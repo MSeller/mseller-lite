@@ -245,7 +245,10 @@
     "items": "ITEMS",
     "tabPicking": "PICKING",
     "tabLoading": "LOADING",
-    "tabInventory": "INVENTORY"
+    "tabInventory": "INVENTORY",
+    "loadingProgressLabel": "Loading Progress",
+    "loadingClientsShort": "{{loaded}} of {{total}} clients",
+    "orderDetailsLabel": "Order details"
   },
   "entrega": {
     "title": "Deliveries",
@@ -300,6 +303,9 @@
       "no_entregado": "Not delivered",
       "excluido": "Excluded",
       "reasignado": "Reassigned"
-    }
+    },
+    "loadingProgressLabel": "Loading Progress",
+    "clientsShort": "{{loaded}} of {{total}} clients",
+    "orderDetailsLabel": "Order details"
   }
 }

@@ -185,19 +185,26 @@ export default function LoadingScreen() {
           <Card.Content>
             {/* Client header */}
             <View style={styles.clientHeader}>
+              <View
+                style={[
+                  styles.seqBadge,
+                  { backgroundColor: item.confirmado ? "#2E7D32" : theme.colors.primary },
+                ]}
+              >
+                {item.confirmado ? (
+                  <Icon source="check" size={18} color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>
+                )}
+              </View>
               <View style={styles.clientInfo}>
-                <View style={styles.clientNameRow}>
-                  <Text
-                    variant="titleMedium"
-                    style={{ fontWeight: "bold", color: theme.colors.onSurface }}
-                    numberOfLines={1}
-                  >
-                    {item.nombreCliente}
-                  </Text>
-                  {item.confirmado && (
-                    <Icon source="check-circle" size={22} color="#388E3C" />
-                  )}
-                </View>
+                <Text
+                  variant="titleMedium"
+                  style={{ fontWeight: "bold", color: theme.colors.onSurface }}
+                  numberOfLines={1}
+                >
+                  {item.nombreCliente}
+                </Text>
                 <Text
                   variant="bodySmall"
                   style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}
@@ -205,35 +212,33 @@ export default function LoadingScreen() {
                   {item.codigoCliente}
                 </Text>
               </View>
-              <View style={styles.clientMeta}>
-                <Chip
-                  style={{
-                    backgroundColor: item.confirmado ? "#E8F5E9" : "#FFF3E0",
-                  }}
-                  textStyle={{
-                    color: item.confirmado ? "#388E3C" : "#F57C00",
-                    fontSize: 11,
-                  }}
-                  compact
-                  icon={item.confirmado ? "check" : "clock-outline"}
-                >
-                  {item.confirmado
-                    ? t("preparacion.loaded")
-                    : t("preparacion.pending")}
-                </Chip>
-              </View>
+              <Chip
+                style={{ backgroundColor: item.confirmado ? "#E7F5E9" : "#FFF4E5" }}
+                textStyle={{
+                  color: item.confirmado ? "#2E7D32" : "#E8820C",
+                  fontSize: 11,
+                  fontWeight: "700",
+                }}
+                compact
+                icon={item.confirmado ? "check" : "clock-outline"}
+              >
+                {item.confirmado ? t("preparacion.loaded") : t("preparacion.pending")}
+              </Chip>
             </View>
 
             {/* Delivery info */}
             <View style={styles.deliveryRow}>
-              <Icon source="truck-delivery" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6 }}>
+              <Icon source="clipboard-check-outline" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text
+                variant="bodySmall"
+                style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }}
+              >
                 {t("preparacion.deliveryOrder")} #{item.secuenciaEntrega} · {productos.length} {t("preparacion.items")}
               </Text>
               {!item.confirmado && (
                 <Icon
                   source={isExpanded ? "chevron-up" : "chevron-down"}
-                  size={20}
+                  size={22}
                   color={theme.colors.onSurfaceVariant}
                 />
               )}
@@ -245,34 +250,47 @@ export default function LoadingScreen() {
         {isExpanded && !item.confirmado && (
           <Card.Content style={{ paddingTop: 0 }}>
             <Divider style={styles.cardDivider} />
+            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
+              {t("preparacion.orderDetailsLabel")}
+            </Text>
 
             {productos.map((prod, idx) => {
               const checked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
               const qty = itemQtys[item.rutaDetalleId]?.[prod.codigoProducto] ?? prod.cantidad;
 
               return (
-                <View key={`${prod.codigoProducto}-${idx}`} style={styles.itemRow}>
+                <View
+                  key={`${prod.codigoProducto}-${idx}`}
+                  style={[
+                    styles.itemCard,
+                    {
+                      backgroundColor: checked ? "#EAF4EC" : theme.colors.surfaceVariant,
+                      borderColor: checked ? "#ABD9B3" : "transparent",
+                    },
+                  ]}
+                >
                   <Checkbox
                     status={checked ? "checked" : "unchecked"}
                     onPress={() => toggleItemCheck(item.rutaDetalleId, prod.codigoProducto)}
-                    color={theme.colors.primary}
+                    color="#2E7D32"
                   />
                   <View style={styles.itemInfo}>
                     <Text
                       variant="bodyMedium"
-                      style={{ color: theme.colors.onSurface }}
+                      style={{ color: theme.colors.onSurface, fontWeight: "600" }}
                       numberOfLines={1}
                     >
-                      {prod.descripcion}
+                      {prod.codigoProducto}
                     </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      {prod.codigoProducto} · {prod.unidad}
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
+                      {prod.descripcion}
+                      {prod.unidad ? ` · ${prod.unidad}` : ""}
                     </Text>
                   </View>
-                  <View style={styles.stepper}>
+                  <View style={[styles.stepper, { backgroundColor: theme.colors.surface }]}>
                     <IconButton
                       icon="minus"
-                      size={18}
+                      size={16}
                       onPress={() => handleItemQtyChange(item.rutaDetalleId, prod.codigoProducto, qty - 1)}
                       style={styles.stepperBtn}
                     />
@@ -285,11 +303,12 @@ export default function LoadingScreen() {
                       keyboardType="numeric"
                       style={styles.stepperInput}
                       dense
-                      mode="outlined"
+                      underlineColor="transparent"
+                      activeUnderlineColor="transparent"
                     />
                     <IconButton
                       icon="plus"
-                      size={18}
+                      size={16}
                       onPress={() => handleItemQtyChange(item.rutaDetalleId, prod.codigoProducto, qty + 1)}
                       style={styles.stepperBtn}
                     />
@@ -306,6 +325,7 @@ export default function LoadingScreen() {
               icon="truck-check"
               style={styles.confirmButton}
               contentStyle={styles.confirmButtonContent}
+              labelStyle={styles.confirmButtonLabel}
             >
               {t("preparacion.confirmLoad")}
             </Button>
@@ -331,26 +351,18 @@ export default function LoadingScreen() {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={["left", "right"]}
     >
-      <View style={[styles.progressContainer, { backgroundColor: theme.colors.surface }]}>
-        <View style={styles.progressTextRow}>
-          <Text
-            variant="bodyLarge"
-            style={{
-              fontWeight: "bold",
-              color: allLoaded ? "#388E3C" : theme.colors.onSurface,
-            }}
-          >
-            {allLoaded
-              ? `✅ ${t("preparacion.allClientsLoaded")}`
-              : t("preparacion.loadingProgress", {
-                  loaded: loadedClients,
-                  total: totalClients,
-                })}
+      <View style={[styles.progressCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+        <View style={styles.progressHeaderRow}>
+          <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>
+            {t("preparacion.loadingProgressLabel")}
+          </Text>
+          <Text style={[styles.progressMetric, { color: allLoaded ? "#2E7D32" : theme.colors.primary }]}>
+            {t("preparacion.loadingClientsShort", { loaded: loadedClients, total: totalClients })}
           </Text>
         </View>
         <ProgressBar
           progress={progress}
-          color={allLoaded ? "#388E3C" : theme.colors.primary}
+          color={allLoaded ? "#2E7D32" : theme.colors.primary}
           style={styles.progressBar}
         />
       </View>
@@ -379,32 +391,74 @@ export default function LoadingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  progressContainer: {
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: "#E0E0E0",
+  progressCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    elevation: 1,
   },
-  progressTextRow: { marginBottom: 8 },
-  progressBar: { height: 10, borderRadius: 5 },
-  listContent: { padding: 16, paddingBottom: 100 },
+  progressHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
+  progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
+  progressBar: { height: 8, borderRadius: 4 },
+  listContent: { padding: 16, paddingBottom: 120 },
   separator: { height: 12 },
-  clientCard: { borderRadius: 12, borderLeftWidth: 4, elevation: 2 },
-  clientHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  clientInfo: { flex: 1, marginRight: 8 },
-  clientNameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  clientMeta: { alignItems: "flex-end" },
-  deliveryRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4 },
-  cardDivider: { marginVertical: 10 },
-  itemRow: {
-    flexDirection: "row", alignItems: "center",
-    paddingVertical: 4, minHeight: 52,
+  clientCard: { borderRadius: 16, borderLeftWidth: 5, elevation: 2 },
+  clientHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  seqBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  itemInfo: { flex: 1, marginRight: 8 },
-  stepper: { flexDirection: "row", alignItems: "center" },
-  stepperBtn: { margin: 0, width: 32, height: 32 },
+  seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
+  clientInfo: { flex: 1 },
+  deliveryRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  cardDivider: { marginTop: 12, marginBottom: 10 },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  itemCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 6,
+    paddingLeft: 4,
+    paddingRight: 8,
+    marginBottom: 8,
+    minHeight: 58,
+  },
+  itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
+  stepper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 10,
+    paddingHorizontal: 2,
+  },
+  stepperBtn: { margin: 0, width: 30, height: 30 },
   stepperInput: {
-    width: 56, height: 36, textAlign: "center",
-    fontSize: 14, paddingHorizontal: 2,
+    width: 44,
+    height: 36,
+    textAlign: "center",
+    fontSize: 15,
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
   },
-  confirmButton: { marginTop: 12, minHeight: 48 },
-  confirmButtonContent: { minHeight: 48 },
+  confirmButton: { marginTop: 8, borderRadius: 12 },
+  confirmButtonContent: { minHeight: 52 },
+  confirmButtonLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
 });

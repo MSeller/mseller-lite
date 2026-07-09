@@ -130,53 +130,64 @@ export default function CargaScreen() {
         <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content>
             <View style={styles.header}>
-              <View style={{ flex: 1, marginRight: 8 }}>
+              <View style={[styles.seqBadge, { backgroundColor: item.confirmado ? "#2E7D32" : theme.colors.primary }]}>
+                {item.confirmado ? (
+                  <Icon source="check" size={18} color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>
+                )}
+              </View>
+              <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>
                   {item.nombreCliente}
                 </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{item.codigoCliente}</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{item.codigoCliente}</Text>
               </View>
               <Chip
                 compact
                 icon={item.confirmado ? "check" : "clock-outline"}
-                style={{ backgroundColor: item.confirmado ? "#E8F5E9" : "#FFF3E0" }}
-                textStyle={{ color: item.confirmado ? "#388E3C" : "#F57C00", fontSize: 11 }}
+                style={{ backgroundColor: item.confirmado ? "#E7F5E9" : "#FFF4E5" }}
+                textStyle={{ color: item.confirmado ? "#2E7D32" : "#E8820C", fontSize: 11, fontWeight: "700" }}
               >
                 {item.confirmado ? t("entrega.loaded") : t("entrega.pending")}
               </Chip>
             </View>
             <View style={styles.deliveryRow}>
-              <Icon source="truck-delivery" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6 }}>
+              <Icon source="clipboard-check-outline" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }}>
                 #{item.secuenciaEntrega} · {productos.length} {t("entrega.items")}
               </Text>
-              {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={theme.colors.onSurfaceVariant} />}
+              {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
           </Card.Content>
         </Pressable>
 
         {isExpanded && !item.confirmado && (
           <Card.Content style={{ paddingTop: 0 }}>
-            <Divider style={{ marginVertical: 10 }} />
+            <Divider style={styles.cardDivider} />
+            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>{t("entrega.orderDetailsLabel")}</Text>
             {productos.map((prod, idx) => {
               const checked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
               const qty = itemQtys[item.rutaDetalleId]?.[prod.codigoProducto] ?? prod.cantidad;
               return (
-                <View key={`${prod.codigoProducto}-${idx}`} style={styles.itemRow}>
-                  <Checkbox status={checked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color={theme.colors.primary} />
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }} numberOfLines={1}>{prod.descripcion}</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{prod.codigoProducto} · {prod.unidad}</Text>
+                <View
+                  key={`${prod.codigoProducto}-${idx}`}
+                  style={[styles.itemCard, { backgroundColor: checked ? "#EAF4EC" : theme.colors.surfaceVariant, borderColor: checked ? "#ABD9B3" : "transparent" }]}
+                >
+                  <Checkbox status={checked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
+                  <View style={styles.itemInfo}>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }} numberOfLines={1}>{prod.codigoProducto}</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>{prod.descripcion}{prod.unidad ? ` · ${prod.unidad}` : ""}</Text>
                   </View>
-                  <View style={styles.stepper}>
-                    <IconButton icon="minus" size={18} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty - 1)} style={styles.stepperBtn} />
-                    <TextInput value={String(qty)} onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) setQty(item.rutaDetalleId, prod.codigoProducto, n); }} keyboardType="numeric" style={styles.stepperInput} dense mode="outlined" />
-                    <IconButton icon="plus" size={18} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty + 1)} style={styles.stepperBtn} />
+                  <View style={[styles.stepper, { backgroundColor: theme.colors.surface }]}>
+                    <IconButton icon="minus" size={16} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty - 1)} style={styles.stepperBtn} />
+                    <TextInput value={String(qty)} onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) setQty(item.rutaDetalleId, prod.codigoProducto, n); }} keyboardType="numeric" style={styles.stepperInput} dense underlineColor="transparent" activeUnderlineColor="transparent" />
+                    <IconButton icon="plus" size={16} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty + 1)} style={styles.stepperBtn} />
                   </View>
                 </View>
               );
             })}
-            <Button mode="contained" onPress={() => handleConfirm(item)} disabled={isConfirming || !allChecked(item)} loading={isConfirming} icon="truck-check" style={{ marginTop: 12, minHeight: 48 }}>
+            <Button mode="contained" onPress={() => handleConfirm(item)} disabled={isConfirming || !allChecked(item)} loading={isConfirming} icon="truck-check" style={styles.confirmButton} contentStyle={styles.confirmButtonContent} labelStyle={styles.confirmButtonLabel}>
               {t("entrega.confirmLoad")}
             </Button>
           </Card.Content>
@@ -196,18 +207,21 @@ export default function CargaScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      <View style={[styles.progress, { backgroundColor: theme.colors.surface }]}>
-        <Text variant="bodyLarge" style={{ fontWeight: "bold", color: allLoaded ? "#388E3C" : theme.colors.onSurface, marginBottom: 8 }}>
-          {allLoaded ? `✅ ${t("entrega.allLoaded")}` : t("entrega.loadProgress", { loaded: loadedC, total: totalC })}
-        </Text>
-        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? "#388E3C" : theme.colors.primary} style={{ height: 10, borderRadius: 5 }} />
+      <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+        <View style={styles.progressHeaderRow}>
+          <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("entrega.loadingProgressLabel")}</Text>
+          <Text style={[styles.progressMetric, { color: allLoaded ? "#2E7D32" : theme.colors.primary }]}>
+            {t("entrega.clientsShort", { loaded: loadedC, total: totalC })}
+          </Text>
+        </View>
+        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? "#2E7D32" : theme.colors.primary} style={styles.progressBar} />
       </View>
 
       <FlatList
         data={sorted}
         keyExtractor={(item) => String(item.rutaDetalleId)}
         renderItem={renderCard}
-        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
@@ -221,12 +235,24 @@ export default function CargaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  progress: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#E0E0E0" },
-  card: { borderRadius: 12, borderLeftWidth: 4, elevation: 2 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  deliveryRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 4 },
-  itemRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4, minHeight: 52 },
-  stepper: { flexDirection: "row", alignItems: "center" },
-  stepperBtn: { margin: 0, width: 32, height: 32 },
-  stepperInput: { width: 56, height: 36, textAlign: "center", fontSize: 14, paddingHorizontal: 2 },
+  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 16, borderWidth: 1, elevation: 1 },
+  progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
+  progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
+  progressBar: { height: 8, borderRadius: 4 },
+  card: { borderRadius: 16, borderLeftWidth: 5, elevation: 2 },
+  header: { flexDirection: "row", alignItems: "center", gap: 12 },
+  seqBadge: { width: 38, height: 38, borderRadius: 19, justifyContent: "center", alignItems: "center" },
+  seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
+  deliveryRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  cardDivider: { marginTop: 12, marginBottom: 10 },
+  sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
+  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, paddingVertical: 6, paddingLeft: 4, paddingRight: 8, marginBottom: 8, minHeight: 58 },
+  itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
+  stepper: { flexDirection: "row", alignItems: "center", borderRadius: 10, paddingHorizontal: 2 },
+  stepperBtn: { margin: 0, width: 30, height: 30 },
+  stepperInput: { width: 44, height: 36, textAlign: "center", fontSize: 15, backgroundColor: "transparent", paddingHorizontal: 0 },
+  confirmButton: { marginTop: 8, borderRadius: 12 },
+  confirmButtonContent: { minHeight: 52 },
+  confirmButtonLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
 });

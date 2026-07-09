@@ -268,7 +268,10 @@
     "items": "ARTÍCULOS",
     "tabPicking": "PREPARACIÓN",
     "tabLoading": "CARGA",
-    "tabInventory": "INVENTARIO"
+    "tabInventory": "INVENTARIO",
+    "loadingProgressLabel": "Progreso de carga",
+    "loadingClientsShort": "{{loaded}} de {{total}} clientes",
+    "orderDetailsLabel": "Detalle del pedido"
   },
   "entrega": {
     "title": "Entregas",
@@ -323,6 +326,9 @@
       "no_entregado": "No entregado",
       "excluido": "Excluido",
       "reasignado": "Reasignado"
-    }
+    },
+    "loadingProgressLabel": "Progreso de carga",
+    "clientsShort": "{{loaded}} de {{total}} clientes",
+    "orderDetailsLabel": "Detalle del pedido"
   }
 }
