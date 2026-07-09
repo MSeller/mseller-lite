@@ -166,7 +166,7 @@ export default function CargaScreen() {
         ]}
       >
         <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
-          <Card.Content>
+          <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
               <View style={[styles.seqBadge, { backgroundColor: item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary }]}>
                 {item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
@@ -199,7 +199,7 @@ export default function CargaScreen() {
         </Pressable>
 
         {isExpanded && !item.confirmado && (
-          <Card.Content style={{ paddingTop: 0 }}>
+          <Card.Content style={styles.cardContentExpanded}>
             <Divider style={styles.cardDivider} />
             <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
               {t("entrega.invoiceDetailsLabel")} · {checked}/{productos.length}
@@ -329,6 +329,8 @@ const styles = StyleSheet.create({
   progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
   progressBar: { height: 8, borderRadius: 4 },
   card: { borderRadius: 6, borderLeftWidth: 5, elevation: 2 },
+  cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
+  cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
   seqBadge: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center" },
   seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
