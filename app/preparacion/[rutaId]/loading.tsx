@@ -159,7 +159,7 @@ export default function LoadingScreen() {
     const complete = allChecked(item);
     const missing = productos.length - checked;
 
-    const accent = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary;
+    const accent = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
     const pillBg = item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
     const pillFg = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
     const pillText = item.confirmado

@@ -152,6 +152,7 @@ export default function CargaScreen() {
 
     const pillBg = item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
     const pillFg = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const statusColor = pillFg;
     const pillText = item.confirmado
       ? item.conIncidencia
         ? t("entrega.loadedWithIssueShort")
@@ -162,13 +163,13 @@ export default function CargaScreen() {
       <Card
         style={[
           styles.card,
-          { backgroundColor: theme.colors.surface, borderLeftColor: item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary, opacity: item.confirmado ? 0.75 : 1 },
+          { backgroundColor: theme.colors.surface, borderLeftColor: statusColor, opacity: item.confirmado ? 0.75 : 1 },
         ]}
       >
         <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
-              <View style={[styles.seqBadge, { backgroundColor: item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary }]}>
+              <View style={[styles.seqBadge, { backgroundColor: statusColor }]}>
                 {item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
