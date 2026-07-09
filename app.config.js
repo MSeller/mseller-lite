@@ -42,6 +42,13 @@ export default {
           backgroundColor: "#ffffff",
         },
       ],
+      [
+        "expo-location",
+        {
+          locationWhenInUsePermission:
+            "MSeller Lite usa tu ubicación para registrar la entrega de los pedidos.",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

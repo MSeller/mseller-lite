@@ -67,7 +67,8 @@
     "products": "Productos",
     "profile": "Perfil",
     "apiTest": "Prueba API",
-    "settings": "Configuración"
+    "settings": "Configuración",
+    "entrega": "Entregas"
   },
   "api": {
     "testApi": "Probar API",
@@ -268,5 +269,60 @@
     "tabPicking": "PREPARACIÓN",
     "tabLoading": "CARGA",
     "tabInventory": "INVENTARIO"
+  },
+  "entrega": {
+    "title": "Entregas",
+    "subtitle": "Rutas asignadas para entrega",
+    "active": "Activa",
+    "delivered": "entregadas",
+    "pending": "pendientes",
+    "noRoutes": "No hay rutas asignadas",
+    "noStops": "No hay paradas en esta ruta",
+    "routeDetailTitle": "Detalle de ruta",
+    "deliveryDetailTitle": "Entrega",
+    "loadTruck": "Cargar camión",
+    "closeTransport": "Cerrar transporte",
+    "pendingStopsHint": "Registra todas las entregas para poder cerrar",
+    "openIn": "Abrir en",
+    "loaded": "Cargado",
+    "items": "Artículos",
+    "allLoaded": "Todo cargado",
+    "loadProgress": "Cargados {{loaded}}/{{total}}",
+    "confirmLoad": "Confirmar carga",
+    "routeDispatched": "Ruta despachada — en ruta",
+    "clientLoaded": "Cliente cargado",
+    "total": "Total",
+    "missing": "Faltan",
+    "deliver": "Entregado",
+    "partial": "Parcial",
+    "notDelivered": "No entregado",
+    "confirmPartial": "Confirmar entrega parcial",
+    "notDeliveredReason": "Motivo de no entrega",
+    "reasonPlaceholder": "Describe el motivo…",
+    "partialNeedsItems": "Indica al menos un artículo faltante",
+    "alreadyRecorded": "Ya registrado: {{status}}",
+    "errorLoading": "Error al cargar la ruta",
+    "errorClosing": "Error al cerrar el transporte",
+    "errorLoadingCarga": "Error al cargar los datos",
+    "errorConfirmingLoad": "Error al confirmar la carga",
+    "errorDelivering": "Error al registrar la entrega",
+    "status": {
+      "borrador": "Borrador",
+      "confirmada": "Confirmada",
+      "en_preparacion": "En preparación",
+      "lista_despacho": "Lista despacho",
+      "en_ruta": "En ruta",
+      "completada": "Completada",
+      "cancelada": "Cancelada"
+    },
+    "detalle": {
+      "pending": "Pendiente",
+      "activo": "Pendiente",
+      "entregado": "Entregado",
+      "parcial": "Parcial",
+      "no_entregado": "No entregado",
+      "excluido": "Excluido",
+      "reasignado": "Reasignado"
+    }
   }
 }
