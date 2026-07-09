@@ -176,16 +176,23 @@ export default function CargaScreen() {
                   {item.nombreCliente}
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{item.codigoCliente}</Text>
+                {!!item.direccion && (
+                  <View style={styles.addrRow}>
+                    <Icon source="map-marker" size={14} color={theme.colors.onSurfaceVariant} />
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 3, flex: 1 }} numberOfLines={2}>
+                      {item.direccion}
+                    </Text>
+                  </View>
+                )}
               </View>
               <Chip compact icon={item.confirmado ? "check" : "clock-outline"} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
                 {pillText}
               </Chip>
             </View>
             <View style={styles.metaRow}>
-              <Icon source="file-document-outline" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }} numberOfLines={1}>
-                {t("entrega.invoiceLabel")} {item.noFactura} · {productos.length} {t("entrega.items")}
-              </Text>
+              <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
+              <Text style={[styles.invoiceText, { color: theme.colors.primary }]} numberOfLines={1}>{item.noFactura}</Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("entrega.items")}</Text>
               {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
           </Card.Content>
@@ -325,7 +332,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
   seqBadge: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center" },
   seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
-  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
+  addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
+  invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
   itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },

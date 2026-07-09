@@ -117,6 +117,8 @@ export interface CargaCliente {
   rutaDetalleId: number;
   codigoCliente: string;
   nombreCliente: string;
+  direccion?: string | null;
+  referenciaDireccion?: string | null;
   /** The final invoice number the driver is loading. */
   noFactura: string;
   noPedidoStr: string;
