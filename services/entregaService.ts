@@ -1,7 +1,7 @@
 import {
   CargaResponse,
+  ConfirmarCargaBody,
   ConfirmarCargaResponse,
-  ItemCargaConfirmacion,
 } from "../types/preparacion";
 import {
   EntregaFacturaDetalle,
@@ -56,15 +56,28 @@ class EntregaService {
     return data;
   }
 
-  /** Confirm load of one invoice; auto-dispatches the route to en_ruta when all are loaded. */
+  /** Confirm load of one invoice; auto-dispatches to en_ruta when all loaded. Pass itemsFaltantes to confirm-with-issue. */
   async confirmarCarga(
     rutaId: number,
     rutaDetalleId: number,
-    items?: ItemCargaConfirmacion[]
+    body?: ConfirmarCargaBody
   ): Promise<ConfirmarCargaResponse> {
     const { data } = await restClient.post<ConfirmarCargaResponse>(
       `${this.baseEndpoint}/rutas/${rutaId}/confirmar-carga/${rutaDetalleId}`,
-      items ? { items } : undefined
+      body ?? undefined
+    );
+    return data;
+  }
+
+  /** Decline (hold back) one invoice at load time — excluded from this route. */
+  async rechazarCarga(
+    rutaId: number,
+    rutaDetalleId: number,
+    observacion?: string
+  ): Promise<ConfirmarCargaResponse> {
+    const { data } = await restClient.post<ConfirmarCargaResponse>(
+      `${this.baseEndpoint}/rutas/${rutaId}/rechazar-carga/${rutaDetalleId}`,
+      observacion ? { observacion } : undefined
     );
     return data;
   }

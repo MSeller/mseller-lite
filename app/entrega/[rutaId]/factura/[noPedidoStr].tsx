@@ -52,6 +52,12 @@ export default function FacturaEntregaScreen() {
       setError("");
       const res = await entregaService.getFactura(numericRutaId, noPedidoStr ?? "");
       setData(res);
+      // Pre-fill the partial delivery from the shortage reported when the truck was loaded.
+      if (res.faltantesCarga?.length) {
+        setFaltantes(
+          Object.fromEntries(res.faltantesCarga.map((f) => [f.codigoProducto, f.cantidadFaltante]))
+        );
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorLoading"));
     } finally {
@@ -170,6 +176,12 @@ export default function FacturaEntregaScreen() {
         {alreadyRecorded && (
           <Chip icon="information" style={styles.recordedChip} textStyle={{ fontSize: 12 }}>
             {t("entrega.alreadyRecorded", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
+          </Chip>
+        )}
+
+        {(data.faltantesCarga?.length ?? 0) > 0 && (
+          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: "#B26A00" }}>
+            {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
           </Chip>
         )}
 
@@ -317,6 +329,7 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
   infoText: { flex: 1, color: "#666" },
   recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#E3F2FD" },
+  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#FFF4E5" },
   lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   stepper: { flexDirection: "row", alignItems: "center" },

@@ -248,7 +248,19 @@
     "tabInventory": "INVENTORY",
     "loadingProgressLabel": "Loading Progress",
     "loadingClientsShort": "{{loaded}} of {{total}} clients",
-    "orderDetailsLabel": "Order details"
+    "orderDetailsLabel": "Order details",
+    "invoiceLabel": "Invoice",
+    "invoiceDetailsLabel": "Invoice details",
+    "transportLabel": "Transport",
+    "loadedWithIssue": "Loaded with issue",
+    "loadedWithIssueShort": "Issue",
+    "itemsMissing": "{{count}} not loaded",
+    "confirmWithIssue": "Confirm with issue",
+    "declineInvoice": "Decline",
+    "declineHint": "The invoice stays behind; the rest of the route still dispatches.",
+    "invoiceDeclined": "Invoice declined",
+    "errorDeclining": "Error declining invoice",
+    "reasonPlaceholder": "Describe the reason…"
   },
   "entrega": {
     "title": "Deliveries",
@@ -306,6 +318,18 @@
     },
     "loadingProgressLabel": "Loading Progress",
     "clientsShort": "{{loaded}} of {{total}} clients",
-    "orderDetailsLabel": "Order details"
+    "orderDetailsLabel": "Order details",
+    "invoiceLabel": "Invoice",
+    "invoiceDetailsLabel": "Invoice details",
+    "transportLabel": "Transport",
+    "loadedWithIssue": "Loaded with issue",
+    "loadedWithIssueShort": "Issue",
+    "itemsMissing": "{{count}} not loaded",
+    "confirmWithIssue": "Confirm with issue",
+    "declineInvoice": "Decline",
+    "declineHint": "The invoice stays behind; the rest of the route still dispatches.",
+    "invoiceDeclined": "Invoice declined",
+    "errorDeclining": "Error declining invoice",
+    "loadShortageBanner": "Loaded with issue — {{count}} item(s) short"
   }
 }

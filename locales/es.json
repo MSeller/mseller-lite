@@ -271,7 +271,19 @@
     "tabInventory": "INVENTARIO",
     "loadingProgressLabel": "Progreso de carga",
     "loadingClientsShort": "{{loaded}} de {{total}} clientes",
-    "orderDetailsLabel": "Detalle del pedido"
+    "orderDetailsLabel": "Detalle del pedido",
+    "invoiceLabel": "Factura",
+    "invoiceDetailsLabel": "Detalle de la factura",
+    "transportLabel": "Transporte",
+    "loadedWithIssue": "Cargado con incidencia",
+    "loadedWithIssueShort": "Incidencia",
+    "itemsMissing": "{{count}} sin cargar",
+    "confirmWithIssue": "Confirmar con incidencia",
+    "declineInvoice": "Rechazar",
+    "declineHint": "La factura queda pendiente; el resto de la ruta continúa.",
+    "invoiceDeclined": "Factura rechazada",
+    "errorDeclining": "Error al rechazar la factura",
+    "reasonPlaceholder": "Describe el motivo…"
   },
   "entrega": {
     "title": "Entregas",
@@ -329,6 +341,18 @@
     },
     "loadingProgressLabel": "Progreso de carga",
     "clientsShort": "{{loaded}} de {{total}} clientes",
-    "orderDetailsLabel": "Detalle del pedido"
+    "orderDetailsLabel": "Detalle del pedido",
+    "invoiceLabel": "Factura",
+    "invoiceDetailsLabel": "Detalle de la factura",
+    "transportLabel": "Transporte",
+    "loadedWithIssue": "Cargado con incidencia",
+    "loadedWithIssueShort": "Incidencia",
+    "itemsMissing": "{{count}} sin cargar",
+    "confirmWithIssue": "Confirmar con incidencia",
+    "declineInvoice": "Rechazar",
+    "declineHint": "La factura queda pendiente; el resto de la ruta continúa.",
+    "invoiceDeclined": "Factura rechazada",
+    "errorDeclining": "Error al rechazar la factura",
+    "loadShortageBanner": "Cargado con incidencia — {{count}} artículo(s) faltante(s)"
   }
 }

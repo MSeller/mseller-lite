@@ -1,9 +1,9 @@
 import {
   CargaResponse,
+  ConfirmarCargaBody,
   ConfirmarCargaResponse,
   ConfirmarProductoRequest,
   ConsolidadoResponse,
-  ItemCargaConfirmacion,
   RutaPreparacion,
   SummaryResponse,
 } from "../types/preparacion";
@@ -58,15 +58,28 @@ class PreparacionService {
     return response.data;
   }
 
-  /** M5 — Confirm a single RutaDetalle is loaded onto the truck, optionally with item-level quantities */
+  /** M5 — Confirm one invoice is loaded. Pass itemsFaltantes to confirm-with-issue (report a shortage). */
   async confirmarCarga(
     rutaId: number,
     rutaDetalleId: number,
-    items?: ItemCargaConfirmacion[]
+    body?: ConfirmarCargaBody
   ): Promise<ConfirmarCargaResponse> {
     const { data } = await restClient.post<ConfirmarCargaResponse>(
       `${this.baseEndpoint}/${rutaId}/confirmar-carga/${rutaDetalleId}`,
-      items ? { items } : undefined
+      body ?? undefined
+    );
+    return data;
+  }
+
+  /** Decline (hold back) one invoice at load time — excluded from this route. */
+  async rechazarCarga(
+    rutaId: number,
+    rutaDetalleId: number,
+    observacion?: string
+  ): Promise<ConfirmarCargaResponse> {
+    const { data } = await restClient.post<ConfirmarCargaResponse>(
+      `${this.baseEndpoint}/${rutaId}/rechazar-carga/${rutaDetalleId}`,
+      observacion ? { observacion } : undefined
     );
     return data;
   }

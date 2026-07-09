@@ -121,6 +121,8 @@ export interface EntregaFacturaDetalle {
   cargaConfirmada: boolean;
   lineas: EntregaFacturaLinea[];
   entrega?: RutaEntregaResumen | null;
+  /** Shortage reported at truck-load time — pre-fills a partial delivery at the stop. */
+  faltantesCarga: ItemFaltanteResumen[];
 }
 
 export interface ItemFaltanteRequest {

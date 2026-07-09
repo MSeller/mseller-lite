@@ -8,9 +8,10 @@ import {
   Card,
   Checkbox,
   Chip,
+  Dialog,
   Divider,
   Icon,
-  IconButton,
+  Portal,
   ProgressBar,
   Snackbar,
   Text,
@@ -19,7 +20,8 @@ import {
 } from "react-native-paper";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
-import { CargaCliente, CargaResponse, ItemCargaConfirmacion } from "../../../types/preparacion";
+import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { vehiculoLabel } from "../../../utils/mapLinks";
 
 export default function CargaScreen() {
   const theme = useTheme();
@@ -31,26 +33,21 @@ export default function CargaScreen() {
   const [data, setData] = useState<CargaResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [confirming, setConfirming] = useState<number | null>(null);
+  const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [itemQtys, setItemQtys] = useState<Record<number, Record<string, number>>>({});
   const [checkedItems, setCheckedItems] = useState<Record<number, Set<string>>>({});
+  const [declineTarget, setDeclineTarget] = useState<CargaCliente | null>(null);
+  const [declineNote, setDeclineNote] = useState("");
 
   const loadCarga = useCallback(async () => {
     try {
       setError("");
       const response = await entregaService.getCarga(numericRutaId);
       setData(response);
-      const qtys: Record<number, Record<string, number>> = {};
       const checks: Record<number, Set<string>> = {};
-      for (const c of response.clientes ?? []) {
-        qtys[c.rutaDetalleId] = {};
-        checks[c.rutaDetalleId] = new Set();
-        for (const p of c.productos ?? []) qtys[c.rutaDetalleId][p.codigoProducto] = p.cantidad;
-      }
-      setItemQtys(qtys);
+      for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = new Set();
       setCheckedItems(checks);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorLoadingCarga"));
@@ -69,9 +66,6 @@ export default function CargaScreen() {
     loadCarga();
   }, [loadCarga]);
 
-  const setQty = (id: number, code: string, qty: number) =>
-    setItemQtys((prev) => ({ ...prev, [id]: { ...prev[id], [code]: Math.max(0, qty) } }));
-
   const toggleItem = (id: number, code: string) =>
     setCheckedItems((prev) => {
       const cur = new Set(prev[id] ?? []);
@@ -80,34 +74,65 @@ export default function CargaScreen() {
       return { ...prev, [id]: cur };
     });
 
+  const checkedCount = (item: CargaCliente) => checkedItems[item.rutaDetalleId]?.size ?? 0;
   const allChecked = (item: CargaCliente) =>
+    (item.productos ?? []).length > 0 &&
     (item.productos ?? []).every((p) => checkedItems[item.rutaDetalleId]?.has(p.codigoProducto));
 
-  const handleConfirm = async (item: CargaCliente) => {
+  const markConfirmed = (id: number, conIncidencia: boolean) =>
+    setData((prev) =>
+      prev
+        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia } : c)) }
+        : prev
+    );
+
+  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[]) => {
     try {
-      setConfirming(item.rutaDetalleId);
+      setBusy(item.rutaDetalleId);
       setError("");
-      const items: ItemCargaConfirmacion[] = (item.productos ?? []).map((p) => ({
-        codigoProducto: p.codigoProducto,
-        cantidadCargada: itemQtys[item.rutaDetalleId]?.[p.codigoProducto] ?? p.cantidad,
-      }));
-      const response = await entregaService.confirmarCarga(numericRutaId, item.rutaDetalleId, items);
-      setData((prev) =>
-        prev
-          ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === item.rutaDetalleId ? { ...c, confirmado: true } : c)) }
-          : prev
+      const response = await entregaService.confirmarCarga(
+        numericRutaId,
+        item.rutaDetalleId,
+        faltantes && faltantes.length > 0 ? { itemsFaltantes: faltantes } : undefined
       );
+      markConfirmed(item.rutaDetalleId, !!(faltantes && faltantes.length));
       setExpandedId(null);
       if (response.rutaDespachada) {
         setSuccess(t("entrega.routeDispatched"));
         setTimeout(() => router.back(), 900);
       } else {
-        setSuccess(t("entrega.clientLoaded"));
+        setSuccess(faltantes?.length ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
     } finally {
-      setConfirming(null);
+      setBusy(null);
+    }
+  };
+
+  const handleConfirmWithIssue = (item: CargaCliente) => {
+    const checked = checkedItems[item.rutaDetalleId] ?? new Set<string>();
+    const faltantes: ItemCargaFaltante[] = (item.productos ?? [])
+      .filter((p) => !checked.has(p.codigoProducto))
+      .map((p) => ({ codigoProducto: p.codigoProducto, cantidadFaltante: p.cantidad }));
+    handleConfirm(item, faltantes);
+  };
+
+  const handleDecline = async () => {
+    const item = declineTarget;
+    if (!item) return;
+    try {
+      setBusy(item.rutaDetalleId);
+      setError("");
+      setDeclineTarget(null);
+      await entregaService.rechazarCarga(numericRutaId, item.rutaDetalleId, declineNote || undefined);
+      setData((prev) => (prev ? { ...prev, clientes: prev.clientes.filter((c) => c.rutaDetalleId !== item.rutaDetalleId) } : prev));
+      setDeclineNote("");
+      setSuccess(t("entrega.invoiceDeclined"));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t("entrega.errorDeclining"));
+    } finally {
+      setBusy(null);
     }
   };
 
@@ -115,27 +140,36 @@ export default function CargaScreen() {
   const totalC = sorted.length;
   const loadedC = sorted.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
+  const veh = data ? [vehiculoLabel(data.vehiculoTipo as any), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
   const renderCard = ({ item }: { item: CargaCliente }) => {
-    const isConfirming = confirming === item.rutaDetalleId;
+    const isBusy = busy === item.rutaDetalleId;
     const isExpanded = expandedId === item.rutaDetalleId;
     const productos = item.productos ?? [];
+    const checked = checkedCount(item);
+    const complete = allChecked(item);
+    const missing = productos.length - checked;
+
+    const pillBg = item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
+    const pillFg = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const pillText = item.confirmado
+      ? item.conIncidencia
+        ? t("entrega.loadedWithIssueShort")
+        : t("entrega.loaded")
+      : t("entrega.pending");
+
     return (
       <Card
         style={[
           styles.card,
-          { backgroundColor: theme.colors.surface, borderLeftColor: item.confirmado ? "#388E3C" : theme.colors.primary, opacity: item.confirmado ? 0.7 : 1 },
+          { backgroundColor: theme.colors.surface, borderLeftColor: item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary, opacity: item.confirmado ? 0.75 : 1 },
         ]}
       >
         <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content>
             <View style={styles.header}>
-              <View style={[styles.seqBadge, { backgroundColor: item.confirmado ? "#2E7D32" : theme.colors.primary }]}>
-                {item.confirmado ? (
-                  <Icon source="check" size={18} color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>
-                )}
+              <View style={[styles.seqBadge, { backgroundColor: item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : theme.colors.primary }]}>
+                {item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>
@@ -143,19 +177,14 @@ export default function CargaScreen() {
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{item.codigoCliente}</Text>
               </View>
-              <Chip
-                compact
-                icon={item.confirmado ? "check" : "clock-outline"}
-                style={{ backgroundColor: item.confirmado ? "#E7F5E9" : "#FFF4E5" }}
-                textStyle={{ color: item.confirmado ? "#2E7D32" : "#E8820C", fontSize: 11, fontWeight: "700" }}
-              >
-                {item.confirmado ? t("entrega.loaded") : t("entrega.pending")}
+              <Chip compact icon={item.confirmado ? "check" : "clock-outline"} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
+                {pillText}
               </Chip>
             </View>
-            <View style={styles.deliveryRow}>
-              <Icon source="clipboard-check-outline" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }}>
-                #{item.secuenciaEntrega} · {productos.length} {t("entrega.items")}
+            <View style={styles.metaRow}>
+              <Icon source="file-document-outline" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }} numberOfLines={1}>
+                {t("entrega.invoiceLabel")} {item.noFactura} · {productos.length} {t("entrega.items")}
               </Text>
               {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
@@ -165,31 +194,44 @@ export default function CargaScreen() {
         {isExpanded && !item.confirmado && (
           <Card.Content style={{ paddingTop: 0 }}>
             <Divider style={styles.cardDivider} />
-            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>{t("entrega.orderDetailsLabel")}</Text>
+            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
+              {t("entrega.invoiceDetailsLabel")} · {checked}/{productos.length}
+            </Text>
             {productos.map((prod, idx) => {
-              const checked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
-              const qty = itemQtys[item.rutaDetalleId]?.[prod.codigoProducto] ?? prod.cantidad;
+              const isChecked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
               return (
-                <View
+                <Pressable
                   key={`${prod.codigoProducto}-${idx}`}
-                  style={[styles.itemCard, { backgroundColor: checked ? "#EAF4EC" : theme.colors.surfaceVariant, borderColor: checked ? "#ABD9B3" : "transparent" }]}
+                  onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)}
+                  style={[styles.itemCard, { backgroundColor: isChecked ? "#EAF4EC" : theme.colors.surfaceVariant, borderColor: isChecked ? "#ABD9B3" : "transparent" }]}
                 >
-                  <Checkbox status={checked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
+                  <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
                   <View style={styles.itemInfo}>
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }} numberOfLines={1}>{prod.codigoProducto}</Text>
                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>{prod.descripcion}{prod.unidad ? ` · ${prod.unidad}` : ""}</Text>
                   </View>
-                  <View style={[styles.stepper, { backgroundColor: theme.colors.surface }]}>
-                    <IconButton icon="minus" size={16} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty - 1)} style={styles.stepperBtn} />
-                    <TextInput value={String(qty)} onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) setQty(item.rutaDetalleId, prod.codigoProducto, n); }} keyboardType="numeric" style={styles.stepperInput} dense underlineColor="transparent" activeUnderlineColor="transparent" />
-                    <IconButton icon="plus" size={16} onPress={() => setQty(item.rutaDetalleId, prod.codigoProducto, qty + 1)} style={styles.stepperBtn} />
-                  </View>
-                </View>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{prod.cantidad}</Text>
+                </Pressable>
               );
             })}
-            <Button mode="contained" onPress={() => handleConfirm(item)} disabled={isConfirming || !allChecked(item)} loading={isConfirming} icon="truck-check" style={styles.confirmButton} contentStyle={styles.confirmButtonContent} labelStyle={styles.confirmButtonLabel}>
-              {t("entrega.confirmLoad")}
-            </Button>
+
+            {complete ? (
+              <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy} disabled={isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
+                {t("entrega.confirmLoad")}
+              </Button>
+            ) : (
+              <>
+                <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 6, marginBottom: 4 }}>
+                  {t("entrega.itemsMissing", { count: missing })}
+                </Text>
+                <Button mode="contained" buttonColor="#B26A00" onPress={() => handleConfirmWithIssue(item)} loading={isBusy} disabled={isBusy} icon="alert-circle-outline" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
+                  {t("entrega.confirmWithIssue")}
+                </Button>
+                <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
+                  {t("entrega.declineInvoice")}
+                </Button>
+              </>
+            )}
           </Card.Content>
         )}
       </Card>
@@ -207,6 +249,23 @@ export default function CargaScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
+      {(!!veh || !!data?.noTransporte) && (
+        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+          {!!veh && (
+            <View style={styles.infoRow}>
+              <Icon source="truck" size={16} color={theme.colors.primary} />
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
+            </View>
+          )}
+          {!!data?.noTransporte && (
+            <View style={styles.infoRow}>
+              <Icon source="receipt" size={16} color={theme.colors.onSurfaceVariant} />
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6 }}>{t("entrega.transportLabel")} {data.noTransporte}</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
         <View style={styles.progressHeaderRow}>
           <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("entrega.loadingProgressLabel")}</Text>
@@ -222,9 +281,25 @@ export default function CargaScreen() {
         keyExtractor={(item) => String(item.rutaDetalleId)}
         renderItem={renderCard}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
+
+      <Portal>
+        <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
+          <Dialog.Title>{t("entrega.declineInvoice")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+              {t("entrega.declineHint")}
+            </Text>
+            <TextInput mode="outlined" value={declineNote} onChangeText={setDeclineNote} placeholder={t("entrega.reasonPlaceholder")} multiline numberOfLines={2} />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</Button>
+            <Button textColor="#C62828" onPress={handleDecline}>{t("entrega.declineInvoice")}</Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
       <Snackbar visible={!!error} onDismiss={() => setError("")} duration={4000} action={{ label: t("common.retry"), onPress: () => { setError(""); loadCarga(); } }}>{error}</Snackbar>
       <Snackbar visible={!!success} onDismiss={() => setSuccess("")} duration={2000}>{success}</Snackbar>
@@ -235,24 +310,24 @@ export default function CargaScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 16, borderWidth: 1, elevation: 1 },
+  infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 6, borderWidth: 1, gap: 4 },
+  infoRow: { flexDirection: "row", alignItems: "center" },
+  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1, elevation: 1 },
   progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
   progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
   progressBar: { height: 8, borderRadius: 4 },
-  card: { borderRadius: 16, borderLeftWidth: 5, elevation: 2 },
+  card: { borderRadius: 6, borderLeftWidth: 5, elevation: 2 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
-  seqBadge: { width: 38, height: 38, borderRadius: 19, justifyContent: "center", alignItems: "center" },
+  seqBadge: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center" },
   seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
-  deliveryRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
+  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
-  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 12, borderWidth: 1, paddingVertical: 6, paddingLeft: 4, paddingRight: 8, marginBottom: 8, minHeight: 58 },
+  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 6, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 56 },
   itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
-  stepper: { flexDirection: "row", alignItems: "center", borderRadius: 10, paddingHorizontal: 2 },
-  stepperBtn: { margin: 0, width: 30, height: 30 },
-  stepperInput: { width: 44, height: 36, textAlign: "center", fontSize: 15, backgroundColor: "transparent", paddingHorizontal: 0 },
-  confirmButton: { marginTop: 8, borderRadius: 12 },
-  confirmButtonContent: { minHeight: 52 },
-  confirmButtonLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
+  actionBtn: { marginTop: 8, borderRadius: 6 },
+  actionBtnContent: { minHeight: 50 },
+  actionBtnLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
+  declineBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E7B4B4" },
 });
