@@ -215,16 +215,15 @@ export default function CargaScreen() {
               );
             })}
 
-            {complete ? (
-              <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy} disabled={isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
-                {t("entrega.confirmLoad")}
-              </Button>
-            ) : (
+            <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
+              {t("entrega.confirmLoad")}
+            </Button>
+            {!complete && (
               <>
-                <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 6, marginBottom: 4 }}>
+                <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 8, marginBottom: 2, textAlign: "center" }}>
                   {t("entrega.itemsMissing", { count: missing })}
                 </Text>
-                <Button mode="contained" buttonColor="#B26A00" onPress={() => handleConfirmWithIssue(item)} loading={isBusy} disabled={isBusy} icon="alert-circle-outline" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
+                <Button mode="outlined" textColor="#B26A00" onPress={() => handleConfirmWithIssue(item)} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
                   {t("entrega.confirmWithIssue")}
                 </Button>
                 <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
@@ -329,5 +328,6 @@ const styles = StyleSheet.create({
   actionBtn: { marginTop: 8, borderRadius: 6 },
   actionBtnContent: { minHeight: 50 },
   actionBtnLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
+  issueBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E6C08A" },
   declineBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E7B4B4" },
 });
