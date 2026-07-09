@@ -207,10 +207,15 @@ export default function CargaScreen() {
                 >
                   <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
                   <View style={styles.itemInfo}>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }} numberOfLines={1}>{prod.codigoProducto}</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>{prod.descripcion}{prod.unidad ? ` · ${prod.unidad}` : ""}</Text>
+                    <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: "700", lineHeight: 20 }} numberOfLines={2}>
+                      {prod.descripcion || prod.codigoProducto}
+                    </Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{prod.codigoProducto}</Text>
                   </View>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>{prod.cantidad}</Text>
+                  <View style={styles.qtyBox}>
+                    <Text style={[styles.qtyNum, { color: theme.colors.onSurface }]}>{prod.cantidad}</Text>
+                    {!!prod.unidad && <Text style={[styles.qtyUnit, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>{prod.unidad}</Text>}
+                  </View>
                 </Pressable>
               );
             })}
@@ -323,8 +328,11 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
-  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 6, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 56 },
+  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
   itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
+  qtyBox: { minWidth: 48, alignItems: "center", justifyContent: "center", paddingLeft: 8 },
+  qtyNum: { fontSize: 24, fontWeight: "800", lineHeight: 26 },
+  qtyUnit: { fontSize: 11, fontWeight: "600", textTransform: "uppercase", marginTop: 1 },
   actionBtn: { marginTop: 8, borderRadius: 6 },
   actionBtnContent: { minHeight: 50 },
   actionBtnLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
