@@ -101,7 +101,9 @@ export default function FacturaEntregaScreen() {
         status,
         latitud: coords?.latitud,
         longitud: coords?.longitud,
-        idempotencyKey: `${data.noPedidoStr}-${Date.now()}`,
+        // Stable per (document, outcome) so an offline retry of the same outcome is truly idempotent
+        // (the backend upserts one delivery record per line, keyed by the route line).
+        idempotencyKey: `${data.noPedidoStr}-${status}`,
         ...extra,
       };
       await entregaService.registrarEntrega(numericRutaId, data.noPedidoStr, payload);
@@ -166,6 +168,18 @@ export default function FacturaEntregaScreen() {
       fotoUrl: fotoUrl ?? undefined,
       observacion: issueMode ? issueNote.trim() : undefined,
     });
+  };
+
+  // Open the delivery dialog with a clean form so payment/photo/note from a previous (cancelled)
+  // attempt never leak into the next submission.
+  const openDeliverDialog = (issue: boolean) => {
+    setIssueMode(issue);
+    setIssueNote("");
+    setTipoPago("efectivo");
+    setMonto("");
+    setFotoUri(null);
+    setFotoUrl(null);
+    setDeliverOpen(true);
   };
 
   if (loading) {
@@ -322,13 +336,13 @@ export default function FacturaEntregaScreen() {
               icon="check-circle"
               loading={submitting}
               disabled={submitting}
-              onPress={() => { setIssueMode(false); setDeliverOpen(true); }}
+              onPress={() => openDeliverDialog(false)}
               contentStyle={{ minHeight: 48 }}
             >
               {t("entrega.deliver")}
             </Button>
             <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setIssueMode(true); setIssueNote(""); setDeliverOpen(true); }}>
+              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={() => openDeliverDialog(true)}>
                 {t("entrega.deliverWithIssue")}
               </Button>
               <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => setPartialMode(true)}>
