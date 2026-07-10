@@ -35,7 +35,9 @@ import {
 const detalleStatus: Record<RutaDetalleStatus, { color: string; bg: string; key: string; icon: string }> = {
   activo: { color: "#F57C00", bg: "#FFF3E0", key: "entrega.detalle.pending", icon: "clock-outline" },
   entregado: { color: "#2E7D32", bg: "#E8F5E9", key: "entrega.detalle.entregado", icon: "check-circle" },
+  entregado_con_novedad: { color: "#00897B", bg: "#E0F2F1", key: "entrega.detalle.entregado_con_novedad", icon: "check-decagram" },
   parcial: { color: "#B26A00", bg: "#FFF8E1", key: "entrega.detalle.parcial", icon: "alert-circle-outline" },
+  entregar_despues: { color: "#5E35B1", bg: "#EDE7F6", key: "entrega.detalle.entregar_despues", icon: "calendar-clock" },
   no_entregado: { color: "#C62828", bg: "#FFEBEE", key: "entrega.detalle.no_entregado", icon: "close-circle-outline" },
   excluido: { color: "#9E9E9E", bg: "#F5F5F5", key: "entrega.detalle.excluido", icon: "minus-circle-outline" },
   reasignado: { color: "#9E9E9E", bg: "#F5F5F5", key: "entrega.detalle.reasignado", icon: "swap-horizontal" },
@@ -77,7 +79,10 @@ export default function RutaEntregaDetalleScreen() {
   );
   const total = facturas.length;
   const done = facturas.filter(
-    (f) => f.statusDetalle === "entregado" || f.statusDetalle === "parcial"
+    (f) =>
+      f.statusDetalle === "entregado" ||
+      f.statusDetalle === "parcial" ||
+      f.statusDetalle === "entregado_con_novedad"
   ).length;
   const hasPending = facturas.some((f) => f.statusDetalle === "activo");
   const progress = total > 0 ? (total - facturas.filter((f) => f.statusDetalle === "activo").length) / total : 0;

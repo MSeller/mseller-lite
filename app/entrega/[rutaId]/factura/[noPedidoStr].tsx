@@ -29,7 +29,12 @@ import { getCurrentCoords } from "../../../../utils/deliveryLocation";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
 
-type Outcome = "entregado" | "no_entregado" | "parcial";
+type Outcome =
+  | "entregado"
+  | "entregado_con_novedad"
+  | "no_entregado"
+  | "parcial"
+  | "entregar_despues";
 
 const PAYMENT_TYPES = ["efectivo", "cheque", "transferencia", "credito"] as const;
 const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
@@ -47,13 +52,17 @@ export default function FacturaEntregaScreen() {
   const [error, setError] = useState("");
 
   const [showMap, setShowMap] = useState(false);
+  // Shared reason dialog for the two "not delivered today" outcomes.
   const [showReason, setShowReason] = useState(false);
+  const [reasonOutcome, setReasonOutcome] = useState<"no_entregado" | "entregar_despues">("no_entregado");
   const [reason, setReason] = useState("");
   const [partialMode, setPartialMode] = useState(false);
   const [faltantes, setFaltantes] = useState<Record<string, number>>({});
 
-  // Delivery confirmation form (payment + proof photo).
+  // Delivery confirmation form (payment + proof photo). issueMode = "delivered with issue".
   const [deliverOpen, setDeliverOpen] = useState(false);
+  const [issueMode, setIssueMode] = useState(false);
+  const [issueNote, setIssueNote] = useState("");
   const [tipoPago, setTipoPago] = useState<string>("efectivo");
   const [monto, setMonto] = useState("");
   const [fotoUri, setFotoUri] = useState<string | null>(null);
@@ -144,13 +153,18 @@ export default function FacturaEntregaScreen() {
   };
 
   const confirmDelivery = () => {
+    if (issueMode && !issueNote.trim()) {
+      setError(t("entrega.issueNoteRequired"));
+      return;
+    }
     const paidToTruck = PAID_TO_TRUCK.includes(tipoPago);
     const montoNum = parseFloat(monto);
     setDeliverOpen(false);
-    submit("entregado", {
+    submit(issueMode ? "entregado_con_novedad" : "entregado", {
       tipoPago,
       montoRecibido: paidToTruck && !isNaN(montoNum) ? montoNum : undefined,
       fotoUrl: fotoUrl ?? undefined,
+      observacion: issueMode ? issueNote.trim() : undefined,
     });
   };
 
@@ -301,26 +315,56 @@ export default function FacturaEntregaScreen() {
             </Button>
           </>
         ) : (
-          <View style={styles.actionRow}>
-            <Button mode="contained" buttonColor="#2E7D32" icon="check-circle" style={styles.actionBtn} loading={submitting} disabled={submitting} onPress={() => setDeliverOpen(true)}>
+          <>
+            <Button
+              mode="contained"
+              buttonColor="#2E7D32"
+              icon="check-circle"
+              loading={submitting}
+              disabled={submitting}
+              onPress={() => { setIssueMode(false); setDeliverOpen(true); }}
+              contentStyle={{ minHeight: 48 }}
+            >
               {t("entrega.deliver")}
             </Button>
-            <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} disabled={submitting} onPress={() => setPartialMode(true)}>
-              {t("entrega.partial")}
-            </Button>
-            <Button mode="outlined" textColor="#C62828" icon="close-circle-outline" style={styles.actionBtn} disabled={submitting} onPress={() => setShowReason(true)}>
-              {t("entrega.notDelivered")}
-            </Button>
-          </View>
+            <View style={[styles.actionRow, { marginTop: 8 }]}>
+              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setIssueMode(true); setIssueNote(""); setDeliverOpen(true); }}>
+                {t("entrega.deliverWithIssue")}
+              </Button>
+              <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => setPartialMode(true)}>
+                {t("entrega.partial")}
+              </Button>
+            </View>
+            <View style={[styles.actionRow, { marginTop: 8 }]}>
+              <Button mode="outlined" textColor="#5E35B1" icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); }}>
+                {t("entrega.deliverLater")}
+              </Button>
+              <Button mode="outlined" textColor="#C62828" icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); }}>
+                {t("entrega.notDelivered")}
+              </Button>
+            </View>
+          </>
         )}
       </View>
 
       {/* Delivery confirmation: payment + proof photo */}
       <Portal>
         <Dialog visible={deliverOpen} onDismiss={() => !submitting && setDeliverOpen(false)}>
-          <Dialog.Title>{t("entrega.deliverTitle")}</Dialog.Title>
+          <Dialog.Title>{issueMode ? t("entrega.deliverWithIssueTitle") : t("entrega.deliverTitle")}</Dialog.Title>
           <Dialog.ScrollArea>
             <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}>
+              {issueMode && (
+                <TextInput
+                  mode="outlined"
+                  label={t("entrega.issueNote")}
+                  value={issueNote}
+                  onChangeText={setIssueNote}
+                  placeholder={t("entrega.issueNotePlaceholder")}
+                  multiline
+                  numberOfLines={2}
+                  style={{ marginBottom: 12 }}
+                />
+              )}
               <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
                 {t("entrega.paymentType")}
               </Text>
@@ -410,9 +454,11 @@ export default function FacturaEntregaScreen() {
           </Dialog.Content>
         </Dialog>
 
-        {/* Not-delivered reason */}
+        {/* Reason for not-delivered / deliver-later */}
         <Dialog visible={showReason} onDismiss={() => setShowReason(false)}>
-          <Dialog.Title>{t("entrega.notDeliveredReason")}</Dialog.Title>
+          <Dialog.Title>
+            {reasonOutcome === "entregar_despues" ? t("entrega.deliverLaterReason") : t("entrega.notDeliveredReason")}
+          </Dialog.Title>
           <Dialog.Content>
             <TextInput
               mode="outlined"
@@ -428,7 +474,7 @@ export default function FacturaEntregaScreen() {
             <Button
               loading={submitting}
               disabled={submitting}
-              onPress={() => { setShowReason(false); submit("no_entregado", { observacion: reason || undefined }); }}
+              onPress={() => { setShowReason(false); submit(reasonOutcome, { observacion: reason || undefined }); }}
             >
               {t("common.confirm")}
             </Button>

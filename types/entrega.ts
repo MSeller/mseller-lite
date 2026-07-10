@@ -12,7 +12,9 @@ export type RutaDetalleStatus =
   | "entregado"
   | "no_entregado"
   | "reasignado"
-  | "parcial";
+  | "parcial"
+  | "entregar_despues"
+  | "entregado_con_novedad";
 
 export type TipoVehiculo = "camion" | "furgoneta" | "motocicleta" | "otro";
 
@@ -134,9 +136,12 @@ export interface ItemFaltanteRequest {
   codigoMotivoRechazo?: string;
 }
 
-/** Payload for recording a delivery outcome. Status must be entregado | no_entregado | parcial. */
+/** Payload for recording a delivery outcome. */
 export interface RegistrarEntregaRequest {
-  status: Extract<RutaDetalleStatus, "entregado" | "no_entregado" | "parcial">;
+  status: Extract<
+    RutaDetalleStatus,
+    "entregado" | "entregado_con_novedad" | "parcial" | "entregar_despues" | "no_entregado"
+  >;
   latitud?: number;
   longitud?: number;
   codigoMotivoRechazo?: string;
