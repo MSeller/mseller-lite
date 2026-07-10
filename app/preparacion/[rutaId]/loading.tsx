@@ -50,6 +50,7 @@ export default function LoadingScreen() {
   const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
   const [issueNote, setIssueNote] = useState("");
   const [declined, setDeclined] = useState<Record<number, string>>({});
+  const [dispatching, setDispatching] = useState(false);
 
   const loadCarga = useCallback(async () => {
     try {
@@ -156,6 +157,26 @@ export default function LoadingScreen() {
   const totalC = activeCards.length;
   const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
+
+  const handleDispatch = async () => {
+    const firstLoaded = activeCards.find((c) => c.confirmado);
+    if (!firstLoaded) return;
+    try {
+      setDispatching(true);
+      setError("");
+      const response = await preparacionService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
+      if (response.rutaDespachada) {
+        setSuccess(response.noTransporte ? `${t("preparacion.routeDispatched")} — ${response.noTransporte}` : t("preparacion.routeDispatched"));
+      } else {
+        setError(t("preparacion.errorConfirmingLoad"));
+      }
+    } catch (err: unknown) {
+      const e = err as { response?: { data?: { message?: string } } };
+      setError(e.response?.data?.message || t("preparacion.errorConfirmingLoad"));
+    } finally {
+      setDispatching(false);
+    }
+  };
   const veh = data ? [vehiculoTipoLabel(data.vehiculoTipo), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
   const renderCard = ({ item }: { item: CargaCliente }) => {
@@ -315,6 +336,14 @@ export default function LoadingScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
+      {allLoaded && (
+        <View style={[styles.dispatchBar, { backgroundColor: theme.colors.surface }]}>
+          <Button mode="contained" buttonColor="#2E7D32" icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={{ fontSize: 15, fontWeight: "700" }}>
+            {t("preparacion.dispatchRoute")}
+          </Button>
+        </View>
+      )}
+
       <Portal>
         <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
           <Dialog.Title>{t("preparacion.confirmWithIssue")}</Dialog.Title>
@@ -369,6 +398,7 @@ const styles = StyleSheet.create({
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
+  dispatchBar: { padding: 16, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
   itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },

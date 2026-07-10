@@ -263,7 +263,8 @@
     "reasonPlaceholder": "Describe the reason…",
     "declined": "Declined",
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
-    "issuePlaceholder": "Describe the issue (optional)…"
+    "issuePlaceholder": "Describe the issue (optional)…",
+    "dispatchRoute": "Dispatch route"
   },
   "entrega": {
     "title": "Deliveries",
@@ -350,6 +351,7 @@
     "confirmDelivery": "Confirm delivery",
     "declined": "Declined",
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
-    "issuePlaceholder": "Describe the issue (optional)…"
+    "issuePlaceholder": "Describe the issue (optional)…",
+    "dispatchRoute": "Dispatch route"
   }
 }

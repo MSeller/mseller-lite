@@ -43,6 +43,7 @@ export default function CargaScreen() {
   const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
   const [issueNote, setIssueNote] = useState("");
   const [declined, setDeclined] = useState<Record<number, string>>({});
+  const [dispatching, setDispatching] = useState(false);
 
   const loadCarga = useCallback(async () => {
     try {
@@ -148,6 +149,28 @@ export default function CargaScreen() {
   const totalC = activeCards.length;
   const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
+
+  // Dispatch a fully-loaded route that didn't auto-transition (re-confirm is idempotent on the
+  // backend and re-evaluates dispatch). Recovers a route left in lista_despacho.
+  const handleDispatch = async () => {
+    const firstLoaded = activeCards.find((c) => c.confirmado);
+    if (!firstLoaded) return;
+    try {
+      setDispatching(true);
+      setError("");
+      const response = await entregaService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
+      if (response.rutaDespachada) {
+        setSuccess(t("entrega.routeDispatched"));
+        setTimeout(() => router.back(), 900);
+      } else {
+        setError(t("entrega.errorConfirmingLoad"));
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
+    } finally {
+      setDispatching(false);
+    }
+  };
   const veh = data ? [vehiculoLabel(data.vehiculoTipo as any), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
   const renderCard = ({ item }: { item: CargaCliente }) => {
@@ -318,6 +341,14 @@ export default function CargaScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
 
+      {allLoaded && (
+        <View style={[styles.dispatchBar, { backgroundColor: theme.colors.surface }]}>
+          <Button mode="contained" buttonColor="#2E7D32" icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={{ fontSize: 15, fontWeight: "700" }}>
+            {t("entrega.dispatchRoute")}
+          </Button>
+        </View>
+      )}
+
       <Portal>
         <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
           <Dialog.Title>{t("entrega.confirmWithIssue")}</Dialog.Title>
@@ -373,6 +404,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
+  dispatchBar: { padding: 16, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
   invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },

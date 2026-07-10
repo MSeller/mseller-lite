@@ -286,7 +286,8 @@
     "reasonPlaceholder": "Describe el motivo…",
     "declined": "Rechazado",
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
-    "issuePlaceholder": "Describe la incidencia (opcional)…"
+    "issuePlaceholder": "Describe la incidencia (opcional)…",
+    "dispatchRoute": "Despachar ruta"
   },
   "entrega": {
     "title": "Entregas",
@@ -373,6 +374,7 @@
     "confirmDelivery": "Confirmar entrega",
     "declined": "Rechazado",
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
-    "issuePlaceholder": "Describe la incidencia (opcional)…"
+    "issuePlaceholder": "Describe la incidencia (opcional)…",
+    "dispatchRoute": "Despachar ruta"
   }
 }
