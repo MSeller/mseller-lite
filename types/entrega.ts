@@ -97,6 +97,9 @@ export interface RutaEntregaResumen {
   codigoMotivoRechazo?: string | null;
   observacion?: string | null;
   montoRecibido?: number | null;
+  tipoPago?: string | null;
+  fotoUrl?: string | null;
+  firmaUrl?: string | null;
   itemsFaltantes: ItemFaltanteResumen[];
 }
 
@@ -141,6 +144,8 @@ export interface RegistrarEntregaRequest {
   firmaUrl?: string;
   fotoUrl?: string;
   montoRecibido?: number;
+  /** efectivo | cheque | transferencia | credito | debito */
+  tipoPago?: string;
   idempotencyKey?: string;
   dispositivoId?: string;
   itemsFaltantes?: ItemFaltanteRequest[];

@@ -330,6 +330,20 @@
     "declineHint": "The invoice stays behind; the rest of the route still dispatches.",
     "invoiceDeclined": "Invoice declined",
     "errorDeclining": "Error declining invoice",
-    "loadShortageBanner": "Loaded with issue — {{count}} item(s) short"
+    "loadShortageBanner": "Loaded with issue — {{count}} item(s) short",
+    "deliverTitle": "Confirm delivery",
+    "paymentType": "Payment type",
+    "pay_efectivo": "Cash",
+    "pay_cheque": "Check",
+    "pay_transferencia": "Transfer",
+    "pay_credito": "Credit",
+    "amountReceived": "Amount received",
+    "photoProof": "Proof of delivery",
+    "takePhoto": "Take photo",
+    "retakePhoto": "Retake photo",
+    "uploadingPhoto": "Uploading…",
+    "photoUploadError": "Could not upload the photo",
+    "cameraPermission": "Camera permission denied",
+    "confirmDelivery": "Confirm delivery"
   }
 }

@@ -353,6 +353,20 @@
     "declineHint": "La factura queda pendiente; el resto de la ruta continúa.",
     "invoiceDeclined": "Factura rechazada",
     "errorDeclining": "Error al rechazar la factura",
-    "loadShortageBanner": "Cargado con incidencia — {{count}} artículo(s) faltante(s)"
+    "loadShortageBanner": "Cargado con incidencia — {{count}} artículo(s) faltante(s)",
+    "deliverTitle": "Confirmar entrega",
+    "paymentType": "Forma de pago",
+    "pay_efectivo": "Efectivo",
+    "pay_cheque": "Cheque",
+    "pay_transferencia": "Transferencia",
+    "pay_credito": "Crédito",
+    "amountReceived": "Monto recibido",
+    "photoProof": "Foto de recibido",
+    "takePhoto": "Tomar foto",
+    "retakePhoto": "Repetir foto",
+    "uploadingPhoto": "Subiendo…",
+    "photoUploadError": "No se pudo subir la foto",
+    "cameraPermission": "Permiso de cámara denegado",
+    "confirmDelivery": "Confirmar entrega"
   }
 }

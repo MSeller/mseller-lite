@@ -1,6 +1,7 @@
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import { Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Linking, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -25,9 +26,13 @@ import {
   RegistrarEntregaRequest,
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
+import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
 
 type Outcome = "entregado" | "no_entregado" | "parcial";
+
+const PAYMENT_TYPES = ["efectivo", "cheque", "transferencia", "credito"] as const;
+const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
   const theme = useTheme();
@@ -46,6 +51,14 @@ export default function FacturaEntregaScreen() {
   const [reason, setReason] = useState("");
   const [partialMode, setPartialMode] = useState(false);
   const [faltantes, setFaltantes] = useState<Record<string, number>>({});
+
+  // Delivery confirmation form (payment + proof photo).
+  const [deliverOpen, setDeliverOpen] = useState(false);
+  const [tipoPago, setTipoPago] = useState<string>("efectivo");
+  const [monto, setMonto] = useState("");
+  const [fotoUri, setFotoUri] = useState<string | null>(null);
+  const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -104,6 +117,42 @@ export default function FacturaEntregaScreen() {
 
   const setFaltante = (code: string, qty: number, max: number) =>
     setFaltantes((prev) => ({ ...prev, [code]: Math.min(max, Math.max(0, qty)) }));
+
+  const takePhoto = async () => {
+    try {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        setError(t("entrega.cameraPermission"));
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
+      if (result.canceled || !result.assets?.length) return;
+      const uri = result.assets[0].uri;
+      setFotoUri(uri);
+      setUploadingPhoto(true);
+      try {
+        const url = await uploadDeliveryPhoto(data?.noPedidoStr ?? noPedidoStr ?? "doc", uri);
+        setFotoUrl(url);
+      } catch {
+        setError(t("entrega.photoUploadError"));
+      } finally {
+        setUploadingPhoto(false);
+      }
+    } catch {
+      setError(t("entrega.photoUploadError"));
+    }
+  };
+
+  const confirmDelivery = () => {
+    const paidToTruck = PAID_TO_TRUCK.includes(tipoPago);
+    const montoNum = parseFloat(monto);
+    setDeliverOpen(false);
+    submit("entregado", {
+      tipoPago,
+      montoRecibido: paidToTruck && !isNaN(montoNum) ? montoNum : undefined,
+      fotoUrl: fotoUrl ?? undefined,
+    });
+  };
 
   if (loading) {
     return (
@@ -253,7 +302,7 @@ export default function FacturaEntregaScreen() {
           </>
         ) : (
           <View style={styles.actionRow}>
-            <Button mode="contained" buttonColor="#2E7D32" icon="check-circle" style={styles.actionBtn} loading={submitting} disabled={submitting} onPress={() => submit("entregado")}>
+            <Button mode="contained" buttonColor="#2E7D32" icon="check-circle" style={styles.actionBtn} loading={submitting} disabled={submitting} onPress={() => setDeliverOpen(true)}>
               {t("entrega.deliver")}
             </Button>
             <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} disabled={submitting} onPress={() => setPartialMode(true)}>
@@ -266,8 +315,80 @@ export default function FacturaEntregaScreen() {
         )}
       </View>
 
-      {/* Map chooser */}
+      {/* Delivery confirmation: payment + proof photo */}
       <Portal>
+        <Dialog visible={deliverOpen} onDismiss={() => !submitting && setDeliverOpen(false)}>
+          <Dialog.Title>{t("entrega.deliverTitle")}</Dialog.Title>
+          <Dialog.ScrollArea>
+            <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}>
+              <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+                {t("entrega.paymentType")}
+              </Text>
+              <View style={styles.payRow}>
+                {PAYMENT_TYPES.map((tp) => (
+                  <Chip
+                    key={tp}
+                    selected={tipoPago === tp}
+                    showSelectedCheck
+                    onPress={() => setTipoPago(tp)}
+                    style={styles.payChip}
+                  >
+                    {t(`entrega.pay_${tp}`)}
+                  </Chip>
+                ))}
+              </View>
+
+              {PAID_TO_TRUCK.includes(tipoPago) && (
+                <TextInput
+                  mode="outlined"
+                  label={t("entrega.amountReceived")}
+                  value={monto}
+                  onChangeText={setMonto}
+                  keyboardType="decimal-pad"
+                  left={<TextInput.Affix text="$" />}
+                  style={{ marginTop: 12 }}
+                />
+              )}
+
+              <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 16, marginBottom: 8 }}>
+                {t("entrega.photoProof")}
+              </Text>
+              {fotoUri ? (
+                <View style={styles.photoWrap}>
+                  <Image source={{ uri: fotoUri }} style={styles.photo} />
+                  {uploadingPhoto ? (
+                    <View style={styles.photoOverlay}>
+                      <ActivityIndicator color="#FFF" />
+                      <Text style={{ color: "#FFF", marginTop: 4 }}>{t("entrega.uploadingPhoto")}</Text>
+                    </View>
+                  ) : (
+                    fotoUrl && (
+                      <View style={styles.photoBadge}>
+                        <Icon source="check-circle" size={22} color="#2E7D32" />
+                      </View>
+                    )
+                  )}
+                </View>
+              ) : null}
+              <Button mode="outlined" icon="camera" onPress={takePhoto} disabled={uploadingPhoto || submitting} style={{ marginTop: 8 }}>
+                {fotoUri ? t("entrega.retakePhoto") : t("entrega.takePhoto")}
+              </Button>
+            </ScrollView>
+          </Dialog.ScrollArea>
+          <Dialog.Actions>
+            <Button onPress={() => setDeliverOpen(false)} disabled={submitting}>{t("common.cancel")}</Button>
+            <Button
+              mode="contained"
+              buttonColor="#2E7D32"
+              loading={submitting}
+              disabled={submitting || uploadingPhoto}
+              onPress={confirmDelivery}
+            >
+              {t("entrega.confirmDelivery")}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
         <Dialog visible={showMap} onDismiss={() => setShowMap(false)}>
           <Dialog.Title>{t("entrega.openIn")}</Dialog.Title>
           <Dialog.Content>
@@ -337,5 +458,18 @@ const styles = StyleSheet.create({
   stepInput: { width: 52, height: 34, textAlign: "center", fontSize: 14, paddingHorizontal: 2 },
   actions: { padding: 12, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
   actionRow: { flexDirection: "row", gap: 8 },
+  payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  payChip: { marginBottom: 4 },
+  photoWrap: { alignSelf: "flex-start", position: "relative" },
+  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EEE" },
+  photoOverlay: {
+    position: "absolute",
+    top: 0, left: 0, right: 0, bottom: 0,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  photoBadge: { position: "absolute", top: 4, right: 4, backgroundColor: "#FFF", borderRadius: 11 },
   actionBtn: { flex: 1 },
 });
