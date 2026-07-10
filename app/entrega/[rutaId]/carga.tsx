@@ -101,7 +101,9 @@ export default function CargaScreen() {
       setExpandedId(null);
       if (response.rutaDespachada) {
         setSuccess(t("entrega.routeDispatched"));
-        setTimeout(() => router.back(), 900);
+        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+        // delivery worklist (reloads via useFocusEffect).
+        router.replace(`/entrega/${numericRutaId}`);
       } else {
         setSuccess(hasIssue ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
       }
@@ -161,7 +163,9 @@ export default function CargaScreen() {
       const response = await entregaService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
       if (response.rutaDespachada) {
         setSuccess(t("entrega.routeDispatched"));
-        setTimeout(() => router.back(), 900);
+        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+        // delivery worklist (reloads via useFocusEffect).
+        router.replace(`/entrega/${numericRutaId}`);
       } else {
         setError(t("entrega.errorConfirmingLoad"));
       }
@@ -305,20 +309,12 @@ export default function CargaScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      {(!!veh || !!data?.noTransporte) && (
+      {!!veh && (
         <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
-          {!!veh && (
-            <View style={styles.infoRow}>
-              <Icon source="truck" size={16} color={theme.colors.primary} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
-            </View>
-          )}
-          {!!data?.noTransporte && (
-            <View style={styles.infoRow}>
-              <Icon source="receipt" size={16} color={theme.colors.onSurfaceVariant} />
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6 }}>{t("entrega.transportLabel")} {data.noTransporte}</Text>
-            </View>
-          )}
+          <View style={styles.infoRow}>
+            <Icon source="truck" size={16} color={theme.colors.primary} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
+          </View>
         </View>
       )}
 

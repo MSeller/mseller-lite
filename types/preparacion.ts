@@ -140,8 +140,6 @@ export interface CargaResponse {
   vehiculoDescripcion?: string | null;
   codigoDistribuidor?: string | null;
   nombreDistribuidor?: string | null;
-  /** Transport number — only present once the route is dispatched. */
-  noTransporte?: string | null;
   clientes: CargaCliente[];
 }
 
@@ -163,7 +161,6 @@ export interface ConfirmarCargaResponse {
   totalClientes: number;
   clientesConfirmados: number;
   rutaDespachada: boolean;
-  noTransporte?: string;
 }
 
 export interface ItemCargaConfirmacion {
