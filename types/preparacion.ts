@@ -117,16 +117,43 @@ export interface CargaCliente {
   rutaDetalleId: number;
   codigoCliente: string;
   nombreCliente: string;
+  direccion?: string | null;
+  referenciaDireccion?: string | null;
+  /** The final invoice number the driver is loading. */
+  noFactura: string;
+  noPedidoStr: string;
   secuenciaEntrega: number;
   totalBultos: number;
   confirmado: boolean;
+  /** True when this invoice was confirmed loaded but with a reported shortage. */
+  conIncidencia: boolean;
+  /** Reason/note captured on confirm-with-issue (or decline). */
+  cargaObservacion?: string | null;
   productos: CargaProducto[];
 }
 
 export interface CargaResponse {
   rutaId: number;
   noRuta: string;
+  vehiculoPlaca?: string | null;
+  vehiculoTipo?: string | null;
+  vehiculoDescripcion?: string | null;
+  codigoDistribuidor?: string | null;
+  nombreDistribuidor?: string | null;
   clientes: CargaCliente[];
+}
+
+/** An item that could not be loaded (missing/short) — reported via confirm-with-issue. */
+export interface ItemCargaFaltante {
+  codigoProducto: string;
+  cantidadFaltante: number;
+}
+
+/** Body for confirming a load. Send itemsFaltantes to confirm-with-issue. */
+export interface ConfirmarCargaBody {
+  items?: ItemCargaConfirmacion[];
+  itemsFaltantes?: ItemCargaFaltante[];
+  observacion?: string;
 }
 
 export interface ConfirmarCargaResponse {
@@ -134,7 +161,6 @@ export interface ConfirmarCargaResponse {
   totalClientes: number;
   clientesConfirmados: number;
   rutaDespachada: boolean;
-  noTransporte?: string;
 }
 
 export interface ItemCargaConfirmacion {

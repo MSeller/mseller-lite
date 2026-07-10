@@ -42,6 +42,20 @@ export default {
           backgroundColor: "#ffffff",
         },
       ],
+      [
+        "expo-location",
+        {
+          locationWhenInUsePermission:
+            "MSeller Lite usa tu ubicación para registrar la entrega de los pedidos.",
+        },
+      ],
+      [
+        "expo-image-picker",
+        {
+          cameraPermission:
+            "MSeller Lite usa la cámara para tomar la foto de prueba de entrega.",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

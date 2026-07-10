@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,20 +19,13 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useTranslation } from "@/hooks/useTranslation";
-import { preparacionService } from "../../../services/preparacionService";
+import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { vehiculoLabel } from "../../../utils/mapLinks";
 
-const vehiculoTipoLabel = (tipo?: string | null) => {
-  switch (tipo) {
-    case "camion": return "Camión";
-    case "furgoneta": return "Furgoneta";
-    case "motocicleta": return "Motocicleta";
-    default: return tipo ? "Vehículo" : "";
-  }
-};
-
-export default function LoadingScreen() {
+export default function CargaScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
   const numericRutaId = parseInt(rutaId ?? "0", 10);
@@ -55,14 +48,13 @@ export default function LoadingScreen() {
   const loadCarga = useCallback(async () => {
     try {
       setError("");
-      const response = await preparacionService.getCarga(numericRutaId);
+      const response = await entregaService.getCarga(numericRutaId);
       setData(response);
       const checks: Record<number, Set<string>> = {};
       for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = new Set();
       setCheckedItems(checks);
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } }; message?: string };
-      setError(e.response?.data?.message || e.message || t("preparacion.errorLoadingCarga"));
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.message || t("entrega.errorLoadingCarga"));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -104,17 +96,19 @@ export default function LoadingScreen() {
       setError("");
       const hasIssue = !!(faltantes && faltantes.length);
       const body = hasIssue || observacion ? { itemsFaltantes: faltantes, observacion } : undefined;
-      const response = await preparacionService.confirmarCarga(numericRutaId, item.rutaDetalleId, body);
+      const response = await entregaService.confirmarCarga(numericRutaId, item.rutaDetalleId, body);
       markConfirmed(item.rutaDetalleId, hasIssue, observacion);
       setExpandedId(null);
       if (response.rutaDespachada) {
-        setSuccess(t("preparacion.routeDispatched"));
+        setSuccess(t("entrega.routeDispatched"));
+        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+        // delivery worklist (reloads via useFocusEffect).
+        router.replace(`/entrega/${numericRutaId}`);
       } else {
-        setSuccess(hasIssue ? t("preparacion.loadedWithIssue") : t("preparacion.clientLoaded"));
+        setSuccess(hasIssue ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
       }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorConfirmingLoad"));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
     } finally {
       setBusy(null);
     }
@@ -139,14 +133,14 @@ export default function LoadingScreen() {
       setError("");
       const note = declineNote;
       setDeclineTarget(null);
-      await preparacionService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
+      await entregaService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
+      // Keep the card visible, marked "Rechazado" with the reason (feedback), instead of removing it.
       setDeclined((prev) => ({ ...prev, [item.rutaDetalleId]: note }));
       setExpandedId(null);
       setDeclineNote("");
-      setSuccess(t("preparacion.invoiceDeclined"));
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorDeclining"));
+      setSuccess(t("entrega.invoiceDeclined"));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t("entrega.errorDeclining"));
     } finally {
       setBusy(null);
     }
@@ -158,26 +152,30 @@ export default function LoadingScreen() {
   const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
 
+  // Dispatch a fully-loaded route that didn't auto-transition (re-confirm is idempotent on the
+  // backend and re-evaluates dispatch). Recovers a route left in lista_despacho.
   const handleDispatch = async () => {
     const firstLoaded = activeCards.find((c) => c.confirmado);
     if (!firstLoaded) return;
     try {
       setDispatching(true);
       setError("");
-      const response = await preparacionService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
+      const response = await entregaService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
       if (response.rutaDespachada) {
-        setSuccess(t("preparacion.routeDispatched"));
+        setSuccess(t("entrega.routeDispatched"));
+        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+        // delivery worklist (reloads via useFocusEffect).
+        router.replace(`/entrega/${numericRutaId}`);
       } else {
-        setError(t("preparacion.errorConfirmingLoad"));
+        setError(t("entrega.errorConfirmingLoad"));
       }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorConfirmingLoad"));
+    } catch (err: any) {
+      setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
     } finally {
       setDispatching(false);
     }
   };
-  const veh = data ? [vehiculoTipoLabel(data.vehiculoTipo), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
+  const veh = data ? [vehiculoLabel(data.vehiculoTipo as any), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
   const renderCard = ({ item }: { item: CargaCliente }) => {
     const isBusy = busy === item.rutaDetalleId;
@@ -191,31 +189,42 @@ export default function LoadingScreen() {
     const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
     const locked = item.confirmado || isDeclined;
 
-    const accent = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
     const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
-    const pillFg = accent;
+    const pillFg = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const statusColor = pillFg;
     const pillText = isDeclined
-      ? t("preparacion.declined")
+      ? t("entrega.declined")
       : item.confirmado
-        ? item.conIncidencia ? t("preparacion.loadedWithIssueShort") : t("preparacion.loaded")
-        : t("preparacion.pending");
+        ? item.conIncidencia
+          ? t("entrega.loadedWithIssueShort")
+          : t("entrega.loaded")
+        : t("entrega.pending");
     const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
 
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: locked ? 0.8 : 1 }]}>
+      <Card
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.surface, borderLeftColor: statusColor, opacity: locked ? 0.8 : 1 },
+        ]}
+      >
         <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
-              <View style={[styles.seqBadge, { backgroundColor: accent }]}>
+              <View style={[styles.seqBadge, { backgroundColor: statusColor }]}>
                 {isDeclined ? <Icon source="close" size={18} color="#FFFFFF" /> : item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>{item.nombreCliente}</Text>
+                <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>
+                  {item.nombreCliente}
+                </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{item.codigoCliente}</Text>
                 {!!item.direccion && (
                   <View style={styles.addrRow}>
                     <Icon source="map-marker" size={14} color={theme.colors.onSurfaceVariant} />
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 3, flex: 1 }} numberOfLines={2}>{item.direccion}</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 3, flex: 1 }} numberOfLines={2}>
+                      {item.direccion}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -226,7 +235,7 @@ export default function LoadingScreen() {
             <View style={styles.metaRow}>
               <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
               <Text style={[styles.invoiceText, { color: theme.colors.primary }]} numberOfLines={1}>{item.noFactura}</Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("preparacion.items")}</Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("entrega.items")}</Text>
               {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
             {!!reason && (
@@ -242,7 +251,7 @@ export default function LoadingScreen() {
           <Card.Content style={styles.cardContentExpanded}>
             <Divider style={styles.cardDivider} />
             <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
-              {t("preparacion.invoiceDetailsLabel")} · {checked}/{productos.length}
+              {t("entrega.invoiceDetailsLabel")} · {checked}/{productos.length}
             </Text>
             {productos.map((prod, idx) => {
               const isChecked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
@@ -268,18 +277,18 @@ export default function LoadingScreen() {
             })}
 
             <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
-              {t("preparacion.confirmLoad")}
+              {t("entrega.confirmLoad")}
             </Button>
             {!complete && (
               <>
                 <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 8, marginBottom: 2, textAlign: "center" }}>
-                  {t("preparacion.itemsMissing", { count: missing })}
+                  {t("entrega.itemsMissing", { count: missing })}
                 </Text>
                 <Button mode="outlined" textColor="#B26A00" onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
-                  {t("preparacion.confirmWithIssue")}
+                  {t("entrega.confirmWithIssue")}
                 </Button>
                 <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
-                  {t("preparacion.declineInvoice")}
+                  {t("entrega.declineInvoice")}
                 </Button>
               </>
             )}
@@ -291,9 +300,9 @@ export default function LoadingScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
         <ActivityIndicator size="large" />
-        <Text variant="bodyLarge" style={{ marginTop: 16, color: theme.colors.onSurfaceVariant }}>{t("preparacion.loadingData")}</Text>
+        <Text variant="bodyLarge" style={{ marginTop: 16, color: theme.colors.onSurfaceVariant }}>{t("common.loading")}</Text>
       </SafeAreaView>
     );
   }
@@ -311,9 +320,9 @@ export default function LoadingScreen() {
 
       <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
         <View style={styles.progressHeaderRow}>
-          <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("preparacion.loadingProgressLabel")}</Text>
+          <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("entrega.loadingProgressLabel")}</Text>
           <Text style={[styles.progressMetric, { color: allLoaded ? "#2E7D32" : theme.colors.primary }]}>
-            {t("preparacion.loadingClientsShort", { loaded: loadedC, total: totalC })}
+            {t("entrega.clientsShort", { loaded: loadedC, total: totalC })}
           </Text>
         </View>
         <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? "#2E7D32" : theme.colors.primary} style={styles.progressBar} />
@@ -321,43 +330,47 @@ export default function LoadingScreen() {
 
       <FlatList
         data={sorted}
-        keyExtractor={(item) => String(item.rutaDetalleId ?? `${item.codigoCliente}-${item.secuenciaEntrega}`)}
+        keyExtractor={(item) => String(item.rutaDetalleId)}
         renderItem={renderCard}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
       {allLoaded && (
         <View style={[styles.dispatchBar, { backgroundColor: theme.colors.surface }]}>
           <Button mode="contained" buttonColor="#2E7D32" icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={{ fontSize: 15, fontWeight: "700" }}>
-            {t("preparacion.dispatchRoute")}
+            {t("entrega.dispatchRoute")}
           </Button>
         </View>
       )}
 
       <Portal>
         <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
-          <Dialog.Title>{t("preparacion.confirmWithIssue")}</Dialog.Title>
+          <Dialog.Title>{t("entrega.confirmWithIssue")}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{t("preparacion.issueHint")}</Text>
-            <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("preparacion.issuePlaceholder")} multiline numberOfLines={2} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+              {t("entrega.issueHint")}
+            </Text>
+            <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("entrega.issuePlaceholder")} multiline numberOfLines={2} />
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor="#B26A00" onPress={submitIssue}>{t("preparacion.confirmWithIssue")}</Button>
+            <Button textColor="#B26A00" onPress={submitIssue}>{t("entrega.confirmWithIssue")}</Button>
           </Dialog.Actions>
         </Dialog>
 
         <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
-          <Dialog.Title>{t("preparacion.declineInvoice")}</Dialog.Title>
+          <Dialog.Title>{t("entrega.declineInvoice")}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{t("preparacion.declineHint")}</Text>
-            <TextInput mode="outlined" value={declineNote} onChangeText={setDeclineNote} placeholder={t("preparacion.reasonPlaceholder")} multiline numberOfLines={2} />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+              {t("entrega.declineHint")}
+            </Text>
+            <TextInput mode="outlined" value={declineNote} onChangeText={setDeclineNote} placeholder={t("entrega.reasonPlaceholder")} multiline numberOfLines={2} />
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor="#C62828" onPress={handleDecline}>{t("preparacion.declineInvoice")}</Button>
+            <Button textColor="#C62828" onPress={handleDecline}>{t("entrega.declineInvoice")}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -378,8 +391,6 @@ const styles = StyleSheet.create({
   progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
   progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
   progressBar: { height: 8, borderRadius: 4 },
-  listContent: { padding: 16, paddingBottom: 120 },
-  separator: { height: 10 },
   card: { borderRadius: 6, borderLeftWidth: 5, elevation: 2 },
   cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
   cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
@@ -388,9 +399,9 @@ const styles = StyleSheet.create({
   seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
-  invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
   dispatchBar: { padding: 16, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
+  invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
   itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
