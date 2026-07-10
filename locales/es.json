@@ -283,7 +283,10 @@
     "declineHint": "La factura queda pendiente; el resto de la ruta continúa.",
     "invoiceDeclined": "Factura rechazada",
     "errorDeclining": "Error al rechazar la factura",
-    "reasonPlaceholder": "Describe el motivo…"
+    "reasonPlaceholder": "Describe el motivo…",
+    "declined": "Rechazado",
+    "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
+    "issuePlaceholder": "Describe la incidencia (opcional)…"
   },
   "entrega": {
     "title": "Entregas",
@@ -367,6 +370,9 @@
     "uploadingPhoto": "Subiendo…",
     "photoUploadError": "No se pudo subir la foto",
     "cameraPermission": "Permiso de cámara denegado",
-    "confirmDelivery": "Confirmar entrega"
+    "confirmDelivery": "Confirmar entrega",
+    "declined": "Rechazado",
+    "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
+    "issuePlaceholder": "Describe la incidencia (opcional)…"
   }
 }

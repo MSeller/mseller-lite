@@ -127,6 +127,8 @@ export interface CargaCliente {
   confirmado: boolean;
   /** True when this invoice was confirmed loaded but with a reported shortage. */
   conIncidencia: boolean;
+  /** Reason/note captured on confirm-with-issue (or decline). */
+  cargaObservacion?: string | null;
   productos: CargaProducto[];
 }
 

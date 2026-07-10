@@ -47,6 +47,9 @@ export default function LoadingScreen() {
   const [checkedItems, setCheckedItems] = useState<Record<number, Set<string>>>({});
   const [declineTarget, setDeclineTarget] = useState<CargaCliente | null>(null);
   const [declineNote, setDeclineNote] = useState("");
+  const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
+  const [issueNote, setIssueNote] = useState("");
+  const [declined, setDeclined] = useState<Record<number, string>>({});
 
   const loadCarga = useCallback(async () => {
     try {
@@ -87,28 +90,26 @@ export default function LoadingScreen() {
     (item.productos ?? []).length > 0 &&
     (item.productos ?? []).every((p) => checkedItems[item.rutaDetalleId]?.has(p.codigoProducto));
 
-  const markConfirmed = (id: number, conIncidencia: boolean) =>
+  const markConfirmed = (id: number, conIncidencia: boolean, observacion?: string) =>
     setData((prev) =>
       prev
-        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia } : c)) }
+        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia, cargaObservacion: observacion ?? c.cargaObservacion } : c)) }
         : prev
     );
 
-  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[]) => {
+  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[], observacion?: string) => {
     try {
       setBusy(item.rutaDetalleId);
       setError("");
-      const response = await preparacionService.confirmarCarga(
-        numericRutaId,
-        item.rutaDetalleId,
-        faltantes && faltantes.length > 0 ? { itemsFaltantes: faltantes } : undefined
-      );
-      markConfirmed(item.rutaDetalleId, !!(faltantes && faltantes.length));
+      const hasIssue = !!(faltantes && faltantes.length);
+      const body = hasIssue || observacion ? { itemsFaltantes: faltantes, observacion } : undefined;
+      const response = await preparacionService.confirmarCarga(numericRutaId, item.rutaDetalleId, body);
+      markConfirmed(item.rutaDetalleId, hasIssue, observacion);
       setExpandedId(null);
       if (response.rutaDespachada) {
         setSuccess(response.noTransporte ? `${t("preparacion.routeDispatched")} — ${response.noTransporte}` : t("preparacion.routeDispatched"));
       } else {
-        setSuccess(faltantes?.length ? t("preparacion.loadedWithIssue") : t("preparacion.clientLoaded"));
+        setSuccess(hasIssue ? t("preparacion.loadedWithIssue") : t("preparacion.clientLoaded"));
       }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { message?: string } } };
@@ -118,12 +119,15 @@ export default function LoadingScreen() {
     }
   };
 
-  const handleConfirmWithIssue = (item: CargaCliente) => {
+  const submitIssue = () => {
+    const item = issueTarget;
+    if (!item) return;
     const checked = checkedItems[item.rutaDetalleId] ?? new Set<string>();
     const faltantes: ItemCargaFaltante[] = (item.productos ?? [])
       .filter((p) => !checked.has(p.codigoProducto))
       .map((p) => ({ codigoProducto: p.codigoProducto, cantidadFaltante: p.cantidad }));
-    handleConfirm(item, faltantes);
+    setIssueTarget(null);
+    handleConfirm(item, faltantes, issueNote || undefined);
   };
 
   const handleDecline = async () => {
@@ -132,9 +136,11 @@ export default function LoadingScreen() {
     try {
       setBusy(item.rutaDetalleId);
       setError("");
+      const note = declineNote;
       setDeclineTarget(null);
-      await preparacionService.rechazarCarga(numericRutaId, item.rutaDetalleId, declineNote || undefined);
-      setData((prev) => (prev ? { ...prev, clientes: prev.clientes.filter((c) => c.rutaDetalleId !== item.rutaDetalleId) } : prev));
+      await preparacionService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
+      setDeclined((prev) => ({ ...prev, [item.rutaDetalleId]: note }));
+      setExpandedId(null);
       setDeclineNote("");
       setSuccess(t("preparacion.invoiceDeclined"));
     } catch (err: unknown) {
@@ -146,8 +152,9 @@ export default function LoadingScreen() {
   };
 
   const sorted = [...(data?.clientes ?? [])].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
-  const totalC = sorted.length;
-  const loadedC = sorted.filter((c) => c.confirmado).length;
+  const activeCards = sorted.filter((c) => !declined[c.rutaDetalleId]);
+  const totalC = activeCards.length;
+  const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
   const veh = data ? [vehiculoTipoLabel(data.vehiculoTipo), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
@@ -159,20 +166,27 @@ export default function LoadingScreen() {
     const complete = allChecked(item);
     const missing = productos.length - checked;
 
-    const accent = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
-    const pillBg = item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
-    const pillFg = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
-    const pillText = item.confirmado
-      ? item.conIncidencia ? t("preparacion.loadedWithIssueShort") : t("preparacion.loaded")
-      : t("preparacion.pending");
+    const isDeclined = !!declined[item.rutaDetalleId];
+    const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
+    const locked = item.confirmado || isDeclined;
+
+    const accent = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
+    const pillFg = accent;
+    const pillText = isDeclined
+      ? t("preparacion.declined")
+      : item.confirmado
+        ? item.conIncidencia ? t("preparacion.loadedWithIssueShort") : t("preparacion.loaded")
+        : t("preparacion.pending");
+    const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
 
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: item.confirmado ? 0.75 : 1 }]}>
-        <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
+      <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: locked ? 0.8 : 1 }]}>
+        <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
               <View style={[styles.seqBadge, { backgroundColor: accent }]}>
-                {item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
+                {isDeclined ? <Icon source="close" size={18} color="#FFFFFF" /> : item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>{item.nombreCliente}</Text>
@@ -184,7 +198,7 @@ export default function LoadingScreen() {
                   </View>
                 )}
               </View>
-              <Chip compact icon={item.confirmado ? "check" : "clock-outline"} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
+              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
                 {pillText}
               </Chip>
             </View>
@@ -192,12 +206,18 @@ export default function LoadingScreen() {
               <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
               <Text style={[styles.invoiceText, { color: theme.colors.primary }]} numberOfLines={1}>{item.noFactura}</Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("preparacion.items")}</Text>
-              {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
+              {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
+            {!!reason && (
+              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : "#FFF4E5" }]}>
+                <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
+                <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
+              </View>
+            )}
           </Card.Content>
         </Pressable>
 
-        {isExpanded && !item.confirmado && (
+        {isExpanded && !locked && (
           <Card.Content style={styles.cardContentExpanded}>
             <Divider style={styles.cardDivider} />
             <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
@@ -234,7 +254,7 @@ export default function LoadingScreen() {
                 <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 8, marginBottom: 2, textAlign: "center" }}>
                   {t("preparacion.itemsMissing", { count: missing })}
                 </Text>
-                <Button mode="outlined" textColor="#B26A00" onPress={() => handleConfirmWithIssue(item)} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
+                <Button mode="outlined" textColor="#B26A00" onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
                   {t("preparacion.confirmWithIssue")}
                 </Button>
                 <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
@@ -296,6 +316,18 @@ export default function LoadingScreen() {
       />
 
       <Portal>
+        <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
+          <Dialog.Title>{t("preparacion.confirmWithIssue")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{t("preparacion.issueHint")}</Text>
+            <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("preparacion.issuePlaceholder")} multiline numberOfLines={2} />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
+            <Button textColor="#B26A00" onPress={submitIssue}>{t("preparacion.confirmWithIssue")}</Button>
+          </Dialog.Actions>
+        </Dialog>
+
         <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
           <Dialog.Title>{t("preparacion.declineInvoice")}</Dialog.Title>
           <Dialog.Content>
@@ -336,6 +368,7 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
+  reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
   itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },

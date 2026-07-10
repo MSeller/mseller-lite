@@ -40,6 +40,9 @@ export default function CargaScreen() {
   const [checkedItems, setCheckedItems] = useState<Record<number, Set<string>>>({});
   const [declineTarget, setDeclineTarget] = useState<CargaCliente | null>(null);
   const [declineNote, setDeclineNote] = useState("");
+  const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
+  const [issueNote, setIssueNote] = useState("");
+  const [declined, setDeclined] = useState<Record<number, string>>({});
 
   const loadCarga = useCallback(async () => {
     try {
@@ -79,29 +82,27 @@ export default function CargaScreen() {
     (item.productos ?? []).length > 0 &&
     (item.productos ?? []).every((p) => checkedItems[item.rutaDetalleId]?.has(p.codigoProducto));
 
-  const markConfirmed = (id: number, conIncidencia: boolean) =>
+  const markConfirmed = (id: number, conIncidencia: boolean, observacion?: string) =>
     setData((prev) =>
       prev
-        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia } : c)) }
+        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia, cargaObservacion: observacion ?? c.cargaObservacion } : c)) }
         : prev
     );
 
-  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[]) => {
+  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[], observacion?: string) => {
     try {
       setBusy(item.rutaDetalleId);
       setError("");
-      const response = await entregaService.confirmarCarga(
-        numericRutaId,
-        item.rutaDetalleId,
-        faltantes && faltantes.length > 0 ? { itemsFaltantes: faltantes } : undefined
-      );
-      markConfirmed(item.rutaDetalleId, !!(faltantes && faltantes.length));
+      const hasIssue = !!(faltantes && faltantes.length);
+      const body = hasIssue || observacion ? { itemsFaltantes: faltantes, observacion } : undefined;
+      const response = await entregaService.confirmarCarga(numericRutaId, item.rutaDetalleId, body);
+      markConfirmed(item.rutaDetalleId, hasIssue, observacion);
       setExpandedId(null);
       if (response.rutaDespachada) {
         setSuccess(t("entrega.routeDispatched"));
         setTimeout(() => router.back(), 900);
       } else {
-        setSuccess(faltantes?.length ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
+        setSuccess(hasIssue ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
       }
     } catch (err: any) {
       setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
@@ -110,12 +111,15 @@ export default function CargaScreen() {
     }
   };
 
-  const handleConfirmWithIssue = (item: CargaCliente) => {
+  const submitIssue = () => {
+    const item = issueTarget;
+    if (!item) return;
     const checked = checkedItems[item.rutaDetalleId] ?? new Set<string>();
     const faltantes: ItemCargaFaltante[] = (item.productos ?? [])
       .filter((p) => !checked.has(p.codigoProducto))
       .map((p) => ({ codigoProducto: p.codigoProducto, cantidadFaltante: p.cantidad }));
-    handleConfirm(item, faltantes);
+    setIssueTarget(null);
+    handleConfirm(item, faltantes, issueNote || undefined);
   };
 
   const handleDecline = async () => {
@@ -124,9 +128,12 @@ export default function CargaScreen() {
     try {
       setBusy(item.rutaDetalleId);
       setError("");
+      const note = declineNote;
       setDeclineTarget(null);
-      await entregaService.rechazarCarga(numericRutaId, item.rutaDetalleId, declineNote || undefined);
-      setData((prev) => (prev ? { ...prev, clientes: prev.clientes.filter((c) => c.rutaDetalleId !== item.rutaDetalleId) } : prev));
+      await entregaService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
+      // Keep the card visible, marked "Rechazado" with the reason (feedback), instead of removing it.
+      setDeclined((prev) => ({ ...prev, [item.rutaDetalleId]: note }));
+      setExpandedId(null);
       setDeclineNote("");
       setSuccess(t("entrega.invoiceDeclined"));
     } catch (err: any) {
@@ -137,8 +144,9 @@ export default function CargaScreen() {
   };
 
   const sorted = [...(data?.clientes ?? [])].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
-  const totalC = sorted.length;
-  const loadedC = sorted.filter((c) => c.confirmado).length;
+  const activeCards = sorted.filter((c) => !declined[c.rutaDetalleId]);
+  const totalC = activeCards.length;
+  const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
   const veh = data ? [vehiculoLabel(data.vehiculoTipo as any), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
 
@@ -150,27 +158,34 @@ export default function CargaScreen() {
     const complete = allChecked(item);
     const missing = productos.length - checked;
 
-    const pillBg = item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
-    const pillFg = item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const isDeclined = !!declined[item.rutaDetalleId];
+    const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
+    const locked = item.confirmado || isDeclined;
+
+    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
+    const pillFg = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
     const statusColor = pillFg;
-    const pillText = item.confirmado
-      ? item.conIncidencia
-        ? t("entrega.loadedWithIssueShort")
-        : t("entrega.loaded")
-      : t("entrega.pending");
+    const pillText = isDeclined
+      ? t("entrega.declined")
+      : item.confirmado
+        ? item.conIncidencia
+          ? t("entrega.loadedWithIssueShort")
+          : t("entrega.loaded")
+        : t("entrega.pending");
+    const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
 
     return (
       <Card
         style={[
           styles.card,
-          { backgroundColor: theme.colors.surface, borderLeftColor: statusColor, opacity: item.confirmado ? 0.75 : 1 },
+          { backgroundColor: theme.colors.surface, borderLeftColor: statusColor, opacity: locked ? 0.8 : 1 },
         ]}
       >
-        <Pressable onPress={() => !item.confirmado && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
+        <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
               <View style={[styles.seqBadge, { backgroundColor: statusColor }]}>
-                {item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
+                {isDeclined ? <Icon source="close" size={18} color="#FFFFFF" /> : item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>
@@ -186,7 +201,7 @@ export default function CargaScreen() {
                   </View>
                 )}
               </View>
-              <Chip compact icon={item.confirmado ? "check" : "clock-outline"} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
+              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
                 {pillText}
               </Chip>
             </View>
@@ -194,12 +209,18 @@ export default function CargaScreen() {
               <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
               <Text style={[styles.invoiceText, { color: theme.colors.primary }]} numberOfLines={1}>{item.noFactura}</Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("entrega.items")}</Text>
-              {!item.confirmado && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
+              {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
+            {!!reason && (
+              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : "#FFF4E5" }]}>
+                <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
+                <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
+              </View>
+            )}
           </Card.Content>
         </Pressable>
 
-        {isExpanded && !item.confirmado && (
+        {isExpanded && !locked && (
           <Card.Content style={styles.cardContentExpanded}>
             <Divider style={styles.cardDivider} />
             <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
@@ -236,7 +257,7 @@ export default function CargaScreen() {
                 <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 8, marginBottom: 2, textAlign: "center" }}>
                   {t("entrega.itemsMissing", { count: missing })}
                 </Text>
-                <Button mode="outlined" textColor="#B26A00" onPress={() => handleConfirmWithIssue(item)} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
+                <Button mode="outlined" textColor="#B26A00" onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
                   {t("entrega.confirmWithIssue")}
                 </Button>
                 <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
@@ -298,6 +319,20 @@ export default function CargaScreen() {
       />
 
       <Portal>
+        <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
+          <Dialog.Title>{t("entrega.confirmWithIssue")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+              {t("entrega.issueHint")}
+            </Text>
+            <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("entrega.issuePlaceholder")} multiline numberOfLines={2} />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
+            <Button textColor="#B26A00" onPress={submitIssue}>{t("entrega.confirmWithIssue")}</Button>
+          </Dialog.Actions>
+        </Dialog>
+
         <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
           <Dialog.Title>{t("entrega.declineInvoice")}</Dialog.Title>
           <Dialog.Content>
@@ -337,6 +372,7 @@ const styles = StyleSheet.create({
   seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
+  reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
   invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },

@@ -260,7 +260,10 @@
     "declineHint": "The invoice stays behind; the rest of the route still dispatches.",
     "invoiceDeclined": "Invoice declined",
     "errorDeclining": "Error declining invoice",
-    "reasonPlaceholder": "Describe the reason…"
+    "reasonPlaceholder": "Describe the reason…",
+    "declined": "Declined",
+    "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
+    "issuePlaceholder": "Describe the issue (optional)…"
   },
   "entrega": {
     "title": "Deliveries",
@@ -344,6 +347,9 @@
     "uploadingPhoto": "Uploading…",
     "photoUploadError": "Could not upload the photo",
     "cameraPermission": "Camera permission denied",
-    "confirmDelivery": "Confirm delivery"
+    "confirmDelivery": "Confirm delivery",
+    "declined": "Declined",
+    "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
+    "issuePlaceholder": "Describe the issue (optional)…"
   }
 }
