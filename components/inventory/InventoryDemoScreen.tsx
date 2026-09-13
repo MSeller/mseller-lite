@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   Button,
@@ -25,6 +25,18 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
   const userContext = useUser();
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
+  // The tonal blocks below take their background from the theme: a fixed light
+  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
+  // which is exactly where these values become unreadable.
+  const tonal = useMemo(
+    () => ({
+      warehouseInfo: [styles.warehouseInfo, { backgroundColor: theme.colors.primaryContainer }],
+      apiItem: [styles.apiItem, { backgroundColor: theme.colors.surfaceVariant }],
+      archDescription: [styles.archDescription, { backgroundColor: theme.colors.surfaceVariant }],
+    }),
+    [theme]
+  );
+
   const envConfig = getEnvironmentConfig();
 
   // Destructure userProfile safely
@@ -38,7 +50,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.header}>
               <View style={styles.headerInfo}>
@@ -85,7 +97,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               Esta pantalla mostraría la funcionalidad completa del sistema de
               inventario móvil una vez que esté conectado a la API del servidor.
             </Paragraph>
-            <Paragraph style={styles.warehouseInfo}>
+            <Paragraph style={tonal.warehouseInfo}>
               <Text style={{ fontWeight: "bold" }}>
                 {t("inventory.warehouse")}:
               </Text>{" "}
@@ -95,7 +107,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         {/* Features Overview */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.primary, marginBottom: 16 }}>
               ✨ Características Implementadas
@@ -164,7 +176,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         {/* API Endpoints */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.primary, marginBottom: 16 }}>
               🔗 Endpoints de API Listos
@@ -174,23 +186,23 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.apiTitle}>
                 Operaciones Básicas:
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • GET /consumo/inventariomovil/conteos-activos/{`{localidadId}`}
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • GET /consumo/inventariomovil/conteo/{`{conteoId}`}/productos
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • POST /consumo/inventariomovil/contar-producto
               </Paragraph>
             </View>
 
             <View style={styles.apiSection}>
               <Paragraph style={styles.apiTitle}>Código de Barras:</Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • GET /consumo/inventariomovil/validar-codigo-barra
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • POST /consumo/inventariomovil/contar-por-codigo-barra
               </Paragraph>
             </View>
@@ -199,13 +211,13 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.apiTitle}>
                 Conteo Sistemático por Zonas:
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • GET /api/inventariozonas/mi-zona/{`{conteoId}`}
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • GET /api/inventariozonas/siguiente-producto-zona
               </Paragraph>
-              <Paragraph style={styles.apiItem}>
+              <Paragraph style={tonal.apiItem}>
                 • POST /api/inventariozonas/contar-producto-zona
               </Paragraph>
             </View>
@@ -213,7 +225,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         {/* Next Steps */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.secondary, marginBottom: 16 }}>
               🚀 Próximos Pasos
@@ -248,7 +260,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         {/* Local Development Setup */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.tertiary, marginBottom: 16 }}>
               🛠️ Configuración de Desarrollo Local
@@ -270,7 +282,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.archTitle}>
                 Servidor de Desarrollo:
               </Paragraph>
-              <Paragraph style={styles.archDescription}>
+              <Paragraph style={tonal.archDescription}>
                 • El servidor local debe estar ejecutándose en
                 https://localhost:7174{"\n"}• El modo local bypasa la
                 configuración de usuario{"\n"}• Todas las requests van
@@ -282,11 +294,11 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.archTitle}>Modo Actual:</Paragraph>
               <Paragraph
                 style={[
-                  styles.archDescription,
+                  tonal.archDescription,
                   {
                     backgroundColor: envConfig.isLocalDevelopment
                       ? "#E8F5E8"
-                      : "#E3F2FD",
+                      : "#DCE7F3",
                     color: envConfig.isLocalDevelopment ? "#2E7D32" : "#1565C0",
                   },
                 ]}
@@ -300,7 +312,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         {/* Technical Architecture */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.tertiary, marginBottom: 16 }}>
               🏗️ Arquitectura Técnica
@@ -308,7 +320,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Servicios:</Paragraph>
-              <Paragraph style={styles.archDescription}>
+              <Paragraph style={tonal.archDescription}>
                 • InventoryMobileService - API principal{"\n"}•
                 InventoryOfflineManager - Sincronización offline{"\n"}•
                 AsyncStorage - Persistencia local
@@ -317,7 +329,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Componentes UI:</Paragraph>
-              <Paragraph style={styles.archDescription}>
+              <Paragraph style={tonal.archDescription}>
                 • InventoryMainScreen - Dashboard principal{"\n"}•
                 ProductCountingScreen - Captura de conteos{"\n"}•
                 InventoryProgressScreen - Seguimiento de progreso
@@ -326,7 +338,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Tipos de Datos:</Paragraph>
-              <Paragraph style={styles.archDescription}>
+              <Paragraph style={tonal.archDescription}>
                 • TypeScript completo con interfaces para todas las operaciones
                 {"\n"}• Enums para estados y tipos de operación{"\n"}•
                 Validación automática de tipos en tiempo de compilación
@@ -361,7 +373,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    elevation: 4,
     borderRadius: 12,
   },
   header: {
@@ -385,7 +396,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   warehouseInfo: {
-    backgroundColor: "#E3F2FD",
+    backgroundColor: "#DCE7F3",
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
@@ -415,7 +426,7 @@ const styles = StyleSheet.create({
   apiItem: {
     fontSize: 12,
     fontFamily: "monospace",
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#EDF1F6",
     padding: 4,
     marginBottom: 4,
     borderRadius: 4,
@@ -433,7 +444,7 @@ const styles = StyleSheet.create({
   },
   archDescription: {
     fontSize: 14,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#EDF1F6",
     padding: 12,
     borderRadius: 8,
     fontFamily: "monospace",

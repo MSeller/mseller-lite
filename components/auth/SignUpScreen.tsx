@@ -99,7 +99,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.content}>
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -225,7 +225,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    elevation: 4,
     borderRadius: 12,
   },
   title: {

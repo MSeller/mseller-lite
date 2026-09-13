@@ -199,7 +199,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
       >
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge">Búsqueda de Productos</Text>
 
@@ -288,7 +288,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
               {isAutoSearching ? "Búsqueda automática..." : "Buscar"}
             </Button>
             {error ? (
-              <Card
+              <Card elevation={0}
                 style={[
                   styles.card,
                   {
@@ -353,7 +353,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
         </Card>
         {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
         {results && results.length > 0 && (
-          <Card style={styles.card}>
+          <Card elevation={0} style={styles.card}>
             <Card.Content>
               <Text variant="titleLarge" style={styles.sectionTitle}>
                 <IconButton
@@ -440,7 +440,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
           </Card>
         )}
         {results && results.length === 0 && !loading && !error && (
-          <Card
+          <Card elevation={0}
             style={[
               styles.card,
               { backgroundColor: theme.colors.surfaceVariant },
@@ -499,7 +499,6 @@ const createStyles = (theme: CustomTheme) =>
     card: {
       marginBottom: 16,
       borderRadius: 12,
-      elevation: 4,
       backgroundColor: theme.colors.surface,
     },
     sectionTitle: {
@@ -517,7 +516,6 @@ const createStyles = (theme: CustomTheme) =>
       padding: 16,
       borderRadius: 12,
       backgroundColor: theme.colors.surface,
-      elevation: 2,
     },
     resultHeader: {
       flexDirection: "row",

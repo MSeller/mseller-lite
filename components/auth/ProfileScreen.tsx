@@ -64,7 +64,7 @@ const ProfileScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <View style={styles.content}>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.avatarContainer}>
               {user.photoURL ? (
@@ -294,7 +294,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    elevation: 4,
     borderRadius: 12,
   },
   cardContent: {

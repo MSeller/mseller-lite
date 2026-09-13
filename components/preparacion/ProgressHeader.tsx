@@ -84,11 +84,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 16,
     margin: 12,
-    elevation: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
   },
   topRow: {
     flexDirection: "row",
@@ -101,11 +96,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   liveChip: {
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#DCE7F3",
     height: 28,
   },
   liveChipText: {
-    color: "#003ec7",
+    color: "#14395E",
     fontSize: 11,
     fontWeight: "700",
   },

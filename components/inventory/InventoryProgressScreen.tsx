@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Card,
@@ -31,6 +31,17 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
+  // The tonal blocks below take their background from the theme: a fixed light
+  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
+  // which is exactly where these values become unreadable.
+  const tonal = useMemo(
+    () => ({
+      summaryItem: [styles.summaryItem, { backgroundColor: theme.colors.surfaceVariant }],
+      quantityText: [styles.quantityText, { backgroundColor: theme.colors.surfaceVariant }],
+    }),
+    [theme]
+  );
+
 
   // State
   const [loading, setLoading] = useState(true);
@@ -149,7 +160,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
       >
         {/* Summary Card */}
         {summary && (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -161,7 +172,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
               </Text>
 
               <View style={styles.summaryGrid}>
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text variant="headlineMedium" style={styles.summaryNumber}>
                     {summary.totalProductosContados +
                       summary.productosPendientes}
@@ -171,7 +182,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -186,7 +197,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -201,7 +212,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -257,7 +268,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
         )}
 
         {/* Status Filter */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
               Filtrar por Estado
@@ -300,7 +311,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
         </Card>
 
         {/* Products List */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text variant="titleMedium" style={styles.sectionTitle}>
               Productos ({filteredProducts.length})
@@ -324,12 +335,12 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 
                   <View style={styles.quantityInfo}>
                     {(product as any).cantidadSnapshot !== undefined && (
-                      <Text variant="bodySmall" style={styles.quantityText}>
+                      <Text variant="bodySmall" style={tonal.quantityText}>
                         Esperado: {(product as any).cantidadSnapshot}
                       </Text>
                     )}
                     {(product as any).cantidadContada !== undefined && (
-                      <Text variant="bodySmall" style={styles.quantityText}>
+                      <Text variant="bodySmall" style={tonal.quantityText}>
                         Contado: {(product as any).cantidadContada}
                       </Text>
                     )}
@@ -340,7 +351,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                         <Text
                           variant="bodySmall"
                           style={[
-                            styles.quantityText,
+                            tonal.quantityText,
                             { color: theme.colors.error, fontWeight: "bold" },
                           ]}
                         >
@@ -410,7 +421,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    elevation: 4,
     borderRadius: 12,
   },
   sectionTitle: {
@@ -427,7 +437,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     padding: 12,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#EDF1F6",
     borderRadius: 8,
   },
   summaryNumber: {
@@ -457,7 +467,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   discrepancyAlert: {
-    backgroundColor: "#FFEBEE",
+    backgroundColor: "#F8DEDC",
     padding: 12,
     borderRadius: 8,
     marginTop: 8,
@@ -484,7 +494,7 @@ const styles = StyleSheet.create({
   productCode: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#666",
+    color: "#5C6773",
     marginBottom: 4,
   },
   productName: {
@@ -505,7 +515,7 @@ const styles = StyleSheet.create({
   },
   quantityText: {
     fontSize: 12,
-    backgroundColor: "#F0F0F0",
+    backgroundColor: "#EDF1F6",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,

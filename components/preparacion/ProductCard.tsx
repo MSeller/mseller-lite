@@ -35,7 +35,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           backgroundColor: theme.colors.surface,
           opacity: isConfirmed ? 0.6 : 1,
           borderLeftColor: isConfirmed
-            ? "#388E3C"
+            ? "#1F6B54"
             : hasQty
               ? theme.colors.primary
               : "#E0E0E0",
@@ -45,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       <View style={styles.mainRow}>
         {/* Status indicator */}
         {isConfirmed && (
-          <View style={[styles.statusIcon, { backgroundColor: "#388E3C" }]}>
+          <View style={[styles.statusIcon, { backgroundColor: "#1F6B54" }]}>
             <Icon source="check" size={20} color="#fff" />
           </View>
         )}
@@ -123,11 +123,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 16,
     borderLeftWidth: 4,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
     overflow: "hidden",
   },
   mainRow: {
@@ -153,20 +148,20 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   locationChip: {
-    backgroundColor: "#E8EEFF",
+    backgroundColor: "#DCE7F3",
     height: 24,
   },
   locationChipText: {
-    color: "#003ec7",
+    color: "#14395E",
     fontSize: 11,
     fontWeight: "700",
   },
   confirmedChip: {
-    backgroundColor: "#E8F5E9",
+    backgroundColor: "#D6EDE3",
     height: 24,
   },
   confirmedChipText: {
-    color: "#388E3C",
+    color: "#1F6B54",
     fontWeight: "700",
     fontSize: 11,
   },

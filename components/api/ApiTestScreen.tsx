@@ -82,7 +82,7 @@ const ApiTestScreen: React.FC = () => {
       <View
         style={[styles.container, { backgroundColor: theme.colors.background }]}
       >
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={[styles.title, { color: theme.colors.onSurface }]}>
               Loading Profile...
@@ -98,7 +98,7 @@ const ApiTestScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
       <View style={styles.content}>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={[styles.title, { color: theme.colors.primary }]}>
               API Testing
@@ -213,7 +213,7 @@ const ApiTestScreen: React.FC = () => {
                   >
                     API Response
                   </Title>
-                  <Card
+                  <Card elevation={0}
                     style={[
                       styles.responseCard,
                       { backgroundColor: theme.colors.surfaceVariant },
@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   card: {
-    elevation: 4,
     borderRadius: 12,
   },
   title: {
@@ -313,7 +312,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   responseCard: {
-    elevation: 2,
     borderRadius: 8,
   },
   responseText: {

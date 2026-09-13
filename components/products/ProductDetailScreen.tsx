@@ -127,7 +127,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </View>
 
         {/* Product Name Card */}
-        <Card style={[styles.card, styles.productNameCard]}>
+        <Card elevation={0} style={[styles.card, styles.productNameCard]}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.productName}>
               {product.nombre}
@@ -182,7 +182,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </Card>
 
         {/* Product Codes Card */}
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.sectionTitle}>
               <IconButton
@@ -204,7 +204,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </Card>
 
         {/* Product Details Card */}
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.sectionTitle}>
               <IconButton
@@ -234,7 +234,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </Card>
 
         {/* Pricing Card */}
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.sectionTitle}>
               <IconButton
@@ -277,7 +277,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </Card>
 
         {/* Stock Information Card */}
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Text variant="titleLarge" style={styles.sectionTitle}>
               <IconButton
@@ -335,7 +335,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
         </Card>
 
         {/* Action Buttons */}
-        <Card style={styles.card}>
+        <Card elevation={0} style={styles.card}>
           <Card.Content>
             <Button
               mode="contained"
@@ -364,7 +364,6 @@ const createStyles = (theme: CustomTheme) =>
     card: {
       marginBottom: 16,
       borderRadius: 12,
-      elevation: 4,
       backgroundColor: theme.colors.surface,
     },
     headerContainer: {

@@ -18,6 +18,8 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
+
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../../services/entregaService";
 import {
@@ -40,7 +42,7 @@ const PAYMENT_TYPES = ["efectivo", "cheque", "transferencia", "credito"] as cons
 const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId, noPedidoStr } = useLocalSearchParams<{ rutaId: string; noPedidoStr: string }>();
@@ -205,7 +207,7 @@ export default function FacturaEntregaScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Customer */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.custHeader}>
               <View style={{ flex: 1 }}>
@@ -257,13 +259,13 @@ export default function FacturaEntregaScreen() {
         )}
 
         {(data.faltantesCarga?.length ?? 0) > 0 && (
-          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: "#B26A00" }}>
+          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: theme.custom.status.warning.onContainer }}>
             {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
           </Chip>
         )}
 
         {/* Lines */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
               {t("entrega.items")} ({data.lineas.length})
@@ -321,7 +323,7 @@ export default function FacturaEntregaScreen() {
       <View style={[styles.actions, { backgroundColor: theme.colors.surface }]}>
         {partialMode ? (
           <>
-            <Button mode="contained" buttonColor="#B26A00" icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
+            <Button mode="contained" buttonColor={theme.custom.status.warning.base} icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
               {t("entrega.confirmPartial")}
             </Button>
             <Button mode="text" onPress={() => { setPartialMode(false); setFaltantes({}); }} disabled={submitting}>
@@ -505,12 +507,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: 16, paddingBottom: 24 },
-  card: { borderRadius: 12, elevation: 2, marginBottom: 12 },
+  card: { borderRadius: 12, marginBottom: 12 },
   custHeader: { flexDirection: "row", alignItems: "center" },
   infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
-  infoText: { flex: 1, color: "#666" },
-  recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#E3F2FD" },
-  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#FFF4E5" },
+  infoText: { flex: 1, color: "#5C6773" },
+  recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#DCE7F3" },
+  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#F6E7CB" },
   lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   stepper: { flexDirection: "row", alignItems: "center" },
@@ -521,7 +523,7 @@ const styles = StyleSheet.create({
   payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   payChip: { marginBottom: 4 },
   photoWrap: { alignSelf: "flex-start", position: "relative" },
-  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EEE" },
+  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EDF1F6" },
   photoOverlay: {
     position: "absolute",
     top: 0, left: 0, right: 0, bottom: 0,

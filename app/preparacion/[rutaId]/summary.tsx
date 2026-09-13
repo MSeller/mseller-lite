@@ -276,7 +276,7 @@ export default function SummaryScreen() {
                   <Text
                     style={[
                       styles.qtyText,
-                      { color: match ? "#388E3C" : "#F57C00" },
+                      { color: match ? "#1F6B54" : "#F57C00" },
                     ]}
                   >
                     {item.cantidadConfirmada}
@@ -288,7 +288,7 @@ export default function SummaryScreen() {
                     / {item.cantidadSolicitada}
                   </Text>
                   {match && (
-                    <Icon source="check-circle" size={18} color="#388E3C" />
+                    <Icon source="check-circle" size={18} color="#1F6B54" />
                   )}
                 </View>
               </View>
@@ -339,7 +339,7 @@ export default function SummaryScreen() {
         contentContainerStyle={styles.listContent}
         ItemSeparatorComponent={() => <Divider />}
         ListEmptyComponent={
-          <Card style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+          <Card elevation={0} style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
             <Card.Content style={styles.emptyContent}>
               <Icon
                 source="clipboard-text-outline"
