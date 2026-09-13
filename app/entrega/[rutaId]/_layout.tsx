@@ -13,7 +13,7 @@ export default function RutaEntregaLayout() {
   // history instead (returns to the routes/transport list), falling back to the list explicitly.
   const backToList = () => {
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)/entrega");
+    else router.replace({ pathname: "/(tabs)/routes", params: { section: "deliveries" } });
   };
 
   return (

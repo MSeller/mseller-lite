@@ -95,7 +95,7 @@ export default function RutaEntregaDetalleScreen() {
       setClosing(true);
       setError("");
       await entregaService.completarRuta(numericRutaId);
-      router.replace("/(tabs)/entrega" as any);
+      router.replace({ pathname: "/(tabs)/routes", params: { section: "deliveries" } });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorClosing"));
     } finally {

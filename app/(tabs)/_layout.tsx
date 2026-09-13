@@ -8,7 +8,7 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useDocumentAccess } from "@/hooks/useDocumentAccess";
+import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 
 type IconName = React.ComponentProps<typeof IconSymbol>["name"];
@@ -16,23 +16,22 @@ type IconName = React.ComponentProps<typeof IconSymbol>["name"];
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
-  // Drivers deliver documents, they don't capture them — the tab is not theirs.
-  // `href: null` unregisters the route, so a driver cannot reach it by deep link
-  // either; DocumentAccessGate still guards the screens themselves.
-  const { canCreateDocuments } = useDocumentAccess();
   const palette = Colors[colorScheme ?? "light"];
   const insets = useSafeAreaInsets();
+  // Tabs are offered by user type (hooks/useNavigationAccess). `href: null` hides a
+  // tab and unregisters its route, so it cannot be reached by deep link either; the
+  // grouped screens and DocumentAccessGate still guard the modules themselves.
+  const { can } = useNavigationAccess();
+  const hideUnless = (allowed: boolean) => (allowed ? undefined : null);
 
   /**
-   * The active destination is marked with a tinted pill behind its icon rather
-   * than by colour alone — at icon size a tint change is easy to miss, and the
-   * pill gives the bar a focal point.
+   * Five destinations at most: related modules share a tab and switch at the top
+   * (Rutas: Preparación / Entregas; Inventario: Conteo / Productos), and account
+   * settings live under Más. That leaves room for labels again, which read far
+   * better than icons alone.
    *
-   * Labels are off on purpose. Eight destinations leave ~38px of label width on
-   * a phone, and every word longer than "Home" ellipsised to "Docu…" / "Invent…"
-   * — measurably worse to read than the icon alone. Each screen titles itself in
-   * its own header, so the name is never more than a tap away. If the tab count
-   * ever comes down to five or so, turn `tabBarShowLabel` back on.
+   * The active destination is also marked with a tinted pill behind its icon — at
+   * icon size a tint change alone is easy to miss.
    */
   const icon = (name: IconName) =>
     function TabIcon({ color, focused }: { color: string; focused: boolean }) {
@@ -56,8 +55,8 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarShowLabel: false,
-        tabBarItemStyle: { paddingVertical: 6 },
+        tabBarLabelStyle: styles.label,
+        tabBarItemStyle: { paddingVertical: 4 },
         // A hairline separates the bar from the page; a shadow there only
         // smudges the bottom edge of the screen.
         tabBarStyle: Platform.select({
@@ -66,7 +65,7 @@ export default function TabLayout() {
             position: "absolute",
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: palette.border,
-            height: 78,
+            height: 84,
           },
           default: {
             backgroundColor: palette.surface,
@@ -74,8 +73,8 @@ export default function TabLayout() {
             borderTopColor: palette.border,
             // Android draws edge to edge, so the system navigation bar sits over the
             // bottom of the window. A fixed height overrides React Navigation's own
-            // inset padding and pushes the icons behind that bar.
-            height: 60 + insets.bottom,
+            // inset padding and pushes the tabs behind that bar.
+            height: 68 + insets.bottom,
             paddingBottom: insets.bottom,
             // Android draws its own shadow above the bar unless this is off.
             elevation: 0,
@@ -96,68 +95,58 @@ export default function TabLayout() {
         options={{
           title: t("navigation.documents"),
           tabBarAccessibilityLabel: t("navigation.documents"),
-          href: canCreateDocuments ? undefined : null,
+          href: hideUnless(can("documents")),
           tabBarIcon: icon("doc.text.fill"),
         }}
       />
       <Tabs.Screen
-        name="preparacion"
+        name="routes"
         options={{
-          title: t("navigation.preparacion"),
-          tabBarAccessibilityLabel: t("navigation.preparacion"),
+          title: t("navigation.routes"),
+          tabBarAccessibilityLabel: t("navigation.routes"),
+          href: hideUnless(can("picking") || can("deliveries")),
           tabBarIcon: icon("map.fill"),
         }}
       />
       <Tabs.Screen
-        name="entrega"
+        name="stock"
         options={{
-          title: t("navigation.entrega"),
-          tabBarAccessibilityLabel: t("navigation.entrega"),
-          tabBarIcon: icon("shippingbox.fill"),
+          title: t("navigation.stock"),
+          tabBarAccessibilityLabel: t("navigation.stock"),
+          href: hideUnless(can("stockCount") || can("products")),
+          tabBarIcon: icon("archivebox.fill"),
         }}
       />
       <Tabs.Screen
-        name="inventory"
+        name="more"
         options={{
-          title: t("navigation.inventory"),
-          tabBarAccessibilityLabel: t("navigation.inventory"),
-          tabBarIcon: icon("barcodescan.fill"),
+          title: t("navigation.more"),
+          tabBarAccessibilityLabel: t("navigation.more"),
+          tabBarIcon: icon("line.3.horizontal"),
         }}
       />
-      <Tabs.Screen
-        name="products"
-        options={{
-          title: t("navigation.products"),
-          tabBarAccessibilityLabel: t("navigation.products"),
-          tabBarIcon: icon("barcode"),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t("navigation.profile"),
-          tabBarAccessibilityLabel: t("navigation.profile"),
-          tabBarIcon: icon("profile.fill"),
-        }}
-      />
-      <Tabs.Screen
-        name="api-test"
-        options={{
-          title: t("navigation.apiTest"),
-          tabBarAccessibilityLabel: t("navigation.apiTest"),
-          tabBarIcon: icon("settings.fill"),
-        }}
-      />
+
+      {/* Old addresses of modules that moved into a grouped tab; they redirect. */}
+      <Tabs.Screen name="preparacion" options={{ href: null }} />
+      <Tabs.Screen name="entrega" options={{ href: null }} />
+      <Tabs.Screen name="inventory" options={{ href: null }} />
+      <Tabs.Screen name="products" options={{ href: null }} />
+      <Tabs.Screen name="profile" options={{ href: null }} />
     </Tabs>
   );
 }
 
 const styles = StyleSheet.create({
   iconWrap: {
-    width: 46,
-    height: 32,
-    borderRadius: 10,
+    width: 56,
+    height: 30,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
+  },
+  label: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: 2,
   },
 });

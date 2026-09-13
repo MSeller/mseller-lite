@@ -29,9 +29,11 @@ type SearchType = "barcode" | "code" | "text";
 
 interface ProductScreenProps {
   onProductSelect: (product: Product) => void;
+  /** Rendered above the search, under the status bar — the Inventario section switcher. */
+  headerAccessory?: React.ReactNode;
 }
 
-const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
+const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAccessory }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
   const styles = createStyles(theme);
@@ -194,6 +196,7 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect }) => {
       style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
       edges={["top", "left", "right"]}
     >
+      {headerAccessory}
       <ScrollView
         style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
         contentContainerStyle={styles.container}

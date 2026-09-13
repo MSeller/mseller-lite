@@ -21,10 +21,12 @@ import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useTranslation } from "@/hooks/useTranslation";
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const { user, loading } = useAuth();
+  const { t } = useTranslation();
 
   /**
    * React Navigation paints the page behind every screen from its OWN theme, and
@@ -70,6 +72,7 @@ function RootLayoutContent() {
         />
         <Stack.Screen name="entrega" options={{ headerShown: false }} />
         <Stack.Screen name="documentos" options={{ headerShown: false }} />
+        <Stack.Screen name="api-test" options={{ title: t("navigation.apiTest") }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

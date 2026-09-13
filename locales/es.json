@@ -70,7 +70,19 @@
     "apiTest": "Prueba API",
     "settings": "Configuración",
     "entrega": "Entregas",
-    "documents": "Documentos"
+    "documents": "Documentos",
+    "routes": "Rutas",
+    "stock": "Inventario",
+    "more": "Más",
+    "sections": {
+      "picking": "Preparación",
+      "deliveries": "Entregas",
+      "stockCount": "Conteo",
+      "products": "Productos"
+    },
+    "language": "Idioma",
+    "developer": "Desarrollo",
+    "noSections": "No hay nada aquí para tu tipo de usuario."
   },
   "api": {
     "testApi": "Probar API",

@@ -69,7 +69,19 @@
     "apiTest": "API Test",
     "settings": "Settings",
     "entrega": "Deliveries",
-    "documents": "Documents"
+    "documents": "Documents",
+    "routes": "Routes",
+    "stock": "Inventory",
+    "more": "More",
+    "sections": {
+      "picking": "Picking",
+      "deliveries": "Deliveries",
+      "stockCount": "Count",
+      "products": "Products"
+    },
+    "language": "Language",
+    "developer": "Developer",
+    "noSections": "There is nothing here for your user type."
   },
   "api": {
     "testApi": "Test API",
