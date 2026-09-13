@@ -1,3 +1,4 @@
+import { requireOptionalNativeModule } from "expo";
 import { Platform } from "react-native";
 
 /**
@@ -78,35 +79,42 @@ type ModulosNativos = {
 };
 
 /**
+ * The native side of each package, by the name its JS asks for. Kept next to the check
+ * because a rename here on an SDK upgrade is exactly what would silently hide printing.
+ */
+const MODULOS_NATIVOS_REQUERIDOS = ["ExpoPrint", "ExpoSharing", "FileSystem"] as const;
+
+/**
  * `undefined` = not tried yet, `null` = unavailable on this build.
  *
- * Required lazily and inside a try/catch on purpose. These are NATIVE modules: a dev
- * client or store build produced before they were added to package.json does not contain
- * them, and a static import would take the whole screen down on a build that is otherwise
- * fine. Feature-detecting instead means an older build quietly shows the same "not
- * available here" notice the web-only version showed, and a rebuilt one gains printing
- * with no further change.
+ * These are NATIVE modules: an app binary built before they were added to package.json
+ * does not contain them. Presence is checked with `requireOptionalNativeModule`, which
+ * answers null, BEFORE any of the three packages is required.
+ *
+ * Wrapping the `require` in a try/catch is not enough, and an earlier version of this
+ * file relied on it. At runtime Metro's own module loader catches an error thrown while a
+ * module evaluates, reports it to the error overlay, and hands back `undefined` — the
+ * catch block never runs. `expo-sharing` throws "Cannot find native module
+ * 'ExpoSharing'" as it evaluates, so an old binary got a red error screen and, worse, a
+ * modules object with `Sharing: undefined` that read as "available" and put a Print
+ * button on screen that could only crash.
  */
 let nativos: ModulosNativos | null | undefined;
 
 const cargarNativos = (): ModulosNativos | null => {
   if (nativos !== undefined) return nativos;
-  if (esWeb) {
+
+  if (esWeb || MODULOS_NATIVOS_REQUERIDOS.some((nombre) => !requireOptionalNativeModule(nombre))) {
     nativos = null;
     return nativos;
   }
 
-  try {
-    nativos = {
-      Print: require("expo-print"),
-      Sharing: require("expo-sharing"),
-      FileSystem: require("expo-file-system"),
-    };
-  } catch {
-    // Native module missing — an app binary built before these dependencies existed.
-    nativos = null;
-  }
-
+  // Safe to require now: every native half is present, so none of these throw on load.
+  nativos = {
+    Print: require("expo-print"),
+    Sharing: require("expo-sharing"),
+    FileSystem: require("expo-file-system"),
+  };
   return nativos;
 };
 
