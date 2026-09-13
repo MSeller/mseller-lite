@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Divider, IconButton, Text, TextInput, useTheme } from "react-native-paper";
 
@@ -47,6 +47,20 @@ const CartLineCard: React.FC<Props> = ({
   const [priceText, setPriceText] = useState(String(line.precio));
   const [discountText, setDiscountText] = useState(String(line.porcientoDescuento));
 
+  // The quantity field is a draft the user is mid-edit on, so it can't simply
+  // mirror the prop. But the line can also change from OUTSIDE this card —
+  // re-tapping the same product in the still-open picker bumps its quantity — and
+  // a draft left showing the old number would be committed on the next blur,
+  // silently undoing that tap. Re-sync whenever the committed value moves away
+  // from what this field last sent.
+  const lastCommitted = useRef(line.cantidad);
+  useEffect(() => {
+    if (line.cantidad !== lastCommitted.current) {
+      lastCommitted.current = line.cantidad;
+      setQuantityText(formatQuantity(line.cantidad));
+    }
+  }, [line.cantidad]);
+
   const totals = useMemo(() => calculateLineTotals(line), [line]);
   const priceChanged = line.precio !== line.precioLista;
   // A case of 12 priced at $145.50 totals $1,746 — without the factor on screen
@@ -55,6 +69,7 @@ const CartLineCard: React.FC<Props> = ({
 
   const commitQuantity = () => {
     const value = parseNumericInput(quantityText);
+    lastCommitted.current = value;
     onChangeQuantity(value);
     // Re-sync from the committed value so a typo like "3..5" doesn't linger.
     setQuantityText(formatQuantity(value > 0 ? value : line.cantidad));
@@ -62,6 +77,7 @@ const CartLineCard: React.FC<Props> = ({
 
   const step = (delta: number) => {
     const next = Math.max(0, line.cantidad + delta);
+    lastCommitted.current = next;
     setQuantityText(formatQuantity(next));
     onChangeQuantity(next);
   };
@@ -180,6 +196,10 @@ const CartLineCard: React.FC<Props> = ({
               label={t("documents.discountPercent")}
               value={discountText}
               onChangeText={setDiscountText}
+              // A discount IS a price concession: gating the price field but not
+              // this one let a seller without the permission reach the same
+              // result by another route.
+              disabled={!canEditPrice}
               onBlur={() => {
                 const value = Math.min(100, Math.max(0, parseNumericInput(discountText)));
                 setDiscountText(String(value));

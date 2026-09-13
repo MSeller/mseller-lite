@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
@@ -90,6 +90,24 @@ const DocumentsListScreen: React.FC = () => {
       active = false;
     };
   }, [fetchPage]);
+
+  // Coming back from capturing a document has to show it. The create flow leaves
+  // via `replace` to the new document, so returning here is a focus event and not
+  // a remount — without this the list a seller checks right after saving is the
+  // one from before they saved, and the document looks lost.
+  //
+  // The first focus is skipped: the effect above has already loaded that page,
+  // and refetching it would double the request on every cold open.
+  const firstFocus = useRef(true);
+  useFocusEffect(
+    useCallback(() => {
+      if (firstFocus.current) {
+        firstFocus.current = false;
+        return;
+      }
+      fetchPage(1, { append: false });
+    }, [fetchPage])
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

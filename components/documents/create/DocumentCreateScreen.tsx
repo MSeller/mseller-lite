@@ -94,8 +94,22 @@ const DocumentCreateScreen: React.FC = () => {
     setCustomer(selected);
     // The customer's own condition is the right default — it is what the portal
     // would use — but it stays overridable for a one-off cash sale.
-    setCondicionPago((current) => selected.condicionPago?.trim() || current);
+    //
+    // Cleared rather than carried over when the new customer has none: keeping the
+    // previous customer's terms would quietly bill this one on someone else's
+    // credit. Nothing selected disables "Next", which is the honest state.
+    setCondicionPago(selected.condicionPago?.trim() || null);
   }, []);
+
+  // A customer can carry a condition code the tenant has since removed. Left as is
+  // it would select no chip while "Next" stayed enabled, and fail only at save with
+  // a message about a code the user never chose — so reconcile against the
+  // catalogue once it is known.
+  useEffect(() => {
+    if (conditionsLoading || !condicionPago) return;
+    const existe = conditions.some((c) => c.condicionPago.trim() === condicionPago);
+    if (!existe) setCondicionPago(null);
+  }, [conditions, conditionsLoading, condicionPago]);
 
   const stepValid = useMemo(() => {
     switch (step) {
