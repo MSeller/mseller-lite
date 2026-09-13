@@ -94,7 +94,8 @@ jobs:
             echo "❌ No Expo config file found"
             exit 1
           fi
-          if grep -q '"MSeller Lite"' "$CONFIG_FILE" || grep -q "'MSeller Lite'" "$CONFIG_FILE"; then
+          # The app name lives in app.variants.js (one entry per Dev/Prod environment)
+          if grep -q '"MSeller Lite"' "$CONFIG_FILE" app.variants.js || grep -q "'MSeller Lite'" "$CONFIG_FILE" app.variants.js; then
             echo "✅ App name is MSeller Lite"
           else
             echo "❌ App name should be MSeller Lite"
