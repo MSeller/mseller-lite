@@ -201,34 +201,9 @@
     "unsavedChanges": "Tienes cambios sin guardar. ¿Estás seguro que quieres salir?"
   },
   "dashboard": {
-    "title": "Panel de Control",
-    "subtitle": "Sistema de Gestión de Inventario",
-    "quickActions": "Acciones Rápidas",
-    "searchProducts": "Buscar Productos",
-    "viewInventory": "Ver Inventario",
-    "recentActivity": "Actividad Reciente",
-    "systemStatus": "Estado del Sistema",
-    "businessInfo": "Información de la Empresa",
-    "getStarted": "Comenzar",
-    "exploreFeatures": "Explora las potentes funciones de MSeller Lite para gestionar tu inventario de manera eficiente.",
-    "productManagement": "Gestión de Productos",
-    "productManagementDesc": "Busca, visualiza y gestiona tu catálogo de productos con facilidad.",
-    "inventoryTracking": "Seguimiento de Inventario",
-    "inventoryTrackingDesc": "Mantén un seguimiento de los niveles de stock en múltiples ubicaciones.",
-    "labelPrinting": "Impresión de Etiquetas",
-    "labelPrintingDesc": "Genera e imprime etiquetas con código QR para tus productos.",
     "goodMorning": "Buenos días",
     "goodAfternoon": "Buenas tardes",
-    "goodEvening": "Buenas noches",
-    "company": "Empresa",
-    "role": "Rol",
-    "mode": "Modo",
-    "modeTest": "Pruebas",
-    "modeProduction": "Producción",
-    "connection": "Conexión",
-    "database": "Base de Datos",
-    "connectionActive": "Activa",
-    "databaseOnline": "Online"
+    "goodEvening": "Buenas noches"
   },
   "preparacion": {
     "title": "Preparación",
@@ -568,6 +543,30 @@
       "save": "Guardar foto",
       "attachFailed": "No pudimos guardar la foto en el producto. Inténtalo de nuevo.",
       "addToExisting": "Agregar foto al producto"
+    }
+  },
+  "home": {
+    "defaultName": "Usuario",
+    "today": "Tu trabajo hoy",
+    "toPrepare": "rutas por preparar",
+    "readyToDispatch": "listas para despacho",
+    "pendingStops": "entregas pendientes",
+    "activeRoutes": "rutas activas",
+    "activeCounts": "conteos activos",
+    "unsynced": "sin sincronizar",
+    "documentsToday": "documentos hoy",
+    "recentDocuments": "Documentos recientes",
+    "findProduct": "Buscar producto",
+    "testMode": "Modo prueba",
+    "userTypes": {
+      "seller": "Vendedor",
+      "driver": "Chofer",
+      "inventory": "Inventario",
+      "office": "Oficina",
+      "accounting": "Contabilidad",
+      "manager": "Gerente",
+      "administrator": "Administrador",
+      "superuser": "Superusuario"
     }
   }
 }

@@ -178,34 +178,9 @@
     "unsavedChanges": "You have unsaved changes. Are you sure you want to leave?"
   },
   "dashboard": {
-    "title": "Dashboard",
-    "subtitle": "Inventory Management System",
-    "quickActions": "Quick Actions",
-    "searchProducts": "Search Products",
-    "viewInventory": "View Inventory",
-    "recentActivity": "Recent Activity",
-    "systemStatus": "System Status",
-    "businessInfo": "Business Information",
-    "getStarted": "Getting Started",
-    "exploreFeatures": "Explore the powerful features of MSeller Lite to manage your inventory efficiently.",
-    "productManagement": "Product Management",
-    "productManagementDesc": "Search, view, and manage your product catalog with ease.",
-    "inventoryTracking": "Inventory Tracking",
-    "inventoryTrackingDesc": "Keep track of stock levels across multiple locations.",
-    "labelPrinting": "Label Printing",
-    "labelPrintingDesc": "Generate and print QR code labels for your products.",
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
-    "goodEvening": "Good evening",
-    "company": "Company",
-    "role": "Role",
-    "mode": "Mode",
-    "modeTest": "Test",
-    "modeProduction": "Production",
-    "connection": "Connection",
-    "database": "Database",
-    "connectionActive": "Active",
-    "databaseOnline": "Online"
+    "goodEvening": "Good evening"
   },
   "preparacion": {
     "title": "Picking",
@@ -545,6 +520,30 @@
       "save": "Save photo",
       "attachFailed": "We couldn't save the photo to the product. Please try again.",
       "addToExisting": "Add photo to product"
+    }
+  },
+  "home": {
+    "defaultName": "User",
+    "today": "Your work today",
+    "toPrepare": "routes to prepare",
+    "readyToDispatch": "ready to dispatch",
+    "pendingStops": "stops pending",
+    "activeRoutes": "active routes",
+    "activeCounts": "active counts",
+    "unsynced": "not synced",
+    "documentsToday": "documents today",
+    "recentDocuments": "Recent documents",
+    "findProduct": "Find product",
+    "testMode": "Test mode",
+    "userTypes": {
+      "seller": "Seller",
+      "driver": "Driver",
+      "inventory": "Inventory",
+      "office": "Office",
+      "accounting": "Accounting",
+      "manager": "Manager",
+      "administrator": "Administrator",
+      "superuser": "Superuser"
     }
   }
 }
