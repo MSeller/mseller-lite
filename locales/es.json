@@ -206,7 +206,16 @@
     "labelPrintingDesc": "Genera e imprime etiquetas con código QR para tus productos.",
     "goodMorning": "Buenos días",
     "goodAfternoon": "Buenas tardes",
-    "goodEvening": "Buenas noches"
+    "goodEvening": "Buenas noches",
+    "company": "Empresa",
+    "role": "Rol",
+    "mode": "Modo",
+    "modeTest": "Pruebas",
+    "modeProduction": "Producción",
+    "connection": "Conexión",
+    "database": "Base de Datos",
+    "connectionActive": "Activa",
+    "databaseOnline": "Online"
   },
   "preparacion": {
     "title": "Preparación",
@@ -464,7 +473,7 @@
     "discardBody": "Se perderá lo que has capturado.",
     "discardConfirm": "Descartar",
     "accessDeniedTitle": "No disponible para tu rol",
-    "accessDeniedBody": "La creación de documentos no está habilitada para usuarios distribuidores.",
+    "accessDeniedBody": "La creación de documentos no está habilitada para tu rol.",
     "newCustomer": {
       "action": "Crear cliente nuevo",
       "title": "Nuevo cliente",
@@ -494,6 +503,7 @@
       "createFailed": "No pudimos crear el documento. Revisa tu conexión e inténtalo de nuevo.",
       "forbidden": "Tu usuario no tiene acceso a esta función.",
       "customerSearchFailed": "No pudimos buscar clientes. Revisa tu conexión.",
+      "paymentConditionsFailed": "No pudimos cargar las condiciones de pago. Revisa tu conexión e inténtalo de nuevo.",
       "customerCreateFailed": "No pudimos crear el cliente.",
       "productSearchFailed": "No pudimos buscar productos. Revisa tu conexión.",
       "productCreateFailed": "No pudimos crear el producto."

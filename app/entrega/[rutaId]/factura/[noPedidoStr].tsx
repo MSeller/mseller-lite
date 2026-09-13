@@ -18,6 +18,8 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
+
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../../services/entregaService";
 import {
@@ -40,7 +42,7 @@ const PAYMENT_TYPES = ["efectivo", "cheque", "transferencia", "credito"] as cons
 const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId, noPedidoStr } = useLocalSearchParams<{ rutaId: string; noPedidoStr: string }>();
@@ -257,7 +259,7 @@ export default function FacturaEntregaScreen() {
         )}
 
         {(data.faltantesCarga?.length ?? 0) > 0 && (
-          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: "#B26A00" }}>
+          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: theme.custom.status.warning.onContainer }}>
             {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
           </Chip>
         )}
@@ -321,7 +323,7 @@ export default function FacturaEntregaScreen() {
       <View style={[styles.actions, { backgroundColor: theme.colors.surface }]}>
         {partialMode ? (
           <>
-            <Button mode="contained" buttonColor="#B26A00" icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
+            <Button mode="contained" buttonColor={theme.custom.status.warning.base} icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
               {t("entrega.confirmPartial")}
             </Button>
             <Button mode="text" onPress={() => { setPartialMode(false); setFaltantes({}); }} disabled={submitting}>

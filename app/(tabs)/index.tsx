@@ -181,12 +181,12 @@ export default function HomeScreen() {
             <SectionHeader title={t("dashboard.businessInfo")} />
             <AppCard style={styles.card}>
               <View style={styles.cardBody}>
-                <InfoRow label="Empresa" value={userProfile.business?.name} />
+                <InfoRow label={t("dashboard.company")} value={userProfile.business?.name} />
                 <Divider style={styles.rowDivider} />
-                <InfoRow label="Rol" value={userProfile.type} />
+                <InfoRow label={t("dashboard.role")} value={userProfile.type} />
                 <Divider style={styles.rowDivider} />
                 <InfoRow
-                  label="Modo"
+                  label={t("dashboard.mode")}
                   trailing={
                     <Chip
                       compact
@@ -208,7 +208,7 @@ export default function HomeScreen() {
                         },
                       ]}
                     >
-                      {userProfile.testMode ? "Pruebas" : "Producción"}
+                      {userProfile.testMode ? t("dashboard.modeTest") : t("dashboard.modeProduction")}
                     </Chip>
                   }
                 />
@@ -253,8 +253,8 @@ export default function HomeScreen() {
         <SectionHeader title={t("dashboard.systemStatus")} />
         <View style={styles.statusRow}>
           {[
-            { id: "net", label: "Conexión", value: "Activa", icon: "wifi" },
-            { id: "db", label: "Base de Datos", value: "Online", icon: "database" },
+            { id: "net", label: t("dashboard.connection"), value: t("dashboard.connectionActive"), icon: "wifi" },
+            { id: "db", label: t("dashboard.database"), value: t("dashboard.databaseOnline"), icon: "database" },
           ].map((status) => (
             <AppCard key={status.id} style={styles.statusCard}>
               <View style={styles.statusInner}>

@@ -18,13 +18,15 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
+
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
 import { vehiculoLabel } from "../../../utils/mapLinks";
 
 export default function CargaScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -189,8 +191,8 @@ export default function CargaScreen() {
     const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
     const locked = item.confirmado || isDeclined;
 
-    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#F6E7CB" : "#E7F5E9") : "#F6E7CB";
-    const pillFg = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
+    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.container : "#E7F5E9") : theme.custom.status.warning.container;
+    const pillFg = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.onContainer : "#2E7D32") : theme.custom.status.warning.onContainer;
     const statusColor = pillFg;
     const pillText = isDeclined
       ? t("entrega.declined")
@@ -239,7 +241,7 @@ export default function CargaScreen() {
               {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
             {!!reason && (
-              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : "#F6E7CB" }]}>
+              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : theme.custom.status.warning.container }]}>
                 <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
                 <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
               </View>
@@ -281,10 +283,10 @@ export default function CargaScreen() {
             </Button>
             {!complete && (
               <>
-                <Text variant="bodySmall" style={{ color: "#B26A00", marginTop: 8, marginBottom: 2, textAlign: "center" }}>
+                <Text variant="bodySmall" style={{ color: theme.custom.status.warning.base, marginTop: 8, marginBottom: 2, textAlign: "center" }}>
                   {t("entrega.itemsMissing", { count: missing })}
                 </Text>
-                <Button mode="outlined" textColor="#B26A00" onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
+                <Button mode="outlined" textColor={theme.custom.status.warning.base} onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
                   {t("entrega.confirmWithIssue")}
                 </Button>
                 <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
@@ -356,7 +358,7 @@ export default function CargaScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor="#B26A00" onPress={submitIssue}>{t("entrega.confirmWithIssue")}</Button>
+            <Button textColor={theme.custom.status.warning.base} onPress={submitIssue}>{t("entrega.confirmWithIssue")}</Button>
           </Dialog.Actions>
         </Dialog>
 

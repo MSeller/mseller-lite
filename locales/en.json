@@ -183,7 +183,16 @@
     "labelPrintingDesc": "Generate and print QR code labels for your products.",
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
-    "goodEvening": "Good evening"
+    "goodEvening": "Good evening",
+    "company": "Company",
+    "role": "Role",
+    "mode": "Mode",
+    "modeTest": "Test",
+    "modeProduction": "Production",
+    "connection": "Connection",
+    "database": "Database",
+    "connectionActive": "Active",
+    "databaseOnline": "Online"
   },
   "preparacion": {
     "title": "Picking",
@@ -441,7 +450,7 @@
     "discardBody": "Everything you've captured will be lost.",
     "discardConfirm": "Discard",
     "accessDeniedTitle": "Not available for your role",
-    "accessDeniedBody": "Document creation is not enabled for driver users.",
+    "accessDeniedBody": "Document creation is not enabled for your role.",
     "newCustomer": {
       "action": "Create new customer",
       "title": "New customer",
@@ -471,6 +480,7 @@
       "createFailed": "We couldn't create the document. Check your connection and try again.",
       "forbidden": "Your user doesn't have access to this feature.",
       "customerSearchFailed": "We couldn't search customers. Check your connection.",
+      "paymentConditionsFailed": "We couldn't load the payment conditions. Check your connection and try again.",
       "customerCreateFailed": "We couldn't create the customer.",
       "productSearchFailed": "We couldn't search products. Check your connection.",
       "productCreateFailed": "We couldn't create the product."

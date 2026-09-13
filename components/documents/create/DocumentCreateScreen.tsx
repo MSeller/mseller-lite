@@ -67,6 +67,7 @@ const DocumentCreateScreen: React.FC = () => {
 
   const [conditions, setConditions] = useState<PaymentCondition[]>([]);
   const [conditionsLoading, setConditionsLoading] = useState(true);
+  const [conditionsError, setConditionsError] = useState(false);
 
   const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [productPickerOpen, setProductPickerOpen] = useState(false);
@@ -79,16 +80,33 @@ const DocumentCreateScreen: React.FC = () => {
 
   const canEditPrice = userProfile?.editPrice ?? false;
 
+  // A tenant with no payment conditions and an API that could not be reached are
+  // different situations, and collapsing both into an empty list strands the seller:
+  // the step shows "no conditions", Next stays disabled, and there is nothing to
+  // retry short of leaving the screen. `listPaymentConditions` already maps a 404 to
+  // an empty catalogue, so anything reaching this catch is a real failure.
+  const loadConditions = useCallback(async () => {
+    setConditionsLoading(true);
+    try {
+      setConditions(await listPaymentConditions());
+      setConditionsError(false);
+    } catch {
+      setConditions([]);
+      setConditionsError(true);
+    } finally {
+      setConditionsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let active = true;
-    listPaymentConditions()
-      .then((result) => active && setConditions(result))
-      .catch(() => active && setConditions([]))
-      .finally(() => active && setConditionsLoading(false));
+    loadConditions().finally(() => {
+      if (!active) return;
+    });
     return () => {
       active = false;
     };
-  }, []);
+  }, [loadConditions]);
 
   const handleSelectCustomer = useCallback((selected: CustomerSummary) => {
     setCustomer(selected);
@@ -244,6 +262,15 @@ const DocumentCreateScreen: React.FC = () => {
 
       {conditionsLoading ? (
         <ActivityIndicator style={styles.inlineLoader} />
+      ) : conditionsError ? (
+        <View style={styles.inlineError}>
+          <Text variant="bodyMedium" style={styles.warningText}>
+            {t("documents.errors.paymentConditionsFailed")}
+          </Text>
+          <Button mode="outlined" icon="refresh" onPress={loadConditions} style={styles.retryButton}>
+            {t("common.retry")}
+          </Button>
+        </View>
       ) : conditions.length === 0 ? (
         <Text variant="bodyMedium" style={styles.warningText}>
           {t("documents.noPaymentConditions")}
@@ -581,6 +608,14 @@ const createStyles = (theme: CustomTheme) =>
     },
     warningText: {
       color: theme.colors.error,
+    },
+    inlineError: {
+      alignItems: "flex-start",
+      gap: 8,
+    },
+    retryButton: {
+      borderRadius: theme.custom.radius.md,
+      borderColor: theme.colors.outlineVariant,
     },
     addButton: {
       borderRadius: 12,

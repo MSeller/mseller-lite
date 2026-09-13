@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Card,
@@ -31,6 +31,17 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
+  // The tonal blocks below take their background from the theme: a fixed light
+  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
+  // which is exactly where these values become unreadable.
+  const tonal = useMemo(
+    () => ({
+      summaryItem: [styles.summaryItem, { backgroundColor: theme.colors.surfaceVariant }],
+      quantityText: [styles.quantityText, { backgroundColor: theme.colors.surfaceVariant }],
+    }),
+    [theme]
+  );
+
 
   // State
   const [loading, setLoading] = useState(true);
@@ -161,7 +172,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
               </Text>
 
               <View style={styles.summaryGrid}>
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text variant="headlineMedium" style={styles.summaryNumber}>
                     {summary.totalProductosContados +
                       summary.productosPendientes}
@@ -171,7 +182,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -186,7 +197,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -201,7 +212,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={styles.summaryItem}>
+                <View style={tonal.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -324,12 +335,12 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 
                   <View style={styles.quantityInfo}>
                     {(product as any).cantidadSnapshot !== undefined && (
-                      <Text variant="bodySmall" style={styles.quantityText}>
+                      <Text variant="bodySmall" style={tonal.quantityText}>
                         Esperado: {(product as any).cantidadSnapshot}
                       </Text>
                     )}
                     {(product as any).cantidadContada !== undefined && (
-                      <Text variant="bodySmall" style={styles.quantityText}>
+                      <Text variant="bodySmall" style={tonal.quantityText}>
                         Contado: {(product as any).cantidadContada}
                       </Text>
                     )}
@@ -340,7 +351,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                         <Text
                           variant="bodySmall"
                           style={[
-                            styles.quantityText,
+                            tonal.quantityText,
                             { color: theme.colors.error, fontWeight: "bold" },
                           ]}
                         >

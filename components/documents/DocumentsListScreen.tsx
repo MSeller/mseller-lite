@@ -50,8 +50,18 @@ const DocumentsListScreen: React.FC = () => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
 
+  // Every request is stamped with the generation current when it started. Changing
+  // the filter or the search bumps the generation, so a slow request for the old
+  // query cannot land after the new one and repopulate the list with documents
+  // that no longer match what the screen is showing. A pending "load more" is
+  // invalidated the same way.
+  const generation = useRef(0);
+
   const fetchPage = useCallback(
     async (pageNumber: number, { append }: { append: boolean }) => {
+      const mine = ++generation.current;
+      const vigente = () => generation.current === mine;
+
       try {
         const result = await listDocuments({
           tipoDocumento: typeFilter === "all" ? undefined : typeFilter,
@@ -60,6 +70,8 @@ const DocumentsListScreen: React.FC = () => {
           pageSize: PAGE_SIZE,
         });
 
+        if (!vigente()) return;
+
         setDocuments((current) =>
           append ? [...current, ...(result.items ?? [])] : result.items ?? []
         );
@@ -67,6 +79,8 @@ const DocumentsListScreen: React.FC = () => {
         setPage(result.pageNumber ?? pageNumber);
         setError("");
       } catch (e: any) {
+        if (!vigente()) return;
+
         // Only blank the list on a first load — a failed "load more" should not
         // throw away what the user is already reading.
         if (!append) setDocuments([]);
@@ -166,7 +180,10 @@ const DocumentsListScreen: React.FC = () => {
   );
 
   const listEmpty = useMemo(() => {
-    if (loading) return null;
+    // Nothing-to-show and could-not-load are different answers. The banner above
+    // already reports the failure; an "you have no documents" panel underneath it
+    // would contradict it.
+    if (loading || error) return null;
     return (
       <View style={styles.emptyState}>
         <Icon source="file-document-outline" size={56} color={theme.colors.onSurfaceVariant} />
@@ -178,7 +195,7 @@ const DocumentsListScreen: React.FC = () => {
         </Text>
       </View>
     );
-  }, [loading, appliedSearch, styles, theme, t]);
+  }, [loading, error, appliedSearch, styles, theme, t]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

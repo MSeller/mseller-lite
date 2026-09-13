@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -50,6 +50,17 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
   const { userProfile } = useUser();
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
+  // The tonal blocks below take their background from the theme: a fixed light
+  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
+  // which is exactly where these values become unreadable.
+  const tonal = useMemo(
+    () => ({
+      quantityInfo: [styles.quantityInfo, { backgroundColor: theme.colors.surfaceVariant }],
+      currentProduct: [styles.currentProduct, { backgroundColor: theme.colors.surfaceVariant }],
+    }),
+    [theme]
+  );
+
 
   // State
   const [loading, setLoading] = useState(false);
@@ -549,7 +560,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
               )}
 
               {"cantidadSnapshot" in foundProduct && (
-                <View style={styles.quantityInfo}>
+                <View style={tonal.quantityInfo}>
                   <Paragraph>
                     {t("inventory.expectedQuantity")}:{" "}
                     {foundProduct.cantidadSnapshot}
@@ -622,7 +633,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
               {currentProduct && (
                 <View
-                  style={styles.currentProduct}
+                  style={tonal.currentProduct}
                   onTouchEnd={() => {
                     setFoundProduct(currentProduct);
                     setCountedQuantity("");

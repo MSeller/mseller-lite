@@ -94,9 +94,19 @@ export const formatUnitWithFactor = (
   return unit ? `${unit} ${packed}` : packed;
 };
 
-/** Short date (`dd/MM/yyyy`) from an ISO string; empty when unparseable. */
+/**
+ * Short date (`dd/MM/yyyy`) from an ISO string; empty when unparseable.
+ *
+ * The calendar part is read straight off the string rather than through `Date`.
+ * `new Date("2026-09-13")` is midnight UTC, so west of Greenwich `getDate()`
+ * answers the 12th — a document would list under the day before it was captured.
+ * The API sends the document date as a calendar date, not an instant, so it is
+ * formatted as one.
+ */
 export const formatDateShort = (iso: string | null | undefined): string => {
   if (!iso) return "";
+  const calendario = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/.exec(iso);
+  if (calendario) return `${calendario[3]}/${calendario[2]}/${calendario[1]}`;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");

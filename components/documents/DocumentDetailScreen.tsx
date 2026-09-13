@@ -99,10 +99,15 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
           <ActivityIndicator size="large" />
         </View>
       ) : !document ? (
-        <View style={styles.center}>
-          <Icon source="file-remove-outline" size={56} color={theme.colors.onSurfaceVariant} />
-          <Text style={styles.emptyText}>{t("documents.errors.notFound")}</Text>
-        </View>
+        // "Not found" only when the request came back without a failure to report.
+        // On a network or server error the banner above says what happened, and
+        // claiming the document does not exist would be a different, wrong answer.
+        error ? null : (
+          <View style={styles.center}>
+            <Icon source="file-remove-outline" size={56} color={theme.colors.onSurfaceVariant} />
+            <Text style={styles.emptyText}>{t("documents.errors.notFound")}</Text>
+          </View>
+        )
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
           <AppCard style={styles.card}>

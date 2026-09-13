@@ -45,7 +45,11 @@ const AppCard: React.FC<Props> = ({
   ];
 
   if (!onPress) {
-    return <View style={base}>{children}</View>;
+    return (
+      <View style={base}>
+        <View style={contentStyle}>{children}</View>
+      </View>
+    );
   }
 
   return (

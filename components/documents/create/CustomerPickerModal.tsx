@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
@@ -240,7 +240,17 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
             </View>
           </>
         ) : (
-          <View style={styles.form}>
+          // A fixed container puts the last fields and the save button under the
+          // on-screen keyboard on a short phone, with no way to scroll to them.
+          <KeyboardAvoidingView
+            style={styles.formFlex}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
+            <ScrollView
+              contentContainerStyle={styles.form}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
             <TextInput
               mode="outlined"
               label={t("documents.newCustomer.name")}
@@ -289,7 +299,8 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
             >
               {t("documents.newCustomer.save")}
             </Button>
-          </View>
+            </ScrollView>
+          </KeyboardAvoidingView>
         )}
       </Modal>
     </Portal>
@@ -383,8 +394,12 @@ const createStyles = (theme: CustomTheme) =>
     footerButtonContent: {
       height: 52,
     },
+    formFlex: {
+      flex: 1,
+    },
     form: {
       padding: 16,
+      paddingBottom: 32,
       gap: 12,
     },
     input: {
