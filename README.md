@@ -127,13 +127,14 @@ pnpm build:android:prod # Android production build
 2. Enable Authentication with Email/Password
 3. Copy your Firebase config to `.env`:
 
-````env
+```env
 EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
 
 ## 📚 Documentation
 
@@ -153,7 +154,7 @@ pnpm lint
 
 # Full validation suite
 pnpm validate-template
-````
+```
 
 ## 🚀 Deployment
 
