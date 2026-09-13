@@ -42,7 +42,7 @@
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React Native with Expo (~53.0.20)
+- **Framework**: React Native with Expo (~54.0.37)
 - **Navigation**: Expo Router with file-based routing
 - **UI Library**: React Native Paper
 - **Authentication**: Firebase Auth
@@ -57,8 +57,8 @@
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
-- npm or yarn
+- Node.js (v20.19.4 or higher, required by Expo SDK 54)
+- pnpm
 - Expo CLI
 - iOS Simulator (for iOS development)
 - Android Studio/Emulator (for Android development)
@@ -76,7 +76,7 @@
 2. **Install dependencies**
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up environment variables**
@@ -89,34 +89,34 @@
 4. **Start the development server**
 
    ```bash
-   npm start
+   pnpm start
    ```
 
 ### Development Scripts
 
 ```bash
 # Start development server
-npm start
+pnpm start
 
 # Start with local API mode
-npm run start:local
+pnpm start:local
 
 # Platform-specific development
-npm run ios          # iOS simulator
-npm run android      # Android emulator
-npm run web          # Web browser
+pnpm ios          # iOS simulator
+pnpm android      # Android emulator
+pnpm web          # Web browser
 
 # Local development with API
-npm run ios:local    # iOS with local API
-npm run android:local # Android with local API
-npm run web:local    # Web with local API
+pnpm ios:local    # iOS with local API
+pnpm android:local # Android with local API
+pnpm web:local    # Web with local API
 
 # Code quality
-npm run lint         # Run ESLint
-npm run validate-template # Full validation (lint + TypeScript)
+pnpm lint         # Run ESLint
+pnpm validate-template # Full validation (lint + TypeScript)
 
 # Production build
-npm run build:android:prod # Android production build
+pnpm build:android:prod # Android production build
 ```
 
 ## 🔧 Configuration
@@ -127,13 +127,14 @@ npm run build:android:prod # Android production build
 2. Enable Authentication with Email/Password
 3. Copy your Firebase config to `.env`:
 
-````env
+```env
 EXPO_PUBLIC_FIREBASE_API_KEY=your_api_key
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+```
 
 ## 📚 Documentation
 
@@ -146,14 +147,14 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ```bash
 # Run TypeScript validation
-npx tsc --noEmit
+pnpm exec tsc --noEmit
 
 # Run ESLint
-npm run lint
+pnpm lint
 
 # Full validation suite
-npm run validate-template
-````
+pnpm validate-template
+```
 
 ## 🚀 Deployment
 
@@ -161,7 +162,7 @@ npm run validate-template
 
 ```bash
 # Android production build
-npm run build:android:prod
+pnpm build:android:prod
 
 # Or using EAS CLI directly
 eas build --platform android --profile production

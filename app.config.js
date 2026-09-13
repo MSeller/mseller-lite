@@ -11,6 +11,7 @@ export default {
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
+      bundleIdentifier: "app.mseller.msellerlite",
       supportsTablet: true,
       icon: "./assets/icons/Icon.png",
     },
