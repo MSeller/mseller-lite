@@ -118,6 +118,8 @@ const ProductPickerModal: React.FC<Props> = ({
     setUnidad("");
     setFormError("");
     setFoto(null);
+    // The field may have unmounted mid-upload and never reported that it finished.
+    setSubiendoFoto(false);
     setFotoDe(null);
     setCodigoBarra("");
     setEscanerPara(null);
@@ -335,11 +337,11 @@ const ProductPickerModal: React.FC<Props> = ({
         visible={visible}
         onDismiss={onDismiss}
         contentContainerStyle={styles.modal}
-        dismissable={!saving}
+        dismissable={!saving && !subiendoFoto}
       >
         <Appbar.Header mode="small" style={styles.appbar}>
           {mode === "create" ? (
-            <Appbar.BackAction onPress={() => setMode("search")} disabled={saving} />
+            <Appbar.BackAction onPress={() => setMode("search")} disabled={saving || subiendoFoto} />
           ) : (
             <Appbar.Action icon="close" onPress={onDismiss} />
           )}
