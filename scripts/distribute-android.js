@@ -57,7 +57,8 @@ if (!args.includes("--allow-dirty") && git("status", "--porcelain")) {
 
 const versionCode = git("rev-list", "--count", "HEAD");
 const sha = git("rev-parse", "--short", "HEAD");
-const branch = git("rev-parse", "--abbrev-ref", "HEAD");
+// CI checks out tags and merge commits detached, where --abbrev-ref only says "HEAD".
+const branch = process.env.GITHUB_REF_NAME || git("rev-parse", "--abbrev-ref", "HEAD");
 const env = { ...process.env, ANDROID_VERSION_CODE: versionCode };
 
 const config = spawnSync("pnpm", ["exec", "expo", "config", "--type", "public", "--json"], {
