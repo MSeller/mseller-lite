@@ -40,6 +40,22 @@ const ProductPhotoSheet: React.FC<Props> = ({ product, onDismiss, onSaved }) => 
     setSubiendo(false);
   }, [product]);
 
+  /**
+   * Remounts the photo field whenever the product changes, which is what makes the field's
+   * own "ignore results after unmount" guard actually fire here.
+   *
+   * Without it that guard is unreachable from this sheet: Paper's Modal keeps its children
+   * mounted until the hide animation finishes, and `ProductPickerModal.resetAll` clears
+   * `fotoDe` when the PICKER closes — a path that does not know this sheet is mid-upload,
+   * because the picker's own busy flag tracks the create form's field, not this one. An
+   * upload started for one product could then resolve into the next product's form and be
+   * saved against it.
+   *
+   * Costs nothing visually: the effect above already clears `foto` on the same trigger, so
+   * the tile was changing anyway.
+   */
+  const claveFoto = product?.codigo ?? "sin-producto";
+
   const guardar = useCallback(async () => {
     if (!product || !foto) return;
     setGuardando(true);
@@ -72,6 +88,7 @@ const ProductPhotoSheet: React.FC<Props> = ({ product, onDismiss, onSaved }) => 
         </Text>
 
         <ProductPhotoField
+          key={claveFoto}
           value={foto}
           onChange={setFoto}
           currentUrl={productThumbnailUrl(product?.imagenes)}
