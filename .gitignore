@@ -54,3 +54,6 @@ app-example
 # pnpm is the only package manager
 package-lock.json
 yarn.lock
+
+# google-github-actions/auth writes its credentials into the workspace
+gha-creds-*.json

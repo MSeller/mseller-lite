@@ -72,6 +72,64 @@ never installs under the wrong package id. The first build after a switch is
 slower. Environment *values* (keys, project ids) are baked in when the JS is
 bundled, so restart Metro after editing an env file.
 
+## Firebase App Distribution (send to testers)
+
+```bash
+pnpm distribute:dev                     # Dev build → "testers" group in mseller-dev-40a08
+pnpm distribute:prod                    # Prod build → "testers" group in mobile-seller-v3
+pnpm distribute:dev -- --groups qa,ops  # other groups (comma-separated aliases)
+```
+
+`scripts/distribute-android.js`:
+
+- builds the release APK for that environment on your Mac;
+- sets `versionCode` to the git commit count, so each build upgrades the last one;
+- uploads it with release notes: environment, version, `branch@sha` and the last 10 commits.
+- builds ARM only (`armeabi-v7a,arm64-v8a`), which covers phones. Set `ANDROID_ARCHITECTURES=x86_64` to test on an Intel emulator.
+
+It refuses to run with uncommitted changes, because every tester build must match a commit.
+Pass `-- --allow-dirty` to override.
+
+| | Dev | Prod |
+|---|---|---|
+| Firebase Android app | `1:1077247630111:android:1cd6826322c2465fb42e2a` | `1:744491375680:android:284590bf026c30af3453a5` |
+| Console | [mseller-dev-40a08 → App Distribution](https://console.firebase.google.com/project/mseller-dev-40a08/appdistribution) | [mobile-seller-v3 → App Distribution](https://console.firebase.google.com/project/mobile-seller-v3/appdistribution) |
+
+### Automatic (GitHub Actions)
+
+`.github/workflows/app-distribution.yml` runs the same script:
+
+| Trigger | Build |
+|---|---|
+| Merge to `main` (code changes, not docs) | Dev and Prod in parallel → `testers` in each project |
+| Actions → App Distribution → *Run workflow* | Pick `both`, `development` or `production`, and the groups |
+
+Each environment runs as its own job, so a failed Prod upload doesn't block Dev.
+
+Repo secrets: `ENV_DEV`, `ENV_PROD` (contents of `.env.dev` / `.env.prod`; update them
+whenever you change those files), plus `FIREBASE_SERVICE_ACCOUNT_DEV` and
+`FIREBASE_SERVICE_ACCOUNT_PROD`. Each service account is `app-distribution-ci` in its
+project, with the *Firebase App Distribution Admin* role.
+
+### Manual
+
+**One-time setup for whoever distributes:** `npm install -g firebase-tools`, then
+`firebase login` with an account that has access to both projects.
+
+**Adding testers:** Console → App Distribution → Testers & Groups → `testers` → Add
+testers, or from the CLI:
+`firebase appdistribution:testers:add --project mseller-dev-40a08 --group-alias testers a@x.com,b@y.com`.
+Dev and Prod are separate projects, so add testers to each one they should get.
+
+**What testers do:** open the invite email on the phone, accept it, and install
+*Firebase App Tester* when asked. New builds then show up there with a notification.
+Android will ask them to allow installs from unknown sources once.
+
+**Signing:** APKs are signed with the debug keystore in the generated `/android`, the
+same key for everyone. Android only installs an update over an existing app when both
+are signed with the same key. A tester who switches between a Firebase build and an EAS
+build of the same package must uninstall first.
+
 ## EAS builds (share with testers)
 
 | Command | Profile | Output |

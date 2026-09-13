@@ -1,0 +1,113 @@
+# Sends Android test builds to Firebase App Distribution.
+#
+#   merge to main      → Dev (mseller-dev-40a08) and Prod (mobile-seller-v3) in parallel → "testers"
+#   Run workflow       → pick environment (or both) and groups
+#
+# Runs the same `pnpm distribute:*` script as a local upload, so both produce the same build.
+# Secrets: ENV_DEV / ENV_PROD (contents of .env.dev / .env.prod) and
+# FIREBASE_SERVICE_ACCOUNT_DEV / FIREBASE_SERVICE_ACCOUNT_PROD (JSON key, Firebase App Distribution Admin).
+
+name: App Distribution
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Backend to build against
+        type: choice
+        options: [both, development, production]
+        default: both
+      groups:
+        description: Tester group aliases (comma-separated)
+        type: string
+        default: testers
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: android (${{ matrix.app_env }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        app_env: ${{ fromJSON((inputs.environment == 'development' && '["development"]') || (inputs.environment == 'production' && '["production"]') || '["development","production"]') }}
+    concurrency:
+      group: app-distribution-${{ github.ref }}-${{ matrix.app_env }}
+      cancel-in-progress: true
+    env:
+      APP_ENV: ${{ matrix.app_env }}
+      # Picks ENV_DEV / FIREBASE_SERVICE_ACCOUNT_DEV or the _PROD pair by name, so a
+      # missing Prod secret fails the job instead of falling back to the Dev one.
+      SECRET_SUFFIX: ${{ matrix.app_env == 'production' && 'PROD' || 'DEV' }}
+      FIREBASE_TESTER_GROUPS: ${{ inputs.groups || 'testers' }}
+
+    steps:
+      - name: Checkout (full history — versionCode is the commit count)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Gradle (with cache)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Write env file
+        env:
+          ENV_CONTENT: ${{ secrets[format('ENV_{0}', env.SECRET_SUFFIX)] }}
+        run: |
+          if [ -z "$ENV_CONTENT" ]; then
+            echo "::error::Secret ENV_$SECRET_SUFFIX is not set"
+            exit 1
+          fi
+          file=$([ "$APP_ENV" = "production" ] && echo .env.prod || echo .env.dev)
+          printf '%s\n' "$ENV_CONTENT" > "$file"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets[format('FIREBASE_SERVICE_ACCOUNT_{0}', env.SECRET_SUFFIX)] }}
+
+      - name: Build and distribute
+        run: |
+          if [ "$APP_ENV" = "production" ]; then
+            pnpm distribute:prod
+          else
+            pnpm distribute:dev
+          fi
+
+      - name: Summary
+        if: success()
+        run: |
+          echo "### Sent MSeller Lite ($APP_ENV) to \`$FIREBASE_TESTER_GROUPS\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: \`${GITHUB_SHA::7}\` · versionCode: $(git rev-list --count HEAD)" >> "$GITHUB_STEP_SUMMARY"
