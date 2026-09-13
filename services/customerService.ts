@@ -34,6 +34,12 @@ export class CustomerService {
     const response = await restClient.post<CreatedCustomer>(BASE, request);
     return response.data;
   }
+
+  /** The code the next customer would get. A preview: nothing is reserved. */
+  async nextCode(): Promise<string | null> {
+    const response = await restClient.get<{ codigo: string | null }>(`${BASE}/siguiente-codigo`);
+    return response.data.codigo;
+  }
 }
 
 export const customerService = new CustomerService();
@@ -41,3 +47,4 @@ export const customerService = new CustomerService();
 export const searchCustomers = (query: string, options?: Parameters<CustomerService["search"]>[1]) =>
   customerService.search(query, options);
 export const createCustomer = (request: NewCustomerRequest) => customerService.create(request);
+export const getNextCustomerCode = () => customerService.nextCode();

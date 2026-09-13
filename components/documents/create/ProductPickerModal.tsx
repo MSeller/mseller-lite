@@ -19,7 +19,14 @@ import {
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
-import { createProduct, searchProductsForDocument } from "../../../services/ProductService";
+import { useBarcodeScanner } from "../../../hooks/useBarcodeScanner";
+import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
+import {
+  createProduct,
+  getNextProductCode,
+  searchProducts,
+  searchProductsForDocument,
+} from "../../../services/ProductService";
 import type { NewProductRequest } from "../../../types/documents";
 import type { Product } from "../../../types/inventory";
 import {
@@ -28,6 +35,7 @@ import {
   parseNumericInput,
 } from "../../../utils/documentFormat";
 import { productThumbnailUrl, type UploadedProductPhoto } from "../../../utils/productPhoto";
+import BarcodeScanSheet from "../../scan/BarcodeScanSheet";
 import ProductPhotoField from "./ProductPhotoField";
 import ProductPhotoSheet from "./ProductPhotoSheet";
 
@@ -78,8 +86,23 @@ const ProductPickerModal: React.FC<Props> = ({
   const [foto, setFoto] = useState<UploadedProductPhoto | null>(null);
   const [subiendoFoto, setSubiendoFoto] = useState(false);
 
+  const [codigoBarra, setCodigoBarra] = useState("");
+
   // The catalogue product whose photo sheet is open.
   const [fotoDe, setFotoDe] = useState<Product | null>(null);
+
+  // What the camera scanner is for while it is open: adding products to the document, or
+  // filling the new product's barcode field.
+  const [escanerPara, setEscanerPara] = useState<"agregar" | "campo" | null>(null);
+  const [avisoEscaneo, setAvisoEscaneo] = useState("");
+
+  // Pre-filled from the name with the code saving would produce; the seller can overwrite it.
+  const codigo = useSuggestedCode(
+    async () => (nombre.trim() ? getNextProductCode(nombre.trim()) : null),
+    [nombre.trim()],
+    { enabled: visible && mode === "create", debounceMs: 400 }
+  );
+  const resetCodigo = codigo.reset;
 
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
@@ -96,7 +119,11 @@ const ProductPickerModal: React.FC<Props> = ({
     setFormError("");
     setFoto(null);
     setFotoDe(null);
-  }, []);
+    setCodigoBarra("");
+    setEscanerPara(null);
+    setAvisoEscaneo("");
+    resetCodigo();
+  }, [resetCodigo]);
 
   useEffect(() => {
     if (!visible) resetAll();
@@ -155,6 +182,9 @@ const ProductPickerModal: React.FC<Props> = ({
     setFormError("");
     try {
       const payload: NewProductRequest = {
+        // Omitted while the suggestion is untouched, so the server derives it on save.
+        codigo: codigo.codeForRequest,
+        codigoBarra: codigoBarra.trim() || undefined,
         nombre: trimmed,
         precio1: price,
         impuesto: impuesto ? parseNumericInput(impuesto) : undefined,
@@ -183,12 +213,64 @@ const ProductPickerModal: React.FC<Props> = ({
       setImpuesto("");
       setUnidad("");
       setFoto(null);
+      setCodigoBarra("");
+      resetCodigo();
     } catch (e: any) {
       setFormError(e?.response?.data?.message || t("documents.errors.productCreateFailed"));
     } finally {
       setSaving(false);
     }
-  }, [nombre, precio, impuesto, unidad, foto, handleAdd, t]);
+  }, [nombre, precio, impuesto, unidad, foto, codigo.codeForRequest, codigoBarra, resetCodigo, handleAdd, t]);
+
+  /**
+   * A scan while picking products: an exact barcode match goes straight into the document; no
+   * match opens New product with the barcode already filled in, because an unknown barcode in
+   * the field almost always means a product nobody registered yet.
+   */
+  const agregarPorCodigoBarra = useCallback(
+    async (barcode: string) => {
+      let encontrados: Product[] = [];
+      try {
+        encontrados = (await searchProducts(barcode)).data ?? [];
+      } catch (e: any) {
+        // The search answers 404 when nothing matches; anything else is a real failure.
+        if (e?.response?.status !== 404) {
+          setAvisoEscaneo(t("scan.lookupFailed"));
+          return;
+        }
+      }
+
+      // The search can also return partial matches; only an exact barcode is added blindly.
+      const exacto = encontrados.find((p) => (p.codigoBarra ?? "").trim() === barcode);
+      if (exacto) {
+        handleAdd(exacto);
+        setAvisoEscaneo(t("scan.added", { name: exacto.nombre || exacto.codigo }));
+        return;
+      }
+
+      setEscanerPara(null);
+      setAvisoEscaneo("");
+      setNombre("");
+      setCodigoBarra(barcode);
+      setMode("create");
+    },
+    [handleAdd, t]
+  );
+
+  const alEscanear = useCallback(
+    (barcode: string) => {
+      if (mode === "create") {
+        setCodigoBarra(barcode);
+        return;
+      }
+      return agregarPorCodigoBarra(barcode);
+    },
+    [mode, agregarPorCodigoBarra]
+  );
+
+  // A built-in hardware scanner feeds the same handler as the camera. Off while the camera
+  // sheet is open, so one read is not handled twice.
+  useBarcodeScanner({ onScan: alEscanear, enabled: visible && escanerPara === null && !fotoDe });
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => {
@@ -287,6 +369,12 @@ const ProductPickerModal: React.FC<Props> = ({
                 style={styles.searchbar}
                 inputStyle={styles.searchInput}
                 autoFocus
+                traileringIcon="barcode-scan"
+                traileringIconAccessibilityLabel={t("scan.scanProducts")}
+                onTraileringIconPress={() => {
+                  setAvisoEscaneo("");
+                  setEscanerPara("agregar");
+                }}
               />
             </View>
 
@@ -361,6 +449,33 @@ const ProductPickerModal: React.FC<Props> = ({
             />
             <TextInput
               mode="outlined"
+              label={t("documents.code.label")}
+              value={codigo.value}
+              onChangeText={codigo.onChangeText}
+              style={styles.input}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              placeholder={t("documents.code.assignedOnSave")}
+              right={codigo.loading ? <TextInput.Icon icon="progress-clock" /> : null}
+            />
+            <TextInput
+              mode="outlined"
+              label={t("documents.newProduct.barcode")}
+              value={codigoBarra}
+              onChangeText={setCodigoBarra}
+              style={styles.input}
+              autoCorrect={false}
+              inputMode="numeric"
+              right={
+                <TextInput.Icon
+                  icon="barcode-scan"
+                  onPress={() => setEscanerPara("campo")}
+                  accessibilityLabel={t("scan.scanBarcode")}
+                />
+              }
+            />
+            <TextInput
+              mode="outlined"
               label={t("documents.newProduct.price")}
               value={precio}
               onChangeText={setPrecio}
@@ -405,6 +520,15 @@ const ProductPickerModal: React.FC<Props> = ({
           </KeyboardAvoidingView>
         )}
       </Modal>
+
+      <BarcodeScanSheet
+        visible={escanerPara !== null}
+        onDismiss={() => setEscanerPara(null)}
+        onScan={escanerPara === "campo" ? setCodigoBarra : agregarPorCodigoBarra}
+        title={escanerPara === "campo" ? t("scan.scanBarcode") : t("scan.scanProducts")}
+        continuous={escanerPara === "agregar"}
+        feedback={avisoEscaneo}
+      />
 
       <ProductPhotoSheet
         product={fotoDe}
