@@ -286,7 +286,13 @@ export interface DocumentShareHistory {
   vecesImpreso: number;
   ultimaImpresion?: string | null;
   ultimoUsuarioImpresion?: string | null;
+  /** The most recent sends, newest first. Capped server-side. */
   envios: DocumentSend[];
+  /**
+   * Every send this document has had, including any beyond the ones listed. Lets the sheet
+   * tell "these are all of them" from "these are the latest of many".
+   */
+  totalEnvios?: number;
 }
 
 export interface SendDocumentRequest {
