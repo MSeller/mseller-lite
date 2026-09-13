@@ -44,6 +44,9 @@ jobs:
       cancel-in-progress: true
     env:
       APP_ENV: ${{ matrix.app_env }}
+      # Picks ENV_DEV / FIREBASE_SERVICE_ACCOUNT_DEV or the _PROD pair by name, so a
+      # missing Prod secret fails the job instead of falling back to the Dev one.
+      SECRET_SUFFIX: ${{ matrix.app_env == 'production' && 'PROD' || 'DEV' }}
       FIREBASE_TESTER_GROUPS: ${{ inputs.groups || 'testers' }}
 
     steps:
@@ -81,19 +84,19 @@ jobs:
 
       - name: Write env file
         env:
-          ENV_DEV: ${{ secrets.ENV_DEV }}
-          ENV_PROD: ${{ secrets.ENV_PROD }}
+          ENV_CONTENT: ${{ secrets[format('ENV_{0}', env.SECRET_SUFFIX)] }}
         run: |
-          if [ "$APP_ENV" = "production" ]; then
-            printf '%s\n' "$ENV_PROD" > .env.prod
-          else
-            printf '%s\n' "$ENV_DEV" > .env.dev
+          if [ -z "$ENV_CONTENT" ]; then
+            echo "::error::Secret ENV_$SECRET_SUFFIX is not set"
+            exit 1
           fi
+          file=$([ "$APP_ENV" = "production" ] && echo .env.prod || echo .env.dev)
+          printf '%s\n' "$ENV_CONTENT" > "$file"
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ env.APP_ENV == 'production' && secrets.FIREBASE_SERVICE_ACCOUNT_PROD || secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+          credentials_json: ${{ secrets[format('FIREBASE_SERVICE_ACCOUNT_{0}', env.SECRET_SUFFIX)] }}
 
       - name: Build and distribute
         run: |
