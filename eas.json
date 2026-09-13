@@ -14,24 +14,14 @@
     "production-internal": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "enableProguardInReleaseBuilds": false,
-        "enableSeparateBuildPerCPUArchitecture": false
+        "buildType": "apk"
       }
     },
     "production-playstore": {
-      "distribution": "store",
-      "android": {
-        "enableProguardInReleaseBuilds": false,
-        "enableSeparateBuildPerCPUArchitecture": false
-      }
+      "distribution": "store"
     },
     "production": {
-      "autoIncrement": true,
-      "android": {
-        "enableProguardInReleaseBuilds": false,
-        "enableSeparateBuildPerCPUArchitecture": false
-      }
+      "autoIncrement": true
     }
   },
   "submit": {

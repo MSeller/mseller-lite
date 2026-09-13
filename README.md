@@ -58,7 +58,7 @@
 ### Prerequisites
 
 - Node.js (v18 or higher)
-- npm or yarn
+- pnpm
 - Expo CLI
 - iOS Simulator (for iOS development)
 - Android Studio/Emulator (for Android development)
@@ -76,7 +76,7 @@
 2. **Install dependencies**
 
    ```bash
-   npm install
+   pnpm install
    ```
 
 3. **Set up environment variables**
@@ -89,34 +89,34 @@
 4. **Start the development server**
 
    ```bash
-   npm start
+   pnpm start
    ```
 
 ### Development Scripts
 
 ```bash
 # Start development server
-npm start
+pnpm start
 
 # Start with local API mode
-npm run start:local
+pnpm start:local
 
 # Platform-specific development
-npm run ios          # iOS simulator
-npm run android      # Android emulator
-npm run web          # Web browser
+pnpm ios          # iOS simulator
+pnpm android      # Android emulator
+pnpm web          # Web browser
 
 # Local development with API
-npm run ios:local    # iOS with local API
-npm run android:local # Android with local API
-npm run web:local    # Web with local API
+pnpm ios:local    # iOS with local API
+pnpm android:local # Android with local API
+pnpm web:local    # Web with local API
 
 # Code quality
-npm run lint         # Run ESLint
-npm run validate-template # Full validation (lint + TypeScript)
+pnpm lint         # Run ESLint
+pnpm validate-template # Full validation (lint + TypeScript)
 
 # Production build
-npm run build:android:prod # Android production build
+pnpm build:android:prod # Android production build
 ```
 
 ## 🔧 Configuration
@@ -149,10 +149,10 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 npx tsc --noEmit
 
 # Run ESLint
-npm run lint
+pnpm lint
 
 # Full validation suite
-npm run validate-template
+pnpm validate-template
 ````
 
 ## 🚀 Deployment
@@ -161,7 +161,7 @@ npm run validate-template
 
 ```bash
 # Android production build
-npm run build:android:prod
+pnpm build:android:prod
 
 # Or using EAS CLI directly
 eas build --platform android --profile production
