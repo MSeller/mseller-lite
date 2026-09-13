@@ -1,4 +1,3 @@
-import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import { Image, Linking, ScrollView, StyleSheet, View } from "react-native";
@@ -29,6 +28,7 @@ import {
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
+import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
 
 type Outcome =
@@ -133,14 +133,9 @@ export default function FacturaEntregaScreen() {
 
   const takePhoto = async () => {
     try {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) {
-        setError(t("entrega.cameraPermission"));
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({ quality: 0.5 });
-      if (result.canceled || !result.assets?.length) return;
-      const uri = result.assets[0].uri;
+      const foto = await capturePhoto("camera", { quality: 0.5 });
+      if (!foto) return;
+      const uri = foto.uri;
       setFotoUri(uri);
       setUploadingPhoto(true);
       try {
@@ -151,8 +146,10 @@ export default function FacturaEntregaScreen() {
       } finally {
         setUploadingPhoto(false);
       }
-    } catch {
-      setError(t("entrega.photoUploadError"));
+    } catch (e) {
+      setError(
+        e instanceof PhotoPermissionError ? t("entrega.cameraPermission") : t("entrega.photoUploadError")
+      );
     }
   };
 

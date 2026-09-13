@@ -1,4 +1,4 @@
-import type { CreatedProduct, NewProductRequest } from "../types/documents";
+import type { CreatedProduct, NewProductRequest, ProductImage, ProductPhoto } from "../types/documents";
 import type { Product } from "../types/inventory";
 import { restClient } from "./api";
 
@@ -115,6 +115,19 @@ export class ProductService {
     const response = await restClient.post<CreatedProduct>(this.baseEndpoint, request);
     return response.data;
   }
+
+  /**
+   * Attaches photos already uploaded to the media library to an existing product, and
+   * returns every image the product now has. Resending a photo that is already attached is
+   * a no-op on the server, so a request that timed out can be retried safely.
+   */
+  async agregarImagenes(codigoProducto: string, imagenes: ProductPhoto[]): Promise<ProductImage[]> {
+    const response = await restClient.post<ProductImage[]>(`${this.baseEndpoint}/imagenes`, {
+      codigoProducto,
+      imagenes,
+    });
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -184,3 +197,11 @@ export const searchProductsForDocument = async (
 export const createProduct = async (request: NewProductRequest): Promise<CreatedProduct> => {
   return productService.crearProducto(request);
 };
+
+/**
+ * Attach uploaded photos to an existing product - Convenience function for UI components
+ */
+export const addProductImages = async (
+  codigoProducto: string,
+  imagenes: ProductPhoto[]
+): Promise<ProductImage[]> => productService.agregarImagenes(codigoProducto, imagenes);

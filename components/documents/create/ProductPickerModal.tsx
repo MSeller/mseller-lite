@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
@@ -27,6 +27,9 @@ import {
   formatUnitWithFactor,
   parseNumericInput,
 } from "../../../utils/documentFormat";
+import { productThumbnailUrl, type UploadedProductPhoto } from "../../../utils/productPhoto";
+import ProductPhotoField from "./ProductPhotoField";
+import ProductPhotoSheet from "./ProductPhotoSheet";
 
 interface Props {
   visible: boolean;
@@ -72,6 +75,11 @@ const ProductPickerModal: React.FC<Props> = ({
   const [unidad, setUnidad] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  const [foto, setFoto] = useState<UploadedProductPhoto | null>(null);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+
+  // The catalogue product whose photo sheet is open.
+  const [fotoDe, setFotoDe] = useState<Product | null>(null);
 
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
@@ -86,6 +94,8 @@ const ProductPickerModal: React.FC<Props> = ({
     setImpuesto("");
     setUnidad("");
     setFormError("");
+    setFoto(null);
+    setFotoDe(null);
   }, []);
 
   useEffect(() => {
@@ -149,6 +159,7 @@ const ProductPickerModal: React.FC<Props> = ({
         precio1: price,
         impuesto: impuesto ? parseNumericInput(impuesto) : undefined,
         unidad: unidad.trim() || undefined,
+        imagenes: foto ? [foto.photo] : undefined,
       };
       const created = await createProduct(payload);
 
@@ -171,27 +182,44 @@ const ProductPickerModal: React.FC<Props> = ({
       setPrecio("");
       setImpuesto("");
       setUnidad("");
+      setFoto(null);
     } catch (e: any) {
       setFormError(e?.response?.data?.message || t("documents.errors.productCreateFailed"));
     } finally {
       setSaving(false);
     }
-  }, [nombre, precio, impuesto, unidad, handleAdd, t]);
+  }, [nombre, precio, impuesto, unidad, foto, handleAdd, t]);
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => {
       const inCart = selected.has(item.codigo);
       const unitLabel = formatUnitWithFactor(item.unidad, item.factor);
+      const miniatura = productThumbnailUrl(item.imagenes);
       return (
         <TouchableRipple onPress={() => handleAdd(item)} style={styles.row}>
           <View style={styles.rowInner}>
-            <View style={[styles.thumb, inCart && styles.thumbSelected]}>
-              <Icon
-                source={inCart ? "check" : "package-variant-closed"}
-                size={22}
-                color={inCart ? theme.colors.onPrimary : theme.colors.onSurfaceVariant}
-              />
-            </View>
+            {/* Its own touch target: tapping the picture opens the photo sheet, tapping the
+                rest of the row adds the product — so adding a photo never lands in the cart. */}
+            <TouchableRipple
+              onPress={() => setFotoDe(item)}
+              borderless
+              style={styles.thumbTouch}
+              accessibilityRole="button"
+              accessibilityLabel={t("documents.productPhoto.addToExisting")}
+            >
+              <View style={styles.thumb}>
+                {miniatura ? (
+                  <Image source={{ uri: miniatura }} style={styles.thumbImage} />
+                ) : (
+                  <Icon source="camera-plus-outline" size={22} color={theme.colors.onSurfaceVariant} />
+                )}
+                {inCart && (
+                  <View style={styles.inCartBadge}>
+                    <Icon source="check" size={12} color={theme.colors.onPrimary} />
+                  </View>
+                )}
+              </View>
+            </TouchableRipple>
 
             <View style={styles.rowBody}>
               <Text variant="titleSmall" style={styles.rowTitle} numberOfLines={2}>
@@ -316,6 +344,12 @@ const ProductPickerModal: React.FC<Props> = ({
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
             >
+            <ProductPhotoField
+              value={foto}
+              onChange={setFoto}
+              onBusyChange={setSubiendoFoto}
+              disabled={saving}
+            />
             <TextInput
               mode="outlined"
               label={t("documents.newProduct.name")}
@@ -361,7 +395,7 @@ const ProductPickerModal: React.FC<Props> = ({
               mode="contained"
               onPress={handleCreate}
               loading={saving}
-              disabled={saving || !nombre.trim() || parseNumericInput(precio) <= 0}
+              disabled={saving || subiendoFoto || !nombre.trim() || parseNumericInput(precio) <= 0}
               contentStyle={styles.footerButtonContent}
               style={styles.footerButton}
             >
@@ -371,6 +405,14 @@ const ProductPickerModal: React.FC<Props> = ({
           </KeyboardAvoidingView>
         )}
       </Modal>
+
+      <ProductPhotoSheet
+        product={fotoDe}
+        onDismiss={() => setFotoDe(null)}
+        onSaved={(codigo, imagenes) =>
+          setResults((prev) => prev.map((p) => (p.codigo === codigo ? { ...p, imagenes } : p)))
+        }
+      />
     </Portal>
   );
 };
@@ -446,8 +488,26 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    thumbSelected: {
+    thumbTouch: {
+      borderRadius: 12,
+    },
+    thumbImage: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+    },
+    inCartBadge: {
+      position: "absolute",
+      right: -2,
+      bottom: -2,
+      width: 18,
+      height: 18,
+      borderRadius: 9,
       backgroundColor: theme.colors.primary,
+      borderWidth: 2,
+      borderColor: theme.colors.surface,
+      alignItems: "center",
+      justifyContent: "center",
     },
     rowBody: {
       flex: 1,
