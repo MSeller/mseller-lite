@@ -520,6 +520,19 @@
       "printedOnce": "Printed once",
       "printedTimes": "Printed {{count}} times",
       "historyCapped": "Showing {{shown}} of {{total}} sends"
+    },
+    "productPhoto": {
+      "takePhoto": "Take photo",
+      "choosePhoto": "Choose from gallery",
+      "remove": "Remove photo",
+      "uploading": "Uploading photo…",
+      "cameraPermission": "Allow camera access to take the product photo.",
+      "tooLarge": "That photo is too large. Try another one or take it again.",
+      "uploadFailed": "We couldn't upload the photo. Check your connection and try again.",
+      "sheetTitle": "Product photo",
+      "save": "Save photo",
+      "attachFailed": "We couldn't save the photo to the product. Please try again.",
+      "addToExisting": "Add photo to product"
     }
   }
 }

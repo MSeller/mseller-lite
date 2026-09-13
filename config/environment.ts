@@ -17,7 +17,12 @@ const isEmulatorEnabled = (): boolean =>
   process.env.NODE_ENV === "development" &&
   process.env.EXPO_PUBLIC_EMULATOR_ENABLED === "true";
 
-const replaceLocalhostWithEmulatorHost = (rawUrl: string): string => {
+/**
+ * Points a localhost URL at the emulator host, so a device can reach services running on the
+ * developer machine (its own 127.0.0.1 is the phone). Leaves every other URL untouched, which
+ * makes it a no-op for production URLs.
+ */
+export const replaceLocalhostWithEmulatorHost = (rawUrl: string): string => {
   const emulatorHost = process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST?.trim();
   if (!emulatorHost) return rawUrl;
 

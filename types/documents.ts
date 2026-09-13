@@ -212,6 +212,32 @@ export interface NewProductRequest {
   descripcion?: string;
   codigoBarra?: string;
   costo?: number;
+  /** Photos already uploaded through `uploadImages`, attached as the product is created. */
+  imagenes?: ProductPhoto[];
+}
+
+/**
+ * A product photo uploaded through the `uploadImages` Firebase callable — the same upload
+ * the portal's media library uses. The server re-derives the storage paths from the
+ * caller's tenant and this id and rejects URLs that do not match, so these are references,
+ * not trusted locations.
+ */
+export interface ProductPhoto {
+  /** Media id returned by `uploadImages`. */
+  idObjeto: string;
+  urlOriginal: string;
+  urlMiniatura: string;
+}
+
+/** One image row as the API returns it (`consumo/Producto/imagenes`). */
+export interface ProductImage {
+  codigoProducto: string;
+  rutaPublica: string;
+  titulo?: string | null;
+  ordenVisualizacion: number;
+  esImagenPredeterminada: boolean;
+  /** "original" or "thumbnail" for photos added by the portal or this app. */
+  tipoImagen?: string | null;
 }
 
 export interface CreatedProduct {
@@ -224,6 +250,8 @@ export interface CreatedProduct {
   unidad: string | null;
   codigoBarra: string | null;
   existencia: number;
+  /** Thumbnail of the default photo, when the product was created with one. */
+  imagenMiniaturaUrl?: string | null;
 }
 
 // ── Cart (client-side draft state) ──────────────────────────────────────────
