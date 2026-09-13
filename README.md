@@ -117,6 +117,10 @@ pnpm validate-template # Full validation (lint + TypeScript)
 
 # Production build
 pnpm build:android:prod # Android production build
+
+# Real device, Dev or Prod backend (see docs/DEVICE_TESTING.md)
+pnpm android:dev       # debug build over USB, Dev Firebase
+pnpm apk:prod          # standalone release build, Prod Firebase
 ```
 
 ## 🔧 Configuration
@@ -142,6 +146,7 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 - [Inventory Management Guide](./docs/INVENTORY_MANAGEMENT_README.md)
 - [Environment Setup](./docs/ENVIRONMENT_SETUP.md)
 - [Local Development](./docs/LOCAL_DEVELOPMENT.md)
+- [Testing on a Real Device (Dev / Prod)](./docs/DEVICE_TESTING.md)
 
 ## 🧪 Testing
 

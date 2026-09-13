@@ -9,6 +9,12 @@
     "start:local": "EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true expo start",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
+    "android:dev": "node scripts/with-env.js development expo run:android",
+    "android:prod": "node scripts/with-env.js production expo run:android",
+    "apk:dev": "node scripts/with-env.js development expo run:android --variant release",
+    "apk:prod": "node scripts/with-env.js production expo run:android --variant release",
+    "start:dev": "node scripts/with-env.js development expo start --dev-client",
+    "start:prod": "node scripts/with-env.js production expo start --dev-client",
     "android:local": "EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true expo start --android",
     "ios": "expo run:ios",
     "ios:local": "EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true expo start --ios",
@@ -19,6 +25,8 @@
     "validate-template": "pnpm lint && pnpm exec tsc --noEmit",
     "build:android:prod": "eas build -p android --profile production --clear-cache",
     "build:android:dev": "eas build -p android --profile development --clear-cache",
+    "build:android:preview-dev": "eas build -p android --profile preview-dev",
+    "build:android:preview-prod": "eas build -p android --profile preview-prod",
     "expo-doctor": "npx expo-doctor"
   },
   "dependencies": {
