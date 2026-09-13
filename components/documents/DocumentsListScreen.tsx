@@ -6,6 +6,7 @@ import {
   Banner,
   FAB,
   Icon,
+  IconButton,
   Searchbar,
   SegmentedButtons,
   Text,
@@ -19,6 +20,7 @@ import { listDocuments } from "../../services/documentService";
 import type { DocumentSummary, DocumentType } from "../../types/documents";
 import { formatDateShort, formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
+import DocumentShareSheet from "./DocumentShareSheet";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
 
@@ -49,6 +51,11 @@ const DocumentsListScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  // The document whose print/send sheet is open. Printing the last invoice is a
+  // one-tap job in the field, so the action lives on the row rather than only
+  // behind opening the document — the detail screen is a detour when all you
+  // want is the paper.
+  const [compartir, setCompartir] = useState<DocumentSummary | null>(null);
 
   // Every request is stamped with the generation current when it started. Changing
   // the filter or the search bumps the generation, so a slow request for the old
@@ -172,6 +179,16 @@ const DocumentsListScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
+
+            <IconButton
+              icon="printer"
+              size={24}
+              // 48px of finger, and its own press handler so tapping it never
+              // opens the document underneath.
+              style={styles.printButton}
+              accessibilityLabel={t("documents.share.action")}
+              onPress={() => setCompartir(item)}
+            />
           </View>
         </AppCard>
       );
@@ -274,6 +291,15 @@ const DocumentsListScreen: React.FC = () => {
         />
       )}
 
+      <DocumentShareSheet
+        visible={!!compartir}
+        onDismiss={() => setCompartir(null)}
+        // Keyed by document so the sheet re-mounts per row instead of carrying
+        // the previous document's history into the next one.
+        key={compartir?.noPedidoStr ?? "none"}
+        noPedidoStr={compartir?.noPedidoStr ?? ""}
+      />
+
       <FAB
         icon="plus"
         label={t("documents.newDocument")}
@@ -343,6 +369,9 @@ const createStyles = (theme: CustomTheme) =>
       borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
+    },
+    printButton: {
+      margin: 0,
     },
     cardBody: {
       flex: 1,
