@@ -33,6 +33,8 @@ export default {
     newArchEnabled: true,
     ios: {
       bundleIdentifier: PACKAGE_ID,
+      // Signs with the MSeller team; EAS holds the certificate and ad hoc profile.
+      appleTeamId: "HDYHZ227JK",
       supportsTablet: true,
       icon: "./assets/icons/Icon.png",
     },

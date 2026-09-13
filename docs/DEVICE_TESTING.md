@@ -78,6 +78,8 @@ bundled, so restart Metro after editing an env file.
 pnpm distribute:dev                     # Dev build → "testers" group in mseller-dev-40a08
 pnpm distribute:prod                    # Prod build → "testers" group in mobile-seller-v3
 pnpm distribute:dev -- --groups qa,ops  # other groups (comma-separated aliases)
+pnpm distribute:ios:dev                 # iOS: ad hoc build on EAS → same groups
+pnpm distribute:ios:prod
 ```
 
 `scripts/distribute-android.js`:
@@ -93,6 +95,7 @@ Pass `-- --allow-dirty` to override.
 | | Dev | Prod |
 |---|---|---|
 | Firebase Android app | `1:1077247630111:android:1cd6826322c2465fb42e2a` | `1:744491375680:android:284590bf026c30af3453a5` |
+| Firebase iOS app | `1:1077247630111:ios:acb9fb787dc65a33b42e2a` | `1:744491375680:ios:9808354e5ad788b83453a5` |
 | Console | [mseller-dev-40a08 → App Distribution](https://console.firebase.google.com/project/mseller-dev-40a08/appdistribution) | [mobile-seller-v3 → App Distribution](https://console.firebase.google.com/project/mobile-seller-v3/appdistribution) |
 
 ### Automatic (GitHub Actions)
@@ -101,15 +104,15 @@ Pass `-- --allow-dirty` to override.
 
 | Trigger | Build |
 |---|---|
-| Merge to `main` (code changes, not docs) | Dev and Prod in parallel → `testers` in each project |
-| Actions → App Distribution → *Run workflow* | Pick `both`, `development` or `production`, and the groups |
+| Merge to `main` (code changes, not docs) | Dev and Prod, Android and iOS, in parallel → `testers` in each project |
+| Actions → App Distribution → *Run workflow* | Pick the environment, the platform (`both`, `android`, `ios`) and the groups |
 
-Each environment runs as its own job, so a failed Prod upload doesn't block Dev.
+Each environment and platform runs as its own job, so one failed upload doesn't block the others.
 
 Repo secrets: `ENV_DEV`, `ENV_PROD` (contents of `.env.dev` / `.env.prod`; update them
 whenever you change those files), plus `FIREBASE_SERVICE_ACCOUNT_DEV` and
 `FIREBASE_SERVICE_ACCOUNT_PROD`. Each service account is `app-distribution-ci` in its
-project, with the *Firebase App Distribution Admin* role.
+project, with the *Firebase App Distribution Admin* role. iOS also needs `EXPO_TOKEN`.
 
 ### Manual
 
@@ -129,6 +132,41 @@ Android will ask them to allow installs from unknown sources once.
 same key for everyone. Android only installs an update over an existing app when both
 are signed with the same key. A tester who switches between a Firebase build and an EAS
 build of the same package must uninstall first.
+
+### iOS
+
+iOS builds are **ad hoc**: only iPhones registered in the Apple Developer account
+(team `HDYHZ227JK`) *before* the build can install it. Apple allows 100 iPhones a year.
+
+`scripts/distribute-ios.js` runs `eas build --profile preview-dev|preview-prod` on EAS,
+waits, downloads the IPA and uploads it with the same release notes as Android. EAS holds
+the Apple Distribution certificate and the ad hoc profile, and increments the build number.
+
+**One-time setup (needs your Apple ID, so run it in your own terminal):**
+
+1. Register your own iPhone: `eas device:create`. Open the link on the iPhone and install the profile.
+2. Create the credentials for each app. Sign in with Apple when asked and let EAS generate
+   the certificate and profile:
+   ```bash
+   eas build --platform ios --profile preview-dev
+   eas build --platform ios --profile preview-prod
+   ```
+3. CI token: create an access token at expo.dev → Account settings → Access tokens, then
+   `gh secret set EXPO_TOKEN --repo MSeller/mseller-lite`.
+
+**Adding an iOS tester:**
+
+1. Send them the link from `eas device:create`, or use *Export UDIDs* in Firebase
+   App Distribution after they accept the invite, and add those with
+   `eas device:create` → *Input*.
+2. Refresh the profile so it includes the new device: `eas credentials --platform ios` →
+   the build profile → *Provisioning profile* → regenerate. Or run step 2 above again
+   and accept adding the new devices.
+3. The **next** build includes them. Builds made before that won't install on their iPhone.
+
+**What iOS testers do:** accept the invite on the iPhone in Safari, add the App Tester web
+clip, and install from there. The first time, trust the developer in Settings →
+General → VPN & Device Management.
 
 ## EAS builds (share with testers)
 

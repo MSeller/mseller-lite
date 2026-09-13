@@ -1,11 +1,13 @@
-# Sends Android test builds to Firebase App Distribution.
+# Sends Android and iOS test builds to Firebase App Distribution.
 #
-#   merge to main      → Dev (mseller-dev-40a08) and Prod (mobile-seller-v3) in parallel → "testers"
-#   Run workflow       → pick environment (or both) and groups
+#   merge to main      → Dev (mseller-dev-40a08) and Prod (mobile-seller-v3), Android and iOS, in parallel → "testers"
+#   Run workflow       → pick environment (or both), platform (or both) and groups
 #
-# Runs the same `pnpm distribute:*` script as a local upload, so both produce the same build.
-# Secrets: ENV_DEV / ENV_PROD (contents of .env.dev / .env.prod) and
-# FIREBASE_SERVICE_ACCOUNT_DEV / FIREBASE_SERVICE_ACCOUNT_PROD (JSON key, Firebase App Distribution Admin).
+# Runs the same `pnpm distribute:*` scripts as a local upload, so both produce the same build.
+# Android builds on this runner; iOS builds on EAS (ad hoc) and this runner uploads the IPA.
+# Secrets: ENV_DEV / ENV_PROD (contents of .env.dev / .env.prod),
+# FIREBASE_SERVICE_ACCOUNT_DEV / FIREBASE_SERVICE_ACCOUNT_PROD (JSON key, Firebase App Distribution Admin)
+# and EXPO_TOKEN (iOS: starts the EAS build).
 
 name: App Distribution
 
@@ -22,6 +24,11 @@ on:
         type: choice
         options: [both, development, production]
         default: both
+      platform:
+        description: Platform to build
+        type: choice
+        options: [both, android, ios]
+        default: both
       groups:
         description: Tester group aliases (comma-separated)
         type: string
@@ -33,6 +40,7 @@ permissions:
 jobs:
   android:
     name: android (${{ matrix.app_env }})
+    if: ${{ inputs.platform != 'ios' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -111,3 +119,63 @@ jobs:
         run: |
           echo "### Sent MSeller Lite ($APP_ENV) to \`$FIREBASE_TESTER_GROUPS\`" >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: \`${GITHUB_SHA::7}\` · versionCode: $(git rev-list --count HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+  ios:
+    name: ios (${{ matrix.app_env }})
+    if: ${{ inputs.platform != 'android' }}
+    # EAS does the macOS build; this runner only starts it, waits and uploads the IPA.
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        app_env: ${{ fromJSON((inputs.environment == 'development' && '["development"]') || (inputs.environment == 'production' && '["production"]') || '["development","production"]') }}
+    concurrency:
+      group: app-distribution-ios-${{ github.ref }}-${{ matrix.app_env }}
+      cancel-in-progress: true
+    env:
+      APP_ENV: ${{ matrix.app_env }}
+      SECRET_SUFFIX: ${{ matrix.app_env == 'production' && 'PROD' || 'DEV' }}
+      FIREBASE_TESTER_GROUPS: ${{ inputs.groups || 'testers' }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - name: Checkout (full history — release notes list recent commits)
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install EAS and Firebase CLIs
+        run: npm install -g eas-cli firebase-tools
+
+      - name: Check EXPO_TOKEN
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::Secret EXPO_TOKEN is not set"
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets[format('FIREBASE_SERVICE_ACCOUNT_{0}', env.SECRET_SUFFIX)] }}
+
+      - name: Build on EAS and distribute
+        run: |
+          if [ "$APP_ENV" = "production" ]; then
+            pnpm distribute:ios:prod
+          else
+            pnpm distribute:ios:dev
+          fi
