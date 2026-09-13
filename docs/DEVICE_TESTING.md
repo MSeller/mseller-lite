@@ -95,6 +95,24 @@ Pass `-- --allow-dirty` to override.
 | Firebase Android app | `1:1077247630111:android:1cd6826322c2465fb42e2a` | `1:744491375680:android:284590bf026c30af3453a5` |
 | Console | [mseller-dev-40a08 → App Distribution](https://console.firebase.google.com/project/mseller-dev-40a08/appdistribution) | [mobile-seller-v3 → App Distribution](https://console.firebase.google.com/project/mobile-seller-v3/appdistribution) |
 
+### Automatic (GitHub Actions)
+
+`.github/workflows/app-distribution.yml` runs the same script:
+
+| Trigger | Build |
+|---|---|
+| Merge to `main` (code changes, not docs) | Dev and Prod in parallel → `testers` in each project |
+| Actions → App Distribution → *Run workflow* | Pick `both`, `development` or `production`, and the groups |
+
+Each environment runs as its own job, so a failed Prod upload doesn't block Dev.
+
+Repo secrets: `ENV_DEV`, `ENV_PROD` (contents of `.env.dev` / `.env.prod`; update them
+whenever you change those files), plus `FIREBASE_SERVICE_ACCOUNT_DEV` and
+`FIREBASE_SERVICE_ACCOUNT_PROD`. Each service account is `app-distribution-ci` in its
+project, with the *Firebase App Distribution Admin* role.
+
+### Manual
+
 **One-time setup for whoever distributes:** `npm install -g firebase-tools`, then
 `firebase login` with an account that has access to both projects.
 
