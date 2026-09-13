@@ -31,7 +31,13 @@ export class DocumentService {
       codigoCliente,
       query,
       dates,
-      soloMisDocumentos = true,
+      // Defaults to false — "as wide as this user's role allows", NOT "everything".
+      // The server decides scope from the role on the token: a field seller is confined
+      // to documents credited to their own seller code no matter what this flag says
+      // (AlcanceVendedor), so sending true adds no security and actively hurts the roles
+      // it does not confine — an administrator or owner carrying a seller code saw only
+      // documents credited to that code, which is an empty list on most tenants.
+      soloMisDocumentos = false,
       pageNumber = 1,
       pageSize = 20,
     } = filters;
