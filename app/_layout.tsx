@@ -15,6 +15,7 @@ import "@/config/i18n";
 
 import AuthScreen from "@/components/auth/AuthScreen";
 import LoadingScreen from "@/components/auth/LoadingScreen";
+import EnvironmentBadge from "@/components/common/EnvironmentBadge";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -142,6 +143,7 @@ export default function RootLayout() {
         <AuthProvider>
           <UserProvider>
             <RootLayoutContent />
+            <EnvironmentBadge />
           </UserProvider>
         </AuthProvider>
       </PaperProvider>

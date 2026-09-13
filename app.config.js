@@ -1,22 +1,43 @@
-import "dotenv/config";
+const { APP_ENVS, resolveAppEnv, getPackageId } = require("./app.variants");
+
+// scripts/with-env.js has already loaded exactly one environment's file and set
+// EXPO_NO_DOTENV. Reading .env on top of it would leak production keys into Dev.
+if (!process.env.EXPO_NO_DOTENV) {
+  require("dotenv").config({ quiet: true });
+}
+
+const APP_ENV = resolveAppEnv();
+const variant = APP_ENVS[APP_ENV];
+const PACKAGE_ID = getPackageId(APP_ENV);
+
+const firebaseProjectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
+if (
+  process.env.APP_ENV &&
+  firebaseProjectId &&
+  firebaseProjectId !== variant.firebaseProjectId
+) {
+  throw new Error(
+    `APP_ENV=${APP_ENV} must use Firebase project "${variant.firebaseProjectId}", got "${firebaseProjectId}".`,
+  );
+}
 
 export default {
   expo: {
-    name: "MSeller Lite",
+    name: variant.name,
     slug: "mseller-lite",
     version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/icons/Icon.png",
-    scheme: "msellerlite",
+    scheme: variant.scheme,
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
-      bundleIdentifier: "app.mseller.msellerlite",
+      bundleIdentifier: PACKAGE_ID,
       supportsTablet: true,
       icon: "./assets/icons/Icon.png",
     },
     android: {
-      package: "app.mseller.msellerlite",
+      package: PACKAGE_ID,
       icon: "./assets/images/Icon-square.png",
       adaptiveIcon: {
         foregroundImage: "./assets/images/Icon-square.png",
@@ -62,6 +83,7 @@ export default {
       typedRoutes: true,
     },
     extra: {
+      appEnv: APP_ENV,
       firebaseApiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
       firebaseAuthDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
       firebaseProjectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
