@@ -514,7 +514,8 @@
       },
       "errors": {
         "failed": "We couldn't complete the action. Check your connection and try again.",
-        "unavailable": "Document sending isn't enabled for this account."
+        "unavailable": "Document sending isn't enabled for this account.",
+        "popupBlocked": "The browser blocked the print window. Allow pop-ups for this site and try again."
       },
       "printedOnce": "Printed once",
       "printedTimes": "Printed {{count}} times"

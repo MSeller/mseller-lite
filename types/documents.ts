@@ -49,6 +49,12 @@ export interface DocumentSummary {
   procesado: DocumentStatus | string;
   anulado: boolean;
   cantidadLineas: number;
+  /**
+   * The customer's address, used to pre-fill the email recipient. On the list row too, not
+   * only the detail: the server's listing query already resolves the customer, so this rides
+   * along and saves fetching a whole document just to print one from the list.
+   */
+  emailCliente?: string | null;
 }
 
 export interface DocumentLine {
@@ -68,8 +74,6 @@ export interface DocumentLine {
 }
 
 export interface DocumentDetail extends DocumentSummary {
-  /** The customer's address, used to pre-fill the email recipient. */
-  emailCliente?: string | null;
   nota: string | null;
   fechaVencimiento: string | null;
   localidadId: number;

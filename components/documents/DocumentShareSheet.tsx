@@ -28,6 +28,7 @@ import {
   downloadPdf,
   pdfFileName,
   printPdf,
+  releasePrintWindow,
   reservePrintWindow,
 } from "../../utils/documentPdf";
 
@@ -105,6 +106,17 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
   const handlePrint = useCallback(async () => {
     // Reserved synchronously, inside the gesture, before any await — see reservePrintWindow.
     const ventana = reservePrintWindow();
+
+    // The button only renders when the platform can show a PDF, so a null here means the
+    // browser blocked the popup. Stop before fetching: that request is the non-preview one
+    // and it RECORDS a print, which would leave the history claiming a copy the user never
+    // saw — and the retry inside printPdf happens after an await, which is exactly what a
+    // popup blocker refuses. Better to say what to fix than to lie about what happened.
+    if (!ventana) {
+      setError(t("documents.share.errors.popupBlocked"));
+      return;
+    }
+
     setBusy("print");
     setError("");
     setOk("");
@@ -113,11 +125,14 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
       printPdf(blob, ventana);
       load();
     } catch (e: any) {
+      // The tab was opened on the gesture and never got a document. Leaving it behind makes
+      // the user clean up after an action that already failed.
+      releasePrintWindow(ventana);
       setError(describirError(e));
     } finally {
       setBusy("none");
     }
-  }, [noPedidoStr, load, describirError]);
+  }, [noPedidoStr, load, describirError, t]);
 
   const handleDownload = useCallback(async () => {
     setBusy("download");

@@ -298,6 +298,7 @@ const DocumentsListScreen: React.FC = () => {
         // the previous document's history into the next one.
         key={compartir?.noPedidoStr ?? "none"}
         noPedidoStr={compartir?.noPedidoStr ?? ""}
+        emailCliente={compartir?.emailCliente}
       />
 
       <FAB

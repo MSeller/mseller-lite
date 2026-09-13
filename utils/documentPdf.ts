@@ -16,6 +16,7 @@ interface VentanaWeb {
   location: { href: string };
   focus(): void;
   print(): void;
+  close(): void;
   addEventListener(tipo: string, escucha: () => void): void;
 }
 
@@ -70,6 +71,22 @@ export const canPresentPdf = (): boolean => esWeb && !!web.window && !!web.URL;
 export const reservePrintWindow = (): VentanaWeb | null => {
   if (!canPresentPdf()) return null;
   return web.window!.open("", "_blank");
+};
+
+/**
+ * Closes a reserved window that never got a document.
+ *
+ * Without this a failed fetch leaves the blank tab the gesture opened sitting there, and the
+ * user has to clean up after an action that already told them it failed. Guarded because a
+ * window the user closed first throws on `close()` in some browsers.
+ */
+export const releasePrintWindow = (ventana: VentanaWeb | null): void => {
+  if (!ventana) return;
+  try {
+    ventana.close();
+  } catch {
+    // Already gone. Nothing to release.
+  }
 };
 
 /**

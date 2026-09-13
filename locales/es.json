@@ -537,7 +537,8 @@
       },
       "errors": {
         "failed": "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo.",
-        "unavailable": "El envío de documentos no está habilitado para esta cuenta."
+        "unavailable": "El envío de documentos no está habilitado para esta cuenta.",
+        "popupBlocked": "El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio e inténtalo de nuevo."
       },
       "printedOnce": "Impreso 1 vez",
       "printedTimes": "Impreso {{count}} veces"
