@@ -16,7 +16,12 @@ import { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
 
-const ProfileScreen: React.FC = () => {
+interface ProfileScreenProps {
+  /** Extra settings rows, shown above Sign Out (the Más tab adds language and developer tools). */
+  children?: React.ReactNode;
+}
+
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
   const { user, userProfile } = useUser();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -247,6 +252,8 @@ const ProfileScreen: React.FC = () => {
                 </Paragraph>
               </View>
             </View>
+
+            {children}
 
             <Button
               mode="contained"

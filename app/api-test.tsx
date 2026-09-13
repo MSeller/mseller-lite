@@ -3,9 +3,9 @@ import React from "react";
 import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function ApiTestTab() {
+export default function ApiTestRoute() {
   return (
-    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.container} edges={["left", "right", "bottom"]}>
       <ApiTestScreen />
     </SafeAreaView>
   );

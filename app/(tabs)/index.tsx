@@ -1,296 +1,260 @@
 import { router } from "expo-router";
 import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import {
-  ActivityIndicator,
-  Avatar,
-  Chip,
-  Divider,
-  Icon,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Avatar, Button, Chip, Icon, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getDocumentTypeMeta } from "@/components/documents/documentMeta";
+import WorkCard from "@/components/home/WorkCard";
 import AppCard from "@/components/ui/AppCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import type { CustomTheme } from "@/constants/Theme";
 import { useUser } from "@/contexts/UserContext";
+import { useHomeSummary } from "@/hooks/useHomeSummary";
+import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
+import { formatDateShort, formatMoney } from "@/utils/documentFormat";
 
+/**
+ * Home is the user's day: what is waiting in each module they work in, the one or
+ * two things they start most often, and the documents they touched last. Every
+ * block follows the user type (hooks/useNavigationAccess), so a driver's home is
+ * about deliveries and a seller's about documents.
+ */
 export default function HomeScreen() {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const { user, userProfile, loading } = useUser();
+  const { can } = useNavigationAccess();
+  const summary = useHomeSummary();
 
-  const getGreeting = () => {
+  const greeting = (() => {
     const hour = new Date().getHours();
     if (hour < 12) return t("dashboard.goodMorning");
     if (hour < 18) return t("dashboard.goodAfternoon");
     return t("dashboard.goodEvening");
-  };
+  })();
 
-  const getUserName = () => {
-    if (userProfile?.firstName) return userProfile.firstName;
-    if (user?.displayName) return user.displayName;
-    return "Usuario";
-  };
-
-  const getInitials = (name: string): string =>
-    name
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase())
-      .join("")
-      .slice(0, 2);
-
-  const quickActions = [
-    {
-      id: "search",
-      title: t("dashboard.searchProducts"),
-      icon: "magnify",
-      color: theme.colors.primary,
-      onPress: () => router.push("/(tabs)/products"),
-    },
-    {
-      id: "inventory",
-      title: t("dashboard.viewInventory"),
-      icon: "package-variant",
-      color: theme.colors.secondary,
-      onPress: () => router.push("/(tabs)/inventory"),
-    },
-    {
-      id: "profile",
-      title: t("navigation.profile"),
-      icon: "account",
-      color: theme.colors.tertiary,
-      onPress: () => router.push("/(tabs)/profile"),
-    },
-  ];
-
-  const features = [
-    {
-      id: "products",
-      title: t("dashboard.productManagement"),
-      description: t("dashboard.productManagementDesc"),
-      icon: "barcode-scan",
-      color: theme.colors.primary,
-    },
-    {
-      id: "inventory",
-      title: t("dashboard.inventoryTracking"),
-      description: t("dashboard.inventoryTrackingDesc"),
-      icon: "clipboard-list",
-      color: theme.colors.secondary,
-    },
-    {
-      id: "labels",
-      title: t("dashboard.labelPrinting"),
-      description: t("dashboard.labelPrintingDesc"),
-      icon: "qrcode",
-      color: theme.colors.tertiary,
-    },
-  ];
+  const userName = userProfile?.firstName || user?.displayName || t("home.defaultName");
+  const initials = userName
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase())
+    .join("")
+    .slice(0, 2);
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" />
-        </View>
+      <SafeAreaView style={[styles.safeArea, styles.center]}>
+        <ActivityIndicator size="large" />
       </SafeAreaView>
     );
   }
 
-  /** Label + value on one line — the shape most of this screen is made of. */
-  const InfoRow = ({
-    label,
-    value,
-    trailing,
-  }: {
-    label: string;
-    value?: string;
-    trailing?: React.ReactNode;
-  }) => (
-    <View style={styles.infoRow}>
-      <Text variant="bodyMedium" style={styles.infoLabel}>
-        {label}
-      </Text>
-      {trailing ?? (
-        <Text variant="bodyMedium" style={styles.infoValue} numberOfLines={1}>
-          {value}
-        </Text>
-      )}
-    </View>
-  );
+  const openSection = (tab: "routes" | "stock", section: string) =>
+    router.navigate({ pathname: `/(tabs)/${tab}`, params: { section } });
+
+  const cards = [
+    can("picking") && (
+      <WorkCard
+        key="picking"
+        title={t("navigation.sections.picking")}
+        icon="package-variant"
+        {...summary.picking}
+        lines={
+          summary.picking.data && [
+            { value: summary.picking.data.toPrepare, label: t("home.toPrepare"), attention: true },
+            { value: summary.picking.data.readyToDispatch, label: t("home.readyToDispatch") },
+          ]
+        }
+        onPress={() => openSection("routes", "picking")}
+        onRetry={() => summary.retry("picking")}
+      />
+    ),
+    can("deliveries") && (
+      <WorkCard
+        key="deliveries"
+        title={t("navigation.sections.deliveries")}
+        icon="truck-outline"
+        {...summary.deliveries}
+        lines={
+          summary.deliveries.data && [
+            { value: summary.deliveries.data.pendingStops, label: t("home.pendingStops"), attention: true },
+            { value: summary.deliveries.data.activeRoutes, label: t("home.activeRoutes") },
+          ]
+        }
+        onPress={() => openSection("routes", "deliveries")}
+        onRetry={() => summary.retry("deliveries")}
+      />
+    ),
+    can("stockCount") && (
+      <WorkCard
+        key="stockCount"
+        title={t("navigation.sections.stockCount")}
+        icon="clipboard-check-outline"
+        {...summary.stockCount}
+        lines={
+          summary.stockCount.data && [
+            { value: summary.stockCount.data.activeCounts, label: t("home.activeCounts") },
+            { value: summary.stockCount.data.unsynced, label: t("home.unsynced"), attention: true },
+          ]
+        }
+        onPress={() => openSection("stock", "stockCount")}
+        onRetry={() => summary.retry("stockCount")}
+      />
+    ),
+    can("documents") && (
+      <WorkCard
+        key="documents"
+        title={t("navigation.documents")}
+        icon="file-document-outline"
+        {...summary.documents}
+        lines={summary.documents.data && [{ value: summary.documents.data.today, label: t("home.documentsToday") }]}
+        onPress={() => router.navigate("/(tabs)/documents")}
+        onRetry={() => summary.retry("documents")}
+      />
+    ),
+  ].filter(Boolean);
+
+  const recent = summary.documents.data?.recent ?? [];
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={summary.refreshing} onRefresh={summary.refresh} />}
       >
-        {/* The greeting sits directly on the page rather than in a card: it is
-            the page's own title, and boxing it makes it compete with content. */}
+        {/* The greeting is the page's own title, so it sits on the page, not in a card. */}
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text variant="bodyMedium" style={styles.greeting}>
-              {getGreeting()}
+            <Text variant="bodyMedium" style={styles.muted}>
+              {greeting}
             </Text>
             <Text variant="headlineMedium" style={styles.userName} numberOfLines={1}>
-              {getUserName()}
+              {userName}
             </Text>
+            {!!userProfile && (
+              <Text variant="bodySmall" style={styles.muted} numberOfLines={1}>
+                {[userProfile.business?.name, t(`home.userTypes.${userProfile.type}`)].filter(Boolean).join(" · ")}
+              </Text>
+            )}
           </View>
-          {user?.photoURL ? (
-            <Avatar.Image size={52} source={{ uri: user.photoURL }} />
-          ) : (
-            <Avatar.Text
-              size={52}
-              label={getInitials(getUserName())}
-              style={styles.avatar}
-              labelStyle={styles.avatarLabel}
-            />
-          )}
+          <TouchableRipple
+            onPress={() => router.navigate("/(tabs)/more")}
+            borderless
+            style={styles.avatarTouch}
+            accessibilityLabel={t("navigation.more")}
+          >
+            {user?.photoURL ? (
+              <Avatar.Image size={48} source={{ uri: user.photoURL }} />
+            ) : (
+              <Avatar.Text size={48} label={initials} style={styles.avatar} labelStyle={styles.avatarLabel} />
+            )}
+          </TouchableRipple>
         </View>
 
-        <SectionHeader title={t("dashboard.quickActions")} />
-        <View style={styles.actionsRow}>
-          {quickActions.map((action) => (
-            <AppCard
-              key={action.id}
-              style={styles.actionCard}
-              onPress={action.onPress}
-              contentStyle={styles.actionCardContent}
-            >
-              <View style={styles.actionInner}>
-                <View
-                  style={[styles.actionIcon, { backgroundColor: `${action.color}14` }]}
-                >
-                  <Icon source={action.icon} size={24} color={action.color} />
-                </View>
-                <Text variant="labelLarge" style={styles.actionTitle} numberOfLines={2}>
-                  {action.title}
-                </Text>
-              </View>
-            </AppCard>
-          ))}
-        </View>
+        {userProfile?.testMode && (
+          <Chip
+            compact
+            icon="test-tube"
+            style={styles.testChip}
+            textStyle={{ color: theme.custom.status.warning.onContainer }}
+          >
+            {t("home.testMode")}
+          </Chip>
+        )}
 
-        {userProfile && (
+        {(can("documents") || can("products")) && (
+          <View style={styles.actions}>
+            {can("documents") && (
+              <Button
+                mode="contained"
+                icon="plus"
+                style={styles.action}
+                contentStyle={styles.actionContent}
+                onPress={() => router.push("/documentos/nuevo")}
+              >
+                {t("documents.newDocument")}
+              </Button>
+            )}
+            {can("products") && (
+              <Button
+                mode="outlined"
+                icon="magnify"
+                style={styles.action}
+                contentStyle={styles.actionContent}
+                onPress={() => openSection("stock", "products")}
+              >
+                {t("home.findProduct")}
+              </Button>
+            )}
+          </View>
+        )}
+
+        {cards.length > 0 && (
           <>
-            <SectionHeader title={t("dashboard.businessInfo")} />
-            <AppCard style={styles.card}>
-              <View style={styles.cardBody}>
-                <InfoRow label={t("dashboard.company")} value={userProfile.business?.name} />
-                <Divider style={styles.rowDivider} />
-                <InfoRow label={t("dashboard.role")} value={userProfile.type} />
-                <Divider style={styles.rowDivider} />
-                <InfoRow
-                  label={t("dashboard.mode")}
-                  trailing={
-                    <Chip
-                      compact
-                      icon={userProfile.testMode ? "test-tube" : "check-circle"}
-                      style={[
-                        styles.modeChip,
-                        {
-                          backgroundColor: userProfile.testMode
-                            ? theme.custom.status.warning.container
-                            : theme.custom.status.positive.container,
-                        },
-                      ]}
-                      textStyle={[
-                        styles.modeChipText,
-                        {
-                          color: userProfile.testMode
-                            ? theme.custom.status.warning.onContainer
-                            : theme.custom.status.positive.onContainer,
-                        },
-                      ]}
-                    >
-                      {userProfile.testMode ? t("dashboard.modeTest") : t("dashboard.modeProduction")}
-                    </Chip>
-                  }
-                />
-              </View>
+            <SectionHeader title={t("home.today")} />
+            <View style={styles.grid}>{cards}</View>
+          </>
+        )}
+
+        {can("documents") && recent.length > 0 && (
+          <>
+            <SectionHeader title={t("home.recentDocuments")} />
+            <AppCard style={styles.recentCard}>
+              {recent.map((doc, index) => {
+                const meta = getDocumentTypeMeta(doc.tipoDocumento);
+                const accent = theme.colors[meta.accent];
+                return (
+                  <TouchableRipple
+                    key={doc.noPedidoStr}
+                    onPress={() => router.push(`/documentos/${encodeURIComponent(doc.noPedidoStr)}`)}
+                    style={[styles.recentRow, index > 0 && styles.recentDivider]}
+                  >
+                    <View style={styles.recentInner}>
+                      <View style={[styles.recentIcon, { backgroundColor: `${accent}14` }]}>
+                        <Icon source={meta.icon} size={18} color={accent} />
+                      </View>
+                      <View style={styles.recentBody}>
+                        <Text variant="titleSmall" style={styles.userName} numberOfLines={1}>
+                          {doc.noPedidoStr}
+                        </Text>
+                        <Text variant="bodySmall" style={styles.muted} numberOfLines={1}>
+                          {doc.nombreCliente || doc.codigoCliente || t("documents.noCustomer")} ·{" "}
+                          {formatDateShort(doc.fecha)}
+                        </Text>
+                      </View>
+                      <Text variant="titleSmall" style={styles.userName}>
+                        {formatMoney(doc.total)}
+                      </Text>
+                    </View>
+                  </TouchableRipple>
+                );
+              })}
             </AppCard>
           </>
         )}
 
-        <SectionHeader title={t("dashboard.getStarted")} />
-        <AppCard style={styles.card}>
-          <View style={styles.cardBody}>
-            <Text variant="bodyMedium" style={styles.featuresIntro}>
-              {t("dashboard.exploreFeatures")}
-            </Text>
-            {features.map((feature, index) => (
-              <View key={feature.id}>
-                {index === 0 && <Divider style={styles.rowDivider} />}
-                <View style={styles.featureRow}>
-                  <View
-                    style={[
-                      styles.featureIcon,
-                      { backgroundColor: `${feature.color}14` },
-                    ]}
-                  >
-                    <Icon source={feature.icon} size={20} color={feature.color} />
-                  </View>
-                  <View style={styles.featureContent}>
-                    <Text variant="titleSmall" style={styles.featureTitle}>
-                      {feature.title}
-                    </Text>
-                    <Text variant="bodySmall" style={styles.featureDescription}>
-                      {feature.description}
-                    </Text>
-                  </View>
-                </View>
-                {index < features.length - 1 && <Divider style={styles.rowDivider} />}
-              </View>
-            ))}
-          </View>
-        </AppCard>
-
-        <SectionHeader title={t("dashboard.systemStatus")} />
-        <View style={styles.statusRow}>
-          {[
-            { id: "net", label: t("dashboard.connection"), value: t("dashboard.connectionActive"), icon: "wifi" },
-            { id: "db", label: t("dashboard.database"), value: t("dashboard.databaseOnline"), icon: "database" },
-          ].map((status) => (
-            <AppCard key={status.id} style={styles.statusCard}>
-              <View style={styles.statusInner}>
-                <Icon
-                  source={status.icon}
-                  size={20}
-                  color={theme.colors.onSurfaceVariant}
-                />
-                <Text variant="bodySmall" style={styles.statusLabel}>
-                  {status.label}
-                </Text>
-                <View style={styles.statusValueRow}>
-                  <View style={styles.statusDot} />
-                  <Text variant="labelLarge" style={styles.statusValue}>
-                    {status.value}
-                  </Text>
-                </View>
-              </View>
-            </AppCard>
-          ))}
-        </View>
+        {!!userProfile && cards.length === 0 && (
+          <Text variant="bodyMedium" style={[styles.muted, styles.empty]}>
+            {t("navigation.noSections")}
+          </Text>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const createStyles = (theme: CustomTheme) => {
-  const { spacing, radius } = theme.custom;
+  const { spacing, radius, hairline } = theme.custom;
 
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    loadingContainer: {
-      flex: 1,
+    center: {
       alignItems: "center",
       justifyContent: "center",
     },
@@ -302,7 +266,6 @@ const createStyles = (theme: CustomTheme) => {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
       gap: spacing.md,
       paddingVertical: spacing.md,
     },
@@ -310,11 +273,14 @@ const createStyles = (theme: CustomTheme) => {
       flex: 1,
       gap: 2,
     },
-    greeting: {
+    muted: {
       color: theme.colors.onSurfaceVariant,
     },
     userName: {
-      color: theme.colors.onBackground,
+      color: theme.colors.onSurface,
+    },
+    avatarTouch: {
+      borderRadius: radius.pill,
     },
     avatar: {
       backgroundColor: theme.colors.primaryContainer,
@@ -323,130 +289,59 @@ const createStyles = (theme: CustomTheme) => {
       color: theme.colors.onPrimaryContainer,
       fontWeight: "700",
     },
-    card: {
-      marginBottom: spacing.lg,
+    testChip: {
+      alignSelf: "flex-start",
+      marginBottom: spacing.md,
+      backgroundColor: theme.custom.status.warning.container,
     },
-    cardBody: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs,
-    },
-    infoRow: {
+    actions: {
       flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: spacing.md,
-      paddingVertical: 14,
-      minHeight: 48,
-    },
-    infoLabel: {
-      color: theme.colors.onSurfaceVariant,
-    },
-    infoValue: {
-      color: theme.colors.onSurface,
-      fontWeight: "600",
-      flexShrink: 1,
-      textAlign: "right",
-    },
-    rowDivider: {
-      backgroundColor: theme.colors.outlineVariant,
-    },
-    modeChip: {
-      borderRadius: radius.sm,
-    },
-    modeChipText: {
-      fontSize: 12,
-      fontWeight: "600",
-    },
-    actionsRow: {
-      flexDirection: "row",
-      gap: spacing.sm + 2,
-      marginBottom: spacing.lg,
-    },
-    actionCard: {
-      flex: 1,
-    },
-    actionCardContent: {
-      minHeight: 104,
-    },
-    actionInner: {
-      alignItems: "center",
-      justifyContent: "center",
       gap: spacing.sm,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xs,
-      minHeight: 104,
+      marginBottom: spacing.lg,
     },
-    actionIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: radius.sm,
-      alignItems: "center",
-      justifyContent: "center",
+    action: {
+      flex: 1,
+      borderRadius: radius.md,
     },
-    actionTitle: {
-      color: theme.colors.onSurface,
-      textAlign: "center",
+    actionContent: {
+      paddingVertical: 6,
     },
-    featuresIntro: {
-      color: theme.colors.onSurfaceVariant,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.md,
-      lineHeight: 20,
-    },
-    featureRow: {
+    grid: {
       flexDirection: "row",
-      alignItems: "flex-start",
-      gap: spacing.sm + 4,
-      paddingVertical: 14,
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
     },
-    featureIcon: {
+    recentCard: {
+      marginBottom: spacing.lg,
+    },
+    recentRow: {
+      paddingHorizontal: spacing.md,
+      paddingVertical: 12,
+    },
+    recentDivider: {
+      borderTopWidth: hairline,
+      borderTopColor: theme.colors.outlineVariant,
+    },
+    recentInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm + 4,
+    },
+    recentIcon: {
       width: 36,
       height: 36,
-      borderRadius: radius.sm,
+      borderRadius: 18,
       alignItems: "center",
       justifyContent: "center",
     },
-    featureContent: {
+    recentBody: {
       flex: 1,
       gap: 2,
     },
-    featureTitle: {
-      color: theme.colors.onSurface,
-    },
-    featureDescription: {
-      color: theme.colors.onSurfaceVariant,
-      lineHeight: 18,
-    },
-    statusRow: {
-      flexDirection: "row",
-      gap: spacing.sm + 2,
-    },
-    statusCard: {
-      flex: 1,
-    },
-    statusInner: {
-      alignItems: "center",
-      gap: spacing.xs + 2,
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.sm,
-    },
-    statusLabel: {
-      color: theme.colors.onSurfaceVariant,
+    empty: {
       textAlign: "center",
-    },
-    statusValueRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-    },
-    statusDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      backgroundColor: theme.custom.status.positive.base,
-    },
-    statusValue: {
-      color: theme.colors.onSurface,
+      marginTop: spacing.xl,
     },
   });
 };

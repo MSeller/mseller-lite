@@ -19,7 +19,7 @@ function TabHeader({ rutaId }: { rutaId: string }) {
     if (navigation.getParent()?.canGoBack()) {
       navigation.getParent()?.goBack();
     } else {
-      router.replace("/(tabs)/preparacion" as any);
+      router.replace({ pathname: "/(tabs)/routes", params: { section: "picking" } });
     }
   };
 
