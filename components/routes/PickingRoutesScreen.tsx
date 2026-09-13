@@ -66,7 +66,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadRutas();

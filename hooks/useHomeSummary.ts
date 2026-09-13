@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useUser } from "../contexts/UserContext";
 import { documentService } from "../services/documentService";
@@ -44,10 +45,15 @@ export interface HomeSummary {
   refreshing: boolean;
   refresh: () => Promise<void>;
   /** Reload a single card, e.g. from its retry button. */
-  retry: (card: keyof Omit<HomeSummary, "refreshing" | "refresh" | "retry">) => void;
+  retry: (card: CardKey) => void;
 }
 
 const idle = <T,>(): CardState<T> => ({ loading: false, failed: false, data: null });
+
+/** Coming back to Home refreshes the counts, but not more often than this. */
+const FOCUS_REFRESH_AFTER_MS = 30_000;
+
+type CardKey = "picking" | "deliveries" | "stockCount" | "documents";
 
 /** `yyyy-MM-dd` in the device's local day, the format the documents API filters on. */
 const localDay = (date = new Date()) => {
@@ -57,7 +63,8 @@ const localDay = (date = new Date()) => {
 
 /**
  * The live numbers behind the home screen, fetched only for the modules this user
- * is offered. Requests run in parallel and settle independently.
+ * is offered. Requests run in parallel and settle independently; a response that
+ * arrives after a newer request for the same card is dropped.
  */
 export const useHomeSummary = (): HomeSummary => {
   const { userProfile } = useUser();
@@ -70,13 +77,18 @@ export const useHomeSummary = (): HomeSummary => {
   const [refreshing, setRefreshing] = useState(false);
 
   const warehouse = userProfile?.warehouse;
+  const requestIds = useRef<Record<CardKey, number>>({ picking: 0, deliveries: 0, stockCount: 0, documents: 0 });
+  const lastLoadedAt = useRef(0);
 
   const track = useCallback(
     async <T,>(
+      card: CardKey,
       enabled: boolean,
       setState: React.Dispatch<React.SetStateAction<CardState<T>>>,
       load: () => Promise<T>,
     ) => {
+      const requestId = ++requestIds.current[card];
+      const isLatest = () => requestIds.current[card] === requestId;
       if (!enabled) {
         setState(idle<T>());
         return;
@@ -84,10 +96,10 @@ export const useHomeSummary = (): HomeSummary => {
       setState((prev) => ({ ...prev, loading: true, failed: false }));
       try {
         const data = await load();
-        setState({ loading: false, failed: false, data });
+        if (isLatest()) setState({ loading: false, failed: false, data });
       } catch (error) {
-        console.warn("Home summary card failed to load:", error);
-        setState((prev) => ({ ...prev, loading: false, failed: true }));
+        console.warn(`Home summary card "${card}" failed to load:`, error);
+        if (isLatest()) setState((prev) => ({ ...prev, loading: false, failed: true }));
       }
     },
     [],
@@ -95,7 +107,7 @@ export const useHomeSummary = (): HomeSummary => {
 
   const loaders = {
     picking: () =>
-      track(can("picking"), setPicking, async () => {
+      track("picking", can("picking"), setPicking, async () => {
         const rutas = await preparacionService.getRutasPreparacion();
         return {
           toPrepare: rutas.filter((r) => r.status === "confirmada" || r.status === "en_preparacion").length,
@@ -103,7 +115,7 @@ export const useHomeSummary = (): HomeSummary => {
         };
       }),
     deliveries: () =>
-      track(can("deliveries"), setDeliveries, async () => {
+      track("deliveries", can("deliveries"), setDeliveries, async () => {
         const { items } = await entregaService.getRutas();
         const open = items.filter((r) => r.status !== "completada" && r.status !== "cancelada");
         return {
@@ -112,7 +124,7 @@ export const useHomeSummary = (): HomeSummary => {
         };
       }),
     stockCount: () =>
-      track(can("stockCount"), setStockCount, async () => {
+      track("stockCount", can("stockCount"), setStockCount, async () => {
         const [counts, unsynced] = await Promise.all([
           warehouse
             ? inventoryService.getConteosActivos(inventoryService.getWarehouseId(warehouse))
@@ -122,7 +134,7 @@ export const useHomeSummary = (): HomeSummary => {
         return { activeCounts: counts.length, unsynced };
       }),
     documents: () =>
-      track(can("documents"), setDocuments, async () => {
+      track("documents", can("documents"), setDocuments, async () => {
         const today = localDay();
         const [todayPage, recentPage] = await Promise.all([
           documentService.list({ dates: `${today}|${today}`, pageSize: 1 }),
@@ -133,10 +145,23 @@ export const useHomeSummary = (): HomeSummary => {
   };
 
   const refresh = async () => {
+    lastLoadedAt.current = Date.now();
     setRefreshing(true);
     await Promise.all(Object.values(loaders).map((load) => load()));
     setRefreshing(false);
   };
+
+  // Home stays mounted behind the other tabs, so counts would otherwise be as old as
+  // the first visit. Refresh on return, throttled so tab hopping is not a request storm.
+  const refreshRef = useRef(refresh);
+  refreshRef.current = refresh;
+  useFocusEffect(
+    useCallback(() => {
+      if (accessLoading || lastLoadedAt.current === 0) return;
+      if (Date.now() - lastLoadedAt.current < FOCUS_REFRESH_AFTER_MS) return;
+      refreshRef.current();
+    }, [accessLoading]),
+  );
 
   useEffect(() => {
     if (accessLoading) return;
