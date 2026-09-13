@@ -116,6 +116,15 @@ export class ProductService {
     return response.data;
   }
 
+  /** The code a product with this name would get. A preview: nothing is reserved. */
+  async siguienteCodigo(nombre: string): Promise<string | null> {
+    const response = await restClient.get<{ codigo: string | null }>(
+      `${this.baseEndpoint}/siguiente-codigo`,
+      { params: { nombre } }
+    );
+    return response.data.codigo;
+  }
+
   /**
    * Attaches photos already uploaded to the media library to an existing product, and
    * returns every image the product now has. Resending a photo that is already attached is
@@ -205,3 +214,9 @@ export const addProductImages = async (
   codigoProducto: string,
   imagenes: ProductPhoto[]
 ): Promise<ProductImage[]> => productService.agregarImagenes(codigoProducto, imagenes);
+
+/**
+ * Suggested code for a new product - Convenience function for UI components
+ */
+export const getNextProductCode = async (nombre: string): Promise<string | null> =>
+  productService.siguienteCodigo(nombre);

@@ -462,7 +462,8 @@
       "hint": "Name and price are required. The server generates the code.",
       "save": "Save product",
       "nameRequired": "The product name is required.",
-      "priceRequired": "The sale price must be greater than zero."
+      "priceRequired": "The sale price must be greater than zero.",
+      "barcode": "Barcode"
     },
     "errors": {
       "loadFailed": "We couldn't load your documents. Check your connection and try again.",
@@ -520,6 +521,10 @@
       "save": "Save photo",
       "attachFailed": "We couldn't save the photo to the product. Please try again.",
       "addToExisting": "Add photo to product"
+    },
+    "code": {
+      "label": "Code",
+      "assignedOnSave": "Assigned when saved"
     }
   },
   "home": {
@@ -545,5 +550,14 @@
       "administrator": "Administrator",
       "superuser": "Superuser"
     }
+  },
+  "scan": {
+    "scanProducts": "Scan products",
+    "scanBarcode": "Scan barcode",
+    "added": "{{name}} added",
+    "lookupFailed": "We couldn't look up that barcode. Check your connection and try again.",
+    "permission": "Allow camera access to scan barcodes.",
+    "allowCamera": "Allow camera",
+    "unavailable": "This version of the app can't scan with the camera. Update the app; a built-in scanner still works."
   }
 }

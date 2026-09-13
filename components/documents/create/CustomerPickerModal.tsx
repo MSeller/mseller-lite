@@ -18,7 +18,8 @@ import {
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
-import { createCustomer, searchCustomers } from "../../../services/customerService";
+import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
+import { createCustomer, getNextCustomerCode, searchCustomers } from "../../../services/customerService";
 import type { CustomerSummary, NewCustomerRequest } from "../../../types/documents";
 
 interface Props {
@@ -60,6 +61,10 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
+  // Pre-filled with the code the server would assign; the seller can overwrite it.
+  const codigo = useSuggestedCode(getNextCustomerCode, [], { enabled: visible && mode === "create" });
+  const resetCodigo = codigo.reset;
+
   const resetAll = useCallback(() => {
     setMode("search");
     setSearch("");
@@ -72,7 +77,8 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     setEmail("");
     setContacto("");
     setFormError("");
-  }, []);
+    resetCodigo();
+  }, [resetCodigo]);
 
   useEffect(() => {
     if (!visible) resetAll();
@@ -119,6 +125,8 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     setFormError("");
     try {
       const payload: NewCustomerRequest = {
+        // Omitted while the suggestion is untouched, so the sequence assigns it on save.
+        codigo: codigo.codeForRequest,
         nombre: trimmed,
         telefono: telefono.trim() || undefined,
         rnc: rnc.trim() || undefined,
@@ -137,7 +145,7 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     } finally {
       setSaving(false);
     }
-  }, [nombre, telefono, rnc, direccion, email, contacto, onSelect, onDismiss, t]);
+  }, [nombre, telefono, rnc, direccion, email, contacto, codigo.codeForRequest, onSelect, onDismiss, t]);
 
   const renderCustomer = useCallback(
     ({ item }: { item: CustomerSummary }) => (
@@ -268,6 +276,17 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
               style={styles.input}
               autoFocus
               autoCapitalize="words"
+            />
+            <TextInput
+              mode="outlined"
+              label={t("documents.code.label")}
+              value={codigo.value}
+              onChangeText={codigo.onChangeText}
+              style={styles.input}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              placeholder={t("documents.code.assignedOnSave")}
+              right={codigo.loading ? <TextInput.Icon icon="progress-clock" /> : null}
             />
             <TextInput
               mode="outlined"
