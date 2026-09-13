@@ -42,6 +42,7 @@ function RootLayoutContent() {
           options={{ headerShown: false }}
         />
         <Stack.Screen name="entrega" options={{ headerShown: false }} />
+        <Stack.Screen name="documentos" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

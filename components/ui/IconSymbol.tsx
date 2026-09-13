@@ -16,6 +16,7 @@ const MAPPING = {
   "clipboard.fill": "assignment",
   "map.fill": "map",
   "shippingbox.fill": "local-shipping",
+  "doc.text.fill": "receipt-long",
 } as const;
 
 type IconSymbolName = keyof typeof MAPPING;

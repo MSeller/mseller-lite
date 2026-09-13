@@ -7,11 +7,16 @@ import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { useDocumentAccess } from "@/hooks/useDocumentAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
+  // Drivers deliver documents, they don't capture them — the tab is not theirs.
+  // `href: null` unregisters the route, so a driver cannot reach it by deep link
+  // either; DocumentAccessGate still guards the screens themselves.
+  const { canCreateDocuments } = useDocumentAccess();
 
   return (
     <Tabs
@@ -50,6 +55,16 @@ export default function TabLayout() {
             ),
           }}
         /> */}
+      <Tabs.Screen
+        name="documents"
+        options={{
+          title: t("navigation.documents"),
+          href: canCreateDocuments ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="doc.text.fill" color={color} />
+          ),
+        }}
+      />
       <Tabs.Screen
         name="preparacion"
         options={{

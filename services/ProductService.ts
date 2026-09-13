@@ -1,3 +1,4 @@
+import type { CreatedProduct, NewProductRequest } from "../types/documents";
 import type { Product } from "../types/inventory";
 import { restClient } from "./api";
 
@@ -66,6 +67,54 @@ export class ProductService {
     );
     return response.data;
   }
+
+  /**
+   * Free-text search for the document form's product picker.
+   *
+   * Uses the `query` parameter, which is the one the endpoint actually reads for
+   * free text (it accepts `query`, `codigoProducto` and `codigoBarra` only) — so
+   * this matches on code and name in a single call, which is what someone typing
+   * into a picker expects.
+   *
+   * The endpoint answers 404 with an empty payload when nothing matches, so an
+   * empty result is returned rather than letting a "no matches" read like a
+   * failure. Its paging is 0-based.
+   */
+  async buscarParaDocumento(
+    query: string,
+    pageNumber = 0,
+    pageSize = 20
+  ): Promise<ProductSearchResponse> {
+    const empty: ProductSearchResponse = {
+      data: [],
+      total: 0,
+      pageNumber,
+      pageSize,
+      totalPages: 0,
+      totalResults: 0,
+    };
+
+    try {
+      const response = await restClient.get<ProductSearchResponse>(
+        `${this.baseEndpoint}/buscar-productos`,
+        { params: { query: query || undefined, pageNumber, pageSize } }
+      );
+      return response.data ?? empty;
+    } catch (error: any) {
+      if (error?.response?.status === 404) return empty;
+      throw error;
+    }
+  }
+
+  /**
+   * Registers a product with only the basics (name + sale price), so capturing a
+   * document never dead-ends on something that isn't in the catalogue yet.
+   * Omitting `codigo` lets the server derive one from the name.
+   */
+  async crearProducto(request: NewProductRequest): Promise<CreatedProduct> {
+    const response = await restClient.post<CreatedProduct>(this.baseEndpoint, request);
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -116,4 +165,22 @@ export const searchProductsByText = async (
     pageNumber,
     pageSize
   );
+};
+
+/**
+ * Free-text product search for the document form - Convenience function for UI components
+ */
+export const searchProductsForDocument = async (
+  query: string,
+  pageNumber = 0,
+  pageSize = 20
+): Promise<ProductSearchResponse> => {
+  return productService.buscarParaDocumento(query, pageNumber, pageSize);
+};
+
+/**
+ * Quick product registration - Convenience function for UI components
+ */
+export const createProduct = async (request: NewProductRequest): Promise<CreatedProduct> => {
+  return productService.crearProducto(request);
 };
