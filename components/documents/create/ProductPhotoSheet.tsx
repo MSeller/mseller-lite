@@ -36,6 +36,8 @@ const ProductPhotoSheet: React.FC<Props> = ({ product, onDismiss, onSaved }) => 
   useEffect(() => {
     setFoto(null);
     setError("");
+    // The field may have unmounted mid-upload and never reported that it finished.
+    setSubiendo(false);
   }, [product]);
 
   const guardar = useCallback(async () => {

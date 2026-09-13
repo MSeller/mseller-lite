@@ -45,13 +45,14 @@ export class ImageTooLargeError extends Error {
   }
 }
 
-/** Builds the data URI the callable expects from picker output. */
-export const toImageDataUri = (base64: string, mimeType?: string): string => {
-  // The callable accepts JPEG and PNG. The picker re-encodes to JPEG when a quality is set,
-  // so anything that is not explicitly PNG is sent as JPEG.
-  const tipo = mimeType === "image/png" ? "png" : "jpeg";
-  return `data:image/${tipo};base64,${base64}`;
-};
+/**
+ * Builds the data URI the callable expects from the picker's `base64`.
+ *
+ * Always JPEG. expo-image-picker encodes `base64` with `Bitmap.CompressFormat.JPEG` whatever
+ * the picked file was, while `mimeType` describes the output file — a PNG from the gallery
+ * would have been labelled PNG around JPEG bytes.
+ */
+export const toImageDataUri = (base64: string): string => `data:image/jpeg;base64,${base64}`;
 
 /**
  * Uploads images to the media library and returns them in the same order. The callable

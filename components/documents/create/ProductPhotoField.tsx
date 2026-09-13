@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { ActivityIndicator, Button, HelperText, Icon, useTheme } from "react-native-paper";
 
@@ -35,6 +35,16 @@ const ProductPhotoField: React.FC<Props> = ({ value, onChange, currentUrl, onBus
   const [subiendo, setSubiendo] = useState(false);
   const [error, setError] = useState("");
 
+  // An upload outlives the field if the user leaves the form mid-upload. Its result must
+  // not reach the parent then, or the next product created would carry that stale photo.
+  const montado = useRef(true);
+  useEffect(() => {
+    montado.current = true;
+    return () => {
+      montado.current = false;
+    };
+  }, []);
+
   const elegir = useCallback(
     async (source: PhotoSource) => {
       setError("");
@@ -42,14 +52,17 @@ const ProductPhotoField: React.FC<Props> = ({ value, onChange, currentUrl, onBus
       onBusyChange?.(true);
       try {
         const subida = await pickAndUploadProductPhoto(source);
-        if (subida) onChange(subida);
+        if (subida && montado.current) onChange(subida);
       } catch (e) {
+        if (!montado.current) return;
         if (e instanceof PhotoPermissionError) setError(t("documents.productPhoto.cameraPermission"));
         else if (e instanceof ImageTooLargeError) setError(t("documents.productPhoto.tooLarge"));
         else setError(t("documents.productPhoto.uploadFailed"));
       } finally {
-        setSubiendo(false);
-        onBusyChange?.(false);
+        if (montado.current) {
+          setSubiendo(false);
+          onBusyChange?.(false);
+        }
       }
     },
     [onChange, onBusyChange, t]

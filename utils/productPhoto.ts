@@ -57,7 +57,7 @@ export const pickAndUploadProductPhoto = async (
   });
   if (!foto?.base64) return null;
 
-  const [media] = await uploadImages([toImageDataUri(foto.base64, foto.mimeType)], "products");
+  const [media] = await uploadImages([toImageDataUri(foto.base64)], "products");
 
   return {
     preview: foto.uri,
