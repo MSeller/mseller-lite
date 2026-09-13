@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Card, Divider, IconButton, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Divider, IconButton, Text, TextInput, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import type { CartLine } from "../../../types/documents";
+import AppCard from "../../ui/AppCard";
 import {
   calculateLineTotals,
   formatMoney,
@@ -66,8 +67,8 @@ const CartLineCard: React.FC<Props> = ({
   };
 
   return (
-    <Card style={styles.card} mode="elevated">
-      <Card.Content style={styles.content}>
+    <AppCard>
+      <View style={styles.content}>
         <View style={styles.headerRow}>
           <View style={styles.titleBlock}>
             <Text variant="titleSmall" style={styles.title} numberOfLines={2}>
@@ -190,19 +191,16 @@ const CartLineCard: React.FC<Props> = ({
             />
           </View>
         )}
-      </Card.Content>
-    </Card>
+      </View>
+    </AppCard>
   );
 };
 
 const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
-    card: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
-    },
     content: {
       paddingVertical: 12,
+      paddingHorizontal: 14,
       gap: 8,
     },
     headerRow: {
@@ -248,6 +246,11 @@ const createStyles = (theme: CustomTheme) =>
     quantityInput: {
       width: 84,
       backgroundColor: theme.colors.surface,
+    },
+    stepperWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
     },
     quantityInputContent: {
       textAlign: "center",

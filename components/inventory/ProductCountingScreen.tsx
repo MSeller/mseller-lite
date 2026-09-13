@@ -414,7 +414,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Search Mode Toggle */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View
               style={{
@@ -518,7 +518,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
         {/* Found Product */}
         {foundProduct && (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -595,7 +595,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
         {/* Product Navigation (for systematic counting) */}
         {products.length > 0 && (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -689,7 +689,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    elevation: 4,
     borderRadius: 12,
   },
   sectionTitle: {
@@ -724,7 +723,7 @@ const styles = StyleSheet.create({
   productCode: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#666",
+    color: "#5C6773",
   },
   location: {
     fontSize: 14,
@@ -732,7 +731,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityInfo: {
-    backgroundColor: "#F5F5F5",
+    backgroundColor: "#EDF1F6",
     padding: 12,
     borderRadius: 8,
     marginBottom: 8,
@@ -760,7 +759,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: "#EDF1F6",
     borderRadius: 8,
   },
   productInfo: {

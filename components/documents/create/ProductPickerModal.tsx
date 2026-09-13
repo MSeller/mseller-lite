@@ -367,7 +367,10 @@ const ProductPickerModal: React.FC<Props> = ({
 const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
     modal: {
-      backgroundColor: theme.colors.background,
+      // A picker is a full-height sheet of rows, so it sits on `surface` rather
+      // than the paper page tone — the rows read crisper on white, and the sheet
+      // reads as something that came up over the screen.
+      backgroundColor: theme.colors.surface,
       margin: 0,
       flex: 1,
     },

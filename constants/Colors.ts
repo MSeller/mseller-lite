@@ -1,26 +1,33 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Flat colour lookup for the few places that read colours outside the
+ * react-native-paper theme — the tab bar and `useThemeColor`.
+ *
+ * These MIRROR the palette in `constants/Theme.ts`; that file is the source of
+ * truth. Anything new should read the Paper theme (`useTheme()`) or the design
+ * tokens (`theme.custom`) instead of adding entries here.
  */
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
 
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    text: "#141A21",
+    // The paper tone the whole app sits on, so the tab bar matches the page
+    // rather than drawing a white band under it.
+    background: "#F5F7FA",
+    surface: "#FFFFFF",
+    tint: "#14395E",
+    icon: "#5C6773",
+    border: "#E3E8EF",
+    tabIconDefault: "#8A94A1",
+    tabIconSelected: "#14395E",
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    text: "#E7EBEF",
+    background: "#0E1216",
+    surface: "#171D23",
+    tint: "#9DC2EA",
+    icon: "#9BA6B2",
+    border: "#2A323B",
+    tabIconDefault: "#75808C",
+    tabIconSelected: "#9DC2EA",
   },
 };

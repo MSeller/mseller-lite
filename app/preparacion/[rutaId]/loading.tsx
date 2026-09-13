@@ -192,7 +192,7 @@ export default function LoadingScreen() {
     const locked = item.confirmado || isDeclined;
 
     const accent = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? "#B26A00" : "#2E7D32") : "#E8820C";
-    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#FFF4E5" : "#E7F5E9") : "#FFF4E5";
+    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? "#F6E7CB" : "#E7F5E9") : "#F6E7CB";
     const pillFg = accent;
     const pillText = isDeclined
       ? t("preparacion.declined")
@@ -202,7 +202,7 @@ export default function LoadingScreen() {
     const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
 
     return (
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: locked ? 0.8 : 1 }]}>
+      <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: locked ? 0.8 : 1 }]}>
         <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
@@ -230,7 +230,7 @@ export default function LoadingScreen() {
               {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
             {!!reason && (
-              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : "#FFF4E5" }]}>
+              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : "#F6E7CB" }]}>
                 <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
                 <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
               </View>
@@ -373,14 +373,14 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 6, borderWidth: 1, gap: 4 },
   infoRow: { flexDirection: "row", alignItems: "center" },
-  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1, elevation: 1 },
+  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1 },
   progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
   progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
   progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
   progressBar: { height: 8, borderRadius: 4 },
   listContent: { padding: 16, paddingBottom: 120 },
   separator: { height: 10 },
-  card: { borderRadius: 6, borderLeftWidth: 5, elevation: 2 },
+  card: { borderRadius: 6, borderLeftWidth: 5 },
   cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
   cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },

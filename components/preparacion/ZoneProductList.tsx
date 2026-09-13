@@ -80,13 +80,13 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
           <View
             style={[
               styles.zoneIconWrap,
-              { backgroundColor: isComplete ? "#E8F5E9" : "#E8EEFF" },
+              { backgroundColor: isComplete ? "#D6EDE3" : "#DCE7F3" },
             ]}
           >
             <Icon
               source={isComplete ? "check-all" : "package-variant"}
               size={18}
-              color={isComplete ? "#388E3C" : "#003ec7"}
+              color={isComplete ? "#1F6B54" : "#14395E"}
             />
           </View>
           <Text
@@ -104,11 +104,11 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
             compact
             style={[
               styles.itemsChip,
-              { backgroundColor: isComplete ? "#E8F5E9" : theme.colors.surfaceVariant },
+              { backgroundColor: isComplete ? "#D6EDE3" : theme.colors.surfaceVariant },
             ]}
             textStyle={[
               styles.itemsChipText,
-              { color: isComplete ? "#388E3C" : theme.colors.onSurfaceVariant },
+              { color: isComplete ? "#1F6B54" : theme.colors.onSurfaceVariant },
             ]}
           >
             {`${confirmedCount}/${section.allProducts.length} ${t("preparacion.items")}`}
@@ -144,7 +144,7 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
           loading={isConfirming}
           disabled={isConfirming}
           icon={isConfirming ? undefined : "check-circle"}
-          style={[styles.confirmZoneButton, { backgroundColor: "#003ec7" }]}
+          style={[styles.confirmZoneButton, { backgroundColor: "#14395E" }]}
           contentStyle={styles.confirmZoneButtonContent}
           labelStyle={styles.confirmZoneLabel}
         >

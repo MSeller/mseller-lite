@@ -205,7 +205,7 @@ export default function FacturaEntregaScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Customer */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.custHeader}>
               <View style={{ flex: 1 }}>
@@ -263,7 +263,7 @@ export default function FacturaEntregaScreen() {
         )}
 
         {/* Lines */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
               {t("entrega.items")} ({data.lineas.length})
@@ -505,12 +505,12 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   scroll: { padding: 16, paddingBottom: 24 },
-  card: { borderRadius: 12, elevation: 2, marginBottom: 12 },
+  card: { borderRadius: 12, marginBottom: 12 },
   custHeader: { flexDirection: "row", alignItems: "center" },
   infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
-  infoText: { flex: 1, color: "#666" },
-  recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#E3F2FD" },
-  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#FFF4E5" },
+  infoText: { flex: 1, color: "#5C6773" },
+  recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#DCE7F3" },
+  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#F6E7CB" },
   lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
   totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
   stepper: { flexDirection: "row", alignItems: "center" },
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
   payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   payChip: { marginBottom: 4 },
   photoWrap: { alignSelf: "flex-start", position: "relative" },
-  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EEE" },
+  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EDF1F6" },
   photoOverlay: {
     position: "absolute",
     top: 0, left: 0, right: 0, bottom: 0,

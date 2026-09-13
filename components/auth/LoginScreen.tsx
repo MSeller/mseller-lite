@@ -89,7 +89,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <View style={styles.container}>
-      <Surface style={styles.background}>
+      <Surface style={styles.background} elevation={0}>
         <KeyboardAvoidingView
           style={styles.keyboardContainer}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -106,7 +106,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
               </View>
 
               {/* Login Card */}
-              <Card
+              <Card elevation={0}
                 style={[styles.card, { backgroundColor: theme.colors.surface }]}
               >
                 <Card.Content style={styles.cardContent}>
@@ -276,15 +276,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   card: {
-    elevation: 8,
     borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
   },
   cardContent: {
     padding: 24,

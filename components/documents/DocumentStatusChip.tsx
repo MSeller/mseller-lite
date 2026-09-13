@@ -26,11 +26,15 @@ const DocumentStatusChip: React.FC<Props> = ({ procesado, anulado = false, compa
     ? { labelKey: "documents.status.anulado", tone: "negative" as StatusTone }
     : getStatusMeta(procesado);
 
+  // Read from the dedicated status palette, not the MD3 secondary/tertiary
+  // roles: those are also Paper's tonal-button and selected-chip colours, and
+  // borrowing them makes an ordinary button look like a success state.
+  const { status } = theme.custom;
   const toneColors: Record<StatusTone, { bg: string; fg: string }> = {
-    positive: { bg: theme.colors.secondaryContainer, fg: theme.colors.onSecondaryContainer },
-    pending: { bg: theme.colors.surfaceVariant, fg: theme.colors.onSurfaceVariant },
-    warning: { bg: theme.colors.tertiaryContainer, fg: theme.colors.onTertiaryContainer },
-    negative: { bg: theme.colors.errorContainer, fg: theme.colors.onErrorContainer },
+    positive: { bg: status.positive.container, fg: status.positive.onContainer },
+    pending: { bg: status.neutral.container, fg: status.neutral.onContainer },
+    warning: { bg: status.warning.container, fg: status.warning.onContainer },
+    negative: { bg: status.negative.container, fg: status.negative.onContainer },
   };
 
   const colors = toneColors[meta.tone];
@@ -49,6 +53,8 @@ const DocumentStatusChip: React.FC<Props> = ({ procesado, anulado = false, compa
 const styles = StyleSheet.create({
   chip: {
     alignSelf: "flex-start",
+    // The chip's own hairline would double up with the tint; the fill is enough.
+    borderWidth: 0,
   },
   text: {
     fontSize: 11,

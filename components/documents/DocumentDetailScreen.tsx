@@ -6,7 +6,6 @@ import {
   Appbar,
   Banner,
   Button,
-  Card,
   Chip,
   Divider,
   Icon,
@@ -25,6 +24,8 @@ import {
   formatQuantity,
   formatUnitWithFactor,
 } from "../../utils/documentFormat";
+import AppCard from "../ui/AppCard";
+import SectionHeader from "../ui/SectionHeader";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
 
@@ -104,8 +105,8 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.content}>
-          <Card mode="elevated" style={styles.card}>
-            <Card.Content style={styles.headerCardContent}>
+          <AppCard style={styles.card}>
+            <View style={styles.headerCardContent}>
               <View style={styles.headerTop}>
                 <View style={styles.headerLeft}>
                   <Text variant="titleLarge" style={styles.customerName} numberOfLines={2}>
@@ -157,20 +158,20 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
               )}
               {!!document.nota && (
                 <View style={styles.noteBox}>
-                  <Text variant="bodySmall" style={styles.metaValue}>
+                  <Text variant="bodySmall" style={styles.noteText}>
                     {document.nota}
                   </Text>
                 </View>
               )}
-            </Card.Content>
-          </Card>
+            </View>
+          </AppCard>
 
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            {t("documents.lines")} ({document.detalle.length})
-          </Text>
+          <SectionHeader
+            title={`${t("documents.lines")} (${document.detalle.length})`}
+          />
 
-          <Card mode="elevated" style={styles.card}>
-            <Card.Content style={styles.linesContent}>
+          <AppCard style={styles.card}>
+            <View style={styles.linesContent}>
               {document.detalle.map((line, index) => (
                 <View key={`${line.codigoProducto}-${index}`}>
                   {index > 0 && <Divider style={styles.lineDivider} />}
@@ -194,11 +195,11 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
                   </View>
                 </View>
               ))}
-            </Card.Content>
-          </Card>
+            </View>
+          </AppCard>
 
-          <Card mode="contained" style={styles.totalsCard}>
-            <Card.Content style={styles.totalsContent}>
+          <AppCard variant="inset" style={styles.totalsCard}>
+            <View style={styles.totalsContent}>
               <View style={styles.totalsRow}>
                 <Text variant="bodyMedium" style={styles.metaLabel}>
                   {t("documents.subtotal")}
@@ -232,11 +233,11 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
                   {formatMoney(document.total)}
                 </Text>
               </View>
-            </Card.Content>
-          </Card>
+            </View>
+          </AppCard>
 
           <Button
-            mode="contained-tonal"
+            mode="outlined"
             icon="plus"
             onPress={() => router.replace("/documentos/nuevo")}
             style={styles.newButton}
@@ -274,11 +275,10 @@ const createStyles = (theme: CustomTheme) =>
       gap: 12,
     },
     card: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
+      marginBottom: 4,
     },
     headerCardContent: {
-      paddingVertical: 16,
+      padding: 16,
       gap: 8,
     },
     headerTop: {
@@ -327,17 +327,17 @@ const createStyles = (theme: CustomTheme) =>
     },
     noteBox: {
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 10,
-      padding: 10,
+      borderRadius: theme.custom.radius.sm,
+      padding: 12,
       marginTop: 4,
     },
-    sectionTitle: {
-      color: theme.colors.onBackground,
-      fontWeight: "700",
-      marginTop: 4,
+    noteText: {
+      color: theme.colors.onSurface,
+      lineHeight: 18,
     },
     linesContent: {
-      paddingVertical: 8,
+      paddingHorizontal: 16,
+      paddingVertical: 6,
     },
     lineRow: {
       flexDirection: "row",
@@ -362,12 +362,11 @@ const createStyles = (theme: CustomTheme) =>
       marginVertical: 2,
     },
     totalsCard: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surfaceVariant,
+      marginTop: 4,
     },
     totalsContent: {
       gap: 8,
-      paddingVertical: 14,
+      padding: 16,
     },
     totalsRow: {
       flexDirection: "row",
@@ -384,7 +383,8 @@ const createStyles = (theme: CustomTheme) =>
       fontWeight: "800",
     },
     newButton: {
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.md,
+      borderColor: theme.colors.outlineVariant,
       marginTop: 4,
     },
     newButtonContent: {

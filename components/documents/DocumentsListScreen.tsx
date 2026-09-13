@@ -4,8 +4,6 @@ import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Banner,
-  Card,
-  Divider,
   FAB,
   Icon,
   Searchbar,
@@ -20,6 +18,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { listDocuments } from "../../services/documentService";
 import type { DocumentSummary, DocumentType } from "../../types/documents";
 import { formatDateShort, formatMoney } from "../../utils/documentFormat";
+import AppCard from "../ui/AppCard";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
 
@@ -111,13 +110,11 @@ const DocumentsListScreen: React.FC = () => {
       const accent = theme.colors[meta.accent];
 
       return (
-        <Card
-          style={styles.card}
-          mode="elevated"
+        <AppCard
           onPress={() => router.push(`/documentos/${encodeURIComponent(item.noPedidoStr)}`)}
         >
-          <Card.Content style={styles.cardContent}>
-            <View style={[styles.typeBadge, { backgroundColor: `${accent}1A` }]}>
+          <View style={styles.cardContent}>
+            <View style={[styles.typeBadge, { backgroundColor: `${accent}14` }]}>
               <Icon source={meta.icon} size={22} color={accent} />
             </View>
 
@@ -143,8 +140,8 @@ const DocumentsListScreen: React.FC = () => {
                 </Text>
               </View>
             </View>
-          </Card.Content>
-        </Card>
+          </View>
+        </AppCard>
       );
     },
     [theme, styles, router, t]
@@ -189,6 +186,15 @@ const DocumentsListScreen: React.FC = () => {
           onValueChange={(value) => setTypeFilter(value as TypeFilter)}
           density="medium"
           style={styles.filters}
+          // MD3 paints the selected segment with the secondary container. Point
+          // it at the brand tone instead so an active filter reads as selected
+          // rather than as a status.
+          theme={{
+            colors: {
+              secondaryContainer: theme.colors.primaryContainer,
+              onSecondaryContainer: theme.colors.onPrimaryContainer,
+            },
+          }}
           buttons={[
             { value: "all", label: t("documents.filter.all") },
             { value: "invoice", label: t("documents.type.invoice") },
@@ -233,12 +239,14 @@ const DocumentsListScreen: React.FC = () => {
         />
       )}
 
-      <Divider />
-
       <FAB
         icon="plus"
         label={t("documents.newDocument")}
         style={styles.fab}
+        // Paper reads the content colour from these props, not from `style` —
+        // tinting the background there alone leaves dark text on a dark FAB.
+        color={theme.colors.onPrimary}
+        customSize={56}
         onPress={() => router.push("/documentos/nuevo")}
       />
     </SafeAreaView>
@@ -287,15 +295,12 @@ const createStyles = (theme: CustomTheme) =>
     separator: {
       height: 10,
     },
-    card: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
-    },
     cardContent: {
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
       paddingVertical: 14,
+      paddingHorizontal: 14,
     },
     typeBadge: {
       width: 44,
@@ -363,7 +368,9 @@ const createStyles = (theme: CustomTheme) =>
       position: "absolute",
       right: 16,
       bottom: 24,
-      borderRadius: 16,
+      ...theme.custom.surface.floating,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 8,
     },
   });
 

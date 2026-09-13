@@ -142,12 +142,10 @@ const styles = StyleSheet.create({
     height: 60,
     paddingBottom: 8,
     paddingTop: 4,
-    borderTopWidth: 0,
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
+    // A hairline rule marks the boundary. An upward shadow only smudges the
+    // edge of the screen and reads as a rendering artefact on a light page.
+    borderTopWidth: StyleSheet.hairlineWidth,
+    elevation: 0,
   },
   tabBarLabel: {
     fontSize: 11,

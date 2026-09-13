@@ -6,7 +6,6 @@ import {
   Appbar,
   Banner,
   Button,
-  Card,
   Chip,
   Divider,
   Icon,
@@ -29,6 +28,8 @@ import {
 } from "../../../services/paymentConditionService";
 import { DOCUMENT_TYPES, type CustomerSummary, type DocumentType } from "../../../types/documents";
 import { formatMoney } from "../../../utils/documentFormat";
+import AppCard from "../../ui/AppCard";
+import SectionHeader from "../../ui/SectionHeader";
 import { DOCUMENT_TYPE_META } from "../documentMeta";
 import CartLineCard from "./CartLineCard";
 import CustomerPickerModal from "./CustomerPickerModal";
@@ -153,9 +154,7 @@ const DocumentCreateScreen: React.FC = () => {
 
   const renderTypeAndCustomer = () => (
     <View style={styles.stepBody}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {t("documents.stepType")}
-      </Text>
+      <SectionHeader title={t("documents.stepType")} />
 
       <View style={styles.typeRow}>
         {DOCUMENT_TYPES.map((type) => {
@@ -190,13 +189,10 @@ const DocumentCreateScreen: React.FC = () => {
         })}
       </View>
 
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {t("documents.stepCustomer")}
-      </Text>
+      <SectionHeader title={t("documents.stepCustomer")} />
 
-      <Card mode="outlined" style={styles.selectorCard}>
-        <TouchableRipple onPress={() => setCustomerPickerOpen(true)} style={styles.selector}>
-          <View style={styles.selectorInner}>
+      <AppCard onPress={() => setCustomerPickerOpen(true)}>
+        <View style={styles.selectorInner}>
             <View style={styles.selectorIcon}>
               <Icon
                 source={customer ? "account-check" : "account-search"}
@@ -226,14 +222,11 @@ const DocumentCreateScreen: React.FC = () => {
                 </>
               )}
             </View>
-            <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />
-          </View>
-        </TouchableRipple>
-      </Card>
+          <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />
+        </View>
+      </AppCard>
 
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {t("documents.paymentCondition")}
-      </Text>
+      <SectionHeader title={t("documents.paymentCondition")} />
 
       {conditionsLoading ? (
         <ActivityIndicator style={styles.inlineLoader} />
@@ -305,8 +298,8 @@ const DocumentCreateScreen: React.FC = () => {
 
   const renderReview = () => (
     <View style={styles.stepBody}>
-      <Card mode="outlined" style={styles.summaryCard}>
-        <Card.Content style={styles.summaryContent}>
+      <AppCard style={styles.summaryCard}>
+        <View style={styles.summaryContent}>
           <View style={styles.summaryRow}>
             <Text variant="bodyMedium" style={styles.summaryLabel}>
               {t("documents.documentType")}
@@ -341,8 +334,8 @@ const DocumentCreateScreen: React.FC = () => {
               {cart.lines.length}
             </Text>
           </View>
-        </Card.Content>
-      </Card>
+        </View>
+      </AppCard>
 
       <TextInput
         mode="outlined"
@@ -354,8 +347,8 @@ const DocumentCreateScreen: React.FC = () => {
         style={styles.noteInput}
       />
 
-      <Card mode="contained" style={styles.totalsCard}>
-        <Card.Content style={styles.summaryContent}>
+      <AppCard variant="inset" style={styles.totalsCard}>
+        <View style={styles.summaryContent}>
           <View style={styles.summaryRow}>
             <Text variant="bodyMedium" style={styles.summaryLabel}>
               {t("documents.subtotal")}
@@ -389,8 +382,8 @@ const DocumentCreateScreen: React.FC = () => {
               {formatMoney(cart.totals.total)}
             </Text>
           </View>
-        </Card.Content>
-      </Card>
+        </View>
+      </AppCard>
 
       <Text variant="bodySmall" style={styles.disclaimer}>
         {t("documents.totalsDisclaimer")}
@@ -508,19 +501,14 @@ const createStyles = (theme: CustomTheme) =>
     stepBody: {
       gap: 14,
     },
-    sectionTitle: {
-      color: theme.colors.onBackground,
-      fontWeight: "700",
-      marginTop: 4,
-    },
     typeRow: {
       flexDirection: "row",
       gap: 10,
     },
     typeCard: {
       flex: 1,
-      borderRadius: 14,
-      borderWidth: 1.5,
+      borderRadius: theme.custom.radius.md,
+      borderWidth: 1,
       borderColor: theme.colors.outlineVariant,
       backgroundColor: theme.colors.surface,
       overflow: "hidden",
@@ -538,16 +526,8 @@ const createStyles = (theme: CustomTheme) =>
       color: theme.colors.onSurfaceVariant,
       textAlign: "center",
     },
-    selectorCard: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
-    },
-    selector: {
-      borderRadius: 14,
-      minHeight: 72,
-      justifyContent: "center",
-    },
     selectorInner: {
+      minHeight: 72,
       flexDirection: "row",
       alignItems: "center",
       gap: 12,
@@ -614,12 +594,11 @@ const createStyles = (theme: CustomTheme) =>
       textAlign: "center",
     },
     summaryCard: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
+      marginBottom: 2,
     },
     summaryContent: {
       gap: 8,
-      paddingVertical: 14,
+      padding: 16,
     },
     summaryRow: {
       flexDirection: "row",
@@ -640,8 +619,7 @@ const createStyles = (theme: CustomTheme) =>
       backgroundColor: theme.colors.surface,
     },
     totalsCard: {
-      borderRadius: 14,
-      backgroundColor: theme.colors.surfaceVariant,
+      marginTop: 2,
     },
     totalsDivider: {
       marginVertical: 4,
@@ -664,7 +642,7 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "center",
       gap: 12,
       padding: 16,
-      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopWidth: theme.custom.hairline,
       borderTopColor: theme.colors.outlineVariant,
       backgroundColor: theme.colors.surface,
     },

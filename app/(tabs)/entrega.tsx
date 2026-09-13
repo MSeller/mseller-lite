@@ -28,7 +28,7 @@ const statusColor: Record<RutaPreparacionStatus, string> = {
   confirmada: "#1976D2",
   en_preparacion: "#F9A825",
   lista_despacho: "#EF6C00",
-  en_ruta: "#388E3C",
+  en_ruta: "#1F6B54",
   completada: "#00897B",
   cancelada: "#D32F2F",
 };
@@ -88,13 +88,13 @@ export default function EntregaTab() {
         activeOpacity={0.7}
         style={styles.cardTouchable}
       >
-        <Card
+        <Card elevation={0}
           style={[
             styles.card,
             {
               backgroundColor: theme.colors.surface,
               borderLeftWidth: ruta.esActiva ? 4 : 0,
-              borderLeftColor: "#388E3C",
+              borderLeftColor: "#1F6B54",
             },
           ]}
         >
@@ -153,7 +153,7 @@ export default function EntregaTab() {
 
             <ProgressBar
               progress={progress}
-              color={progress >= 1 ? "#388E3C" : theme.colors.primary}
+              color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
               style={styles.progressBar}
             />
           </Card.Content>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
   scrollContent: { padding: 16, paddingTop: 0, paddingBottom: 100 },
   cardTouchable: { marginBottom: 12 },
-  card: { borderRadius: 12, elevation: 3 },
+  card: { borderRadius: 14 },
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
-  activeChip: { backgroundColor: "#E8F5E9" },
+  activeChip: { backgroundColor: "#D6EDE3" },
   activeChipText: { color: "#2E7D32", fontSize: 11 },
   metaItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   progressBar: { height: 6, borderRadius: 3, marginTop: 4 },

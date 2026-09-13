@@ -48,7 +48,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <View style={styles.content}>
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={[styles.title, { color: theme.colors.primary }]}>
               Reset Password
@@ -139,7 +139,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   card: {
-    elevation: 4,
     borderRadius: 12,
   },
   title: {

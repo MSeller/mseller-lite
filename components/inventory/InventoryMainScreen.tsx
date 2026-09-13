@@ -143,7 +143,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
       case EstadoConteo.EnProgreso:
         return "#1976D2"; // Material Blue 700
       case EstadoConteo.Completado:
-        return "#388E3C"; // Material Green 700
+        return "#1F6B54"; // Material Green 700
       case EstadoConteo.Reconciliado:
         return "#7B1FA2"; // Material Purple 700
       case EstadoConteo.Planificado:
@@ -209,7 +209,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
         }
       >
         {/* Header */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <View style={styles.header}>
               <View style={styles.headerInfo}>
@@ -248,7 +248,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
 
         {/* Offline Operations Alert */}
         {offlineOperationsCount > 0 && (
-          <Card style={[styles.card, styles.warningCard]}>
+          <Card elevation={0} style={[styles.card, styles.warningCard]}>
             <Card.Content>
               <View style={styles.offlineAlert}>
                 <View style={styles.offlineInfo}>
@@ -277,7 +277,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
 
         {/* Active Count Section */}
         {activeCount ? (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -371,7 +371,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
             </Card.Content>
           </Card>
         ) : (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content style={styles.noActiveCount}>
@@ -393,7 +393,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
 
         {/* Recent Counts */}
         {allCounts.length > 0 && (
-          <Card
+          <Card elevation={0}
             style={[styles.card, { backgroundColor: theme.colors.surface }]}
           >
             <Card.Content>
@@ -485,7 +485,6 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    elevation: 4,
     borderRadius: 12,
   },
   warningCard: {

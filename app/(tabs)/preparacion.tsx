@@ -32,7 +32,7 @@ const statusConfig: Record<
   confirmada: { color: "#1976D2", label: "Confirmada" },
   en_preparacion: { color: "#F9A825", label: "En Preparación" },
   lista_despacho: { color: "#EF6C00", label: "Lista Despacho" },
-  en_ruta: { color: "#388E3C", label: "En Ruta" },
+  en_ruta: { color: "#1F6B54", label: "En Ruta" },
   completada: { color: "#00897B", label: "Completada" },
   cancelada: { color: "#D32F2F", label: "Cancelada" },
 };
@@ -96,7 +96,7 @@ export default function PreparacionTab() {
         activeOpacity={0.7}
         style={styles.cardTouchable}
       >
-        <Card
+        <Card elevation={0}
           style={[styles.card, { backgroundColor: theme.colors.surface }]}
         >
           <Card.Content>
@@ -140,7 +140,7 @@ export default function PreparacionTab() {
             <View style={styles.progressRow}>
               <ProgressBar
                 progress={progress}
-                color={progress >= 1 ? "#388E3C" : theme.colors.primary}
+                color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
                 style={styles.progressBar}
               />
               <Text
@@ -173,7 +173,7 @@ export default function PreparacionTab() {
           </Text>
         </View>
         {[1, 2, 3].map((i) => (
-          <Card
+          <Card elevation={0}
             key={i}
             style={[
               styles.card,
@@ -277,8 +277,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    borderRadius: 12,
-    elevation: 3,
+    borderRadius: 14,
   },
   cardHeader: {
     flexDirection: "row",
@@ -313,6 +312,6 @@ const styles = StyleSheet.create({
   skeletonLine: {
     height: 14,
     borderRadius: 4,
-    backgroundColor: "#D0D0D0",
+    backgroundColor: "#DCE2EA",
   },
 });

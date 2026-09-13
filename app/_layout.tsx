@@ -6,7 +6,7 @@ import {
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { PaperProvider } from "react-native-paper";
 import "react-native-reanimated";
 
@@ -25,6 +25,32 @@ function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const { user, loading } = useAuth();
 
+  /**
+   * React Navigation paints the page behind every screen from its OWN theme, and
+   * its default is a flat grey that has nothing to do with our palette. Deriving
+   * it from the design system is what makes the paper-tone page consistent app
+   * wide — and it is what lets white cards read as raised without a shadow,
+   * instead of sitting invisibly on a near-white background.
+   */
+  const navigationTheme = useMemo(() => {
+    const isDark = colorScheme === "dark";
+    const base = isDark ? DarkTheme : DefaultTheme;
+    const { colors } = getTheme(isDark);
+
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.onSurface,
+        border: colors.outlineVariant,
+        primary: colors.primary,
+        notification: colors.error,
+      },
+    };
+  }, [colorScheme]);
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -34,7 +60,7 @@ function RootLayoutContent() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={navigationTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen
