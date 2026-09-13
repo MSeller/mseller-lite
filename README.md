@@ -57,7 +57,7 @@
 
 ### Prerequisites
 
-- Node.js (v18 or higher)
+- Node.js (v20.19.4 or higher, required by Expo SDK 54)
 - pnpm
 - Expo CLI
 - iOS Simulator (for iOS development)
