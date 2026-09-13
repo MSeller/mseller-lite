@@ -38,6 +38,11 @@ export default {
     },
     android: {
       package: PACKAGE_ID,
+      // Set by scripts/distribute-android.js so every tester build upgrades the last one.
+      // EAS builds ignore it (appVersionSource: remote).
+      ...(process.env.ANDROID_VERSION_CODE && {
+        versionCode: Number(process.env.ANDROID_VERSION_CODE),
+      }),
       icon: "./assets/images/Icon-square.png",
       adaptiveIcon: {
         foregroundImage: "./assets/images/Icon-square.png",

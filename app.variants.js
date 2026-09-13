@@ -3,6 +3,9 @@
  * scripts/with-env.js so the package id a build installs as and the Firebase
  * project it talks to can never be picked from two different places.
  *
+ * firebaseAndroidAppId is the Android app registered in that project for App
+ * Distribution (scripts/distribute-android.js). It is an identifier, not a secret.
+ *
  * The Firebase project is the whole backend switch: the API base URL comes from
  * the signed-in user's business config in that project's Firestore.
  */
@@ -13,6 +16,7 @@ const APP_ENVS = {
     scheme: "msellerlite-dev",
     envFile: ".env.dev",
     firebaseProjectId: "mseller-dev-40a08",
+    firebaseAndroidAppId: "1:1077247630111:android:1cd6826322c2465fb42e2a",
   },
   production: {
     name: "MSeller Lite",
@@ -20,6 +24,7 @@ const APP_ENVS = {
     scheme: "msellerlite",
     envFile: ".env.prod",
     firebaseProjectId: "mobile-seller-v3",
+    firebaseAndroidAppId: "1:744491375680:android:284590bf026c30af3453a5",
   },
 };
 
