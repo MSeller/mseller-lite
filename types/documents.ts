@@ -93,10 +93,22 @@ export interface CreateDocumentItem {
   /** Omit to sell at the product's list price. */
   precio?: number;
   factor?: number;
-  porcientoDescuento?: number;
+  /**
+   * Discount PERCENTAGE (0-100), not an amount. Named `descuento` to match the
+   * server's shared creation contract, which the MCP write tools publish under
+   * that name too.
+   */
+  descuento?: number;
   descripcionAdicional?: string;
 }
 
+/**
+ * Registering a customer on its own (`POST consumo/Cliente`).
+ *
+ * Note `tipoCliente` here vs `tipoComprobante` on {@link InlineCustomerRequest}:
+ * the same concept under two names, because the server's two published creation
+ * schemas disagree. Not ours to reconcile from this side.
+ */
 export interface NewCustomerRequest {
   /** Omit to let the server assign the next CLI-… code. */
   codigo?: string;
@@ -108,13 +120,32 @@ export interface NewCustomerRequest {
   email?: string;
   condicionPago?: string;
   localidadId?: number;
+  /** Fiscal document type (e.g. "B01"). */
+  tipoCliente?: string;
+}
+
+/**
+ * A customer captured together with the document that needs it, so it is created
+ * inside that document's transaction rather than before it.
+ */
+export interface InlineCustomerRequest {
+  /** Omit to let the server assign the next CLI-… code. */
+  codigo?: string;
+  nombre: string;
+  telefono?: string;
+  rnc?: string;
+  /** Fiscal document type (e.g. "B01"). */
   tipoComprobante?: string;
+  direccion?: string;
+  ciudad?: string;
+  email?: string;
+  localidadId?: number;
 }
 
 export interface CreateDocumentRequest {
   tipoDocumento: DocumentType;
   codigoCliente?: string;
-  clienteNuevo?: NewCustomerRequest;
+  nuevoCliente?: InlineCustomerRequest;
   codigoVendedor?: string;
   condicionPago?: string;
   localidadId?: number;
@@ -163,7 +194,8 @@ export interface NewProductRequest {
   /** Omit to let the server derive a code from the name. */
   codigo?: string;
   nombre: string;
-  precio: number;
+  /** Main sale price. Named `precio1` to match the server's shared contract. */
+  precio1: number;
   impuesto?: number;
   factor?: number;
   unidad?: string;

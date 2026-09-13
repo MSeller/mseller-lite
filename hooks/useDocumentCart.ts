@@ -91,7 +91,7 @@ export const useDocumentCart = () => {
         cantidad: l.cantidad,
         ...(l.precio !== l.precioLista ? { precio: l.precio } : {}),
         factor: l.factor,
-        ...(l.porcientoDescuento > 0 ? { porcientoDescuento: l.porcientoDescuento } : {}),
+        ...(l.porcientoDescuento > 0 ? { descuento: l.porcientoDescuento } : {}),
       })),
     [lines]
   );

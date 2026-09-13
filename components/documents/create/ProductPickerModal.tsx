@@ -146,7 +146,7 @@ const ProductPickerModal: React.FC<Props> = ({
     try {
       const payload: NewProductRequest = {
         nombre: trimmed,
-        precio: price,
+        precio1: price,
         impuesto: impuesto ? parseNumericInput(impuesto) : undefined,
         unidad: unidad.trim() || undefined,
       };
