@@ -64,6 +64,9 @@ function TabHeader({ rutaId }: { rutaId: string }) {
 export default function RutaIdLayout() {
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
   const { t } = useTranslation();
+  // A fixed tab bar height overrides React Navigation's inset padding, which put the
+  // tabs behind Android's navigation bar (and the iOS home indicator).
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
@@ -72,7 +75,10 @@ export default function RutaIdLayout() {
         header: () => <TabHeader rutaId={rutaId ?? ""} />,
         tabBarActiveTintColor: "#003ec7",
         tabBarInactiveTintColor: "#9E9E9E",
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [
+          styles.tabBar,
+          { height: 60 + insets.bottom, paddingBottom: 8 + insets.bottom },
+        ],
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
@@ -139,8 +145,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   tabBar: {
-    height: 60,
-    paddingBottom: 8,
     paddingTop: 4,
     // A hairline rule marks the boundary. An upward shadow only smudges the
     // edge of the screen and reads as a rendering artefact on a light page.
