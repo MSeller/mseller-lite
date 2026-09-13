@@ -42,7 +42,7 @@
 
 ## 🛠️ Tech Stack
 
-- **Framework**: React Native with Expo (~53.0.20)
+- **Framework**: React Native with Expo (~54.0.37)
 - **Navigation**: Expo Router with file-based routing
 - **UI Library**: React Native Paper
 - **Authentication**: Firebase Auth
@@ -146,7 +146,7 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
 
 ```bash
 # Run TypeScript validation
-npx tsc --noEmit
+pnpm exec tsc --noEmit
 
 # Run ESLint
 pnpm lint
