@@ -22,7 +22,8 @@
     "lastName": "Apellido",
     "search": "Buscar",
     "again": "De Nuevo",
-    "completed": "completado"
+    "completed": "completado",
+    "close": "Cerrar"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -479,6 +480,8 @@
       "title": "Nuevo cliente",
       "name": "Nombre o razón social",
       "phone": "Teléfono",
+      "contact": "Contacto",
+      "email": "Correo electrónico",
       "rnc": "RNC / Cédula",
       "address": "Dirección",
       "hint": "Solo el nombre es obligatorio. El resto lo puedes completar luego en el portal.",
@@ -507,6 +510,39 @@
       "customerCreateFailed": "No pudimos crear el cliente.",
       "productSearchFailed": "No pudimos buscar productos. Revisa tu conexión.",
       "productCreateFailed": "No pudimos crear el producto."
+    },
+    "share": {
+      "action": "Imprimir o enviar",
+      "title": "Imprimir y enviar",
+      "print": "Imprimir",
+      "reprint": "Volver a imprimir",
+      "savePdf": "Guardar PDF",
+      "emailIt": "Enviar por correo",
+      "send": "Enviar",
+      "resend": "Reenviar",
+      "isResend": "reenvío",
+      "recipients": "Destinatarios",
+      "recipientsHint": "Vacío envía al correo del cliente",
+      "message": "Mensaje (opcional)",
+      "queued": "El documento se puso en cola de envío.",
+      "history": "Envíos",
+      "noRecipients": "Sin destinatarios",
+      "pdfUnavailable": "Esta versión de la app no puede mostrar PDF. Actualiza la app para imprimir desde este dispositivo; el envío por correo funciona igual.",
+      "state": {
+        "Pendiente": "En cola",
+        "Enviando": "Enviando",
+        "Enviado": "Enviado",
+        "Fallido": "Falló",
+        "Cancelado": "Cancelado"
+      },
+      "errors": {
+        "failed": "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo.",
+        "unavailable": "El envío de documentos no está habilitado para esta cuenta.",
+        "popupBlocked": "El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio e inténtalo de nuevo."
+      },
+      "printedOnce": "Impreso 1 vez",
+      "printedTimes": "Impreso {{count}} veces",
+      "historyCapped": "Mostrando {{shown}} de {{total}} envíos"
     }
   }
 }

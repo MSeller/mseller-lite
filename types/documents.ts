@@ -49,6 +49,12 @@ export interface DocumentSummary {
   procesado: DocumentStatus | string;
   anulado: boolean;
   cantidadLineas: number;
+  /**
+   * The customer's address, used to pre-fill the email recipient. On the list row too, not
+   * only the detail: the server's listing query already resolves the customer, so this rides
+   * along and saves fetching a whole document just to print one from the list.
+   */
+  emailCliente?: string | null;
 }
 
 export interface DocumentLine {
@@ -118,6 +124,10 @@ export interface NewCustomerRequest {
   direccion?: string;
   ciudad?: string;
   email?: string;
+  /** Person to ask for at this customer — the name on the door, not the business. */
+  contacto?: string;
+  /** WhatsApp number when it differs from the phone; the two are different reachability. */
+  contactoWhatsApp?: string;
   condicionPago?: string;
   localidadId?: number;
   /** Fiscal document type (e.g. "B01"). */
@@ -242,4 +252,51 @@ export interface CartTotals {
   descuento: number;
   impuesto: number;
   total: number;
+}
+
+// ── Sharing: print, PDF and email ───────────────────────────────────────────
+
+/**
+ * Where a queued email currently stands. `Enviado` means the outbox handed it to
+ * the mail provider — whether it reached the inbox is a different question, which
+ * `entregas` answers once the provider's webhook arrives.
+ */
+export type SendState = "Pendiente" | "Enviando" | "Enviado" | "Fallido" | "Cancelado";
+
+export interface DocumentSend {
+  id: string;
+  documentoId: string;
+  estado: SendState;
+  destinatarios: string[];
+  copia: string[];
+  asunto: string;
+  intentos: number;
+  nombreArchivo?: string | null;
+  errorMensaje?: string | null;
+  creadoEn: string;
+  creadoPor?: string | null;
+  enviadoEn?: string | null;
+  /** Set when this send is a re-send; points at the original. */
+  reenvioDeId?: string | null;
+}
+
+/** Print count and send history — what decides "Print" vs "Re-print". */
+export interface DocumentShareHistory {
+  noPedidoStr: string;
+  vecesImpreso: number;
+  ultimaImpresion?: string | null;
+  ultimoUsuarioImpresion?: string | null;
+  /** The most recent sends, newest first. Capped server-side. */
+  envios: DocumentSend[];
+  /**
+   * Every send this document has had, including any beyond the ones listed. Lets the sheet
+   * tell "these are all of them" from "these are the latest of many".
+   */
+  totalEnvios?: number;
+}
+
+export interface SendDocumentRequest {
+  /** Omit to send to the customer's own address, which the server resolves. */
+  destinatarios?: string[];
+  mensaje?: string;
 }

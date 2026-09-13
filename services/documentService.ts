@@ -3,8 +3,11 @@ import type {
   CreateDocumentRequest,
   DocumentDetail,
   DocumentListFilters,
+  DocumentShareHistory,
+  DocumentSend,
   DocumentSummary,
   PagedResult,
+  SendDocumentRequest,
 } from "../types/documents";
 
 const BASE = "/consumo/Documento";
@@ -67,6 +70,60 @@ export class DocumentService {
     );
     return response.data;
   }
+
+  // ── Print, PDF and email ──────────────────────────────────────────────────
+
+  /**
+   * The document's PDF, as raw bytes.
+   *
+   * Fetched through `restClient` rather than pointed at with a plain URL because the
+   * endpoint is authenticated: an `<Image>`/`<a href>` carries no bearer token and would
+   * get a 401. The caller turns these bytes into an object URL (web) or a cache file
+   * (iOS/Android).
+   *
+   * `preview` exists so opening the viewer does not record a print. The history is what
+   * labels the action "Re-print", and a document nobody printed should not claim otherwise.
+   */
+  async getPdf(noPedidoStr: string, { preview = false } = {}): Promise<ArrayBuffer> {
+    // arraybuffer rather than blob so one response type serves both platforms: React
+    // Native's Blob carries no `arrayBuffer()`, so bytes fetched as a Blob cannot be
+    // written to a file on a phone, and the web side builds a Blob from these bytes in
+    // one line. Fetching through restClient (rather than expo-file-system's downloader)
+    // keeps the Firebase token on the one interceptor that already owns it.
+    const response = await restClient.get<ArrayBuffer>(
+      `${BASE}/${encodeURIComponent(noPedidoStr)}/pdf`,
+      {
+        params: { registrarImpresion: !preview },
+        responseType: "arraybuffer",
+      }
+    );
+    return response.data;
+  }
+
+  /** Queues the document to be emailed. Resolves as soon as it is queued, not delivered. */
+  async send(noPedidoStr: string, request: SendDocumentRequest = {}): Promise<DocumentSend> {
+    const response = await restClient.post<DocumentSend>(
+      `${BASE}/${encodeURIComponent(noPedidoStr)}/enviar`,
+      request
+    );
+    return response.data;
+  }
+
+  /** Re-sends a previous email, optionally somewhere else. */
+  async resend(envioId: string, destinatarios?: string[]): Promise<DocumentSend> {
+    const response = await restClient.post<DocumentSend>(
+      `${BASE}/envios/${encodeURIComponent(envioId)}/reenviar`,
+      { destinatarios }
+    );
+    return response.data;
+  }
+
+  async getShareHistory(noPedidoStr: string): Promise<DocumentShareHistory> {
+    const response = await restClient.get<DocumentShareHistory>(
+      `${BASE}/${encodeURIComponent(noPedidoStr)}/compartir`
+    );
+    return response.data;
+  }
 }
 
 export const documentService = new DocumentService();
@@ -74,3 +131,11 @@ export const documentService = new DocumentService();
 export const createDocument = (request: CreateDocumentRequest) => documentService.create(request);
 export const listDocuments = (filters?: DocumentListFilters) => documentService.list(filters);
 export const getDocument = (noPedidoStr: string) => documentService.get(noPedidoStr);
+export const getDocumentPdf = (noPedidoStr: string, options?: { preview?: boolean }) =>
+  documentService.getPdf(noPedidoStr, options);
+export const sendDocument = (noPedidoStr: string, request?: SendDocumentRequest) =>
+  documentService.send(noPedidoStr, request);
+export const resendDocument = (envioId: string, destinatarios?: string[]) =>
+  documentService.resend(envioId, destinatarios);
+export const getDocumentShareHistory = (noPedidoStr: string) =>
+  documentService.getShareHistory(noPedidoStr);

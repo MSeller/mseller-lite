@@ -22,7 +22,8 @@
     "lastName": "Last Name",
     "search": "Search",
     "again": "Again",
-    "completed": "completed"
+    "completed": "completed",
+    "close": "Close"
   },
   "auth": {
     "signIn": "Sign In",
@@ -456,6 +457,8 @@
       "title": "New customer",
       "name": "Name or business name",
       "phone": "Phone",
+      "contact": "Contact person",
+      "email": "Email",
       "rnc": "Tax ID",
       "address": "Address",
       "hint": "Only the name is required. You can complete the rest later in the portal.",
@@ -484,6 +487,39 @@
       "customerCreateFailed": "We couldn't create the customer.",
       "productSearchFailed": "We couldn't search products. Check your connection.",
       "productCreateFailed": "We couldn't create the product."
+    },
+    "share": {
+      "action": "Print or send",
+      "title": "Print and send",
+      "print": "Print",
+      "reprint": "Print again",
+      "savePdf": "Save PDF",
+      "emailIt": "Send by email",
+      "send": "Send",
+      "resend": "Resend",
+      "isResend": "resend",
+      "recipients": "Recipients",
+      "recipientsHint": "Leave empty to use the customer's email",
+      "message": "Message (optional)",
+      "queued": "The document was queued for sending.",
+      "history": "Sends",
+      "noRecipients": "No recipients",
+      "pdfUnavailable": "This version of the app can't display PDFs. Update the app to print from this device; sending by email works either way.",
+      "state": {
+        "Pendiente": "Queued",
+        "Enviando": "Sending",
+        "Enviado": "Sent",
+        "Fallido": "Failed",
+        "Cancelado": "Cancelled"
+      },
+      "errors": {
+        "failed": "We couldn't complete the action. Check your connection and try again.",
+        "unavailable": "Document sending isn't enabled for this account.",
+        "popupBlocked": "The browser blocked the print window. Allow pop-ups for this site and try again."
+      },
+      "printedOnce": "Printed once",
+      "printedTimes": "Printed {{count}} times",
+      "historyCapped": "Showing {{shown}} of {{total}} sends"
     }
   }
 }

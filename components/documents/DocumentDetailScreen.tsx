@@ -26,6 +26,7 @@ import {
 } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
 import SectionHeader from "../ui/SectionHeader";
+import DocumentShareSheet from "./DocumentShareSheet";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
 
@@ -49,6 +50,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shareVisible, setShareVisible] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -86,6 +88,13 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
         {/* MD3 Appbar.Content ignores `subtitle`; the document type is shown on
             the card below, next to the status. */}
         <Appbar.Content title={document?.noPedidoStr ?? noPedidoStr} />
+        {!!document && (
+          <Appbar.Action
+            icon="printer"
+            accessibilityLabel={t("documents.share.title")}
+            onPress={() => setShareVisible(true)}
+          />
+        )}
       </Appbar.Header>
 
       {!!error && (
@@ -242,6 +251,16 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
           </AppCard>
 
           <Button
+            mode="contained"
+            icon="printer"
+            onPress={() => setShareVisible(true)}
+            style={styles.shareButton}
+            contentStyle={styles.newButtonContent}
+          >
+            {t("documents.share.action")}
+          </Button>
+
+          <Button
             mode="outlined"
             icon="plus"
             onPress={() => router.replace("/documentos/nuevo")}
@@ -252,6 +271,13 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
           </Button>
         </ScrollView>
       )}
+
+      <DocumentShareSheet
+        visible={shareVisible}
+        onDismiss={() => setShareVisible(false)}
+        noPedidoStr={document?.noPedidoStr ?? noPedidoStr}
+        emailCliente={document?.emailCliente}
+      />
     </SafeAreaView>
   );
 };
@@ -387,10 +413,13 @@ const createStyles = (theme: CustomTheme) =>
       color: theme.colors.primary,
       fontWeight: "800",
     },
+    shareButton: {
+      borderRadius: theme.custom.radius.md,
+      marginTop: 4,
+    },
     newButton: {
       borderRadius: theme.custom.radius.md,
       borderColor: theme.colors.outlineVariant,
-      marginTop: 4,
     },
     newButtonContent: {
       height: 52,

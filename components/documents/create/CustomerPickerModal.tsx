@@ -55,6 +55,8 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
   const [telefono, setTelefono] = useState("");
   const [rnc, setRnc] = useState("");
   const [direccion, setDireccion] = useState("");
+  const [email, setEmail] = useState("");
+  const [contacto, setContacto] = useState("");
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
@@ -67,6 +69,8 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     setTelefono("");
     setRnc("");
     setDireccion("");
+    setEmail("");
+    setContacto("");
     setFormError("");
   }, []);
 
@@ -119,6 +123,11 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
         telefono: telefono.trim() || undefined,
         rnc: rnc.trim() || undefined,
         direccion: direccion.trim() || undefined,
+        // Worth the two extra fields at capture time: a customer registered without an
+        // address cannot be emailed an invoice later without someone going back to the
+        // portal to fill it in, and by then nobody remembers who to ask for.
+        email: email.trim() || undefined,
+        contacto: contacto.trim() || undefined,
       };
       const created = await createCustomer(payload);
       onSelect(created);
@@ -128,7 +137,7 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     } finally {
       setSaving(false);
     }
-  }, [nombre, telefono, rnc, direccion, onSelect, onDismiss, t]);
+  }, [nombre, telefono, rnc, direccion, email, contacto, onSelect, onDismiss, t]);
 
   const renderCustomer = useCallback(
     ({ item }: { item: CustomerSummary }) => (
@@ -276,6 +285,25 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
               onChangeText={setRnc}
               style={styles.input}
               inputMode="numeric"
+            />
+            <TextInput
+              mode="outlined"
+              label={t("documents.newCustomer.contact")}
+              value={contacto}
+              onChangeText={setContacto}
+              style={styles.input}
+              autoCapitalize="words"
+            />
+            <TextInput
+              mode="outlined"
+              label={t("documents.newCustomer.email")}
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              inputMode="email"
+              right={email ? <TextInput.Icon icon="close" onPress={() => setEmail("")} /> : null}
             />
             <TextInput
               mode="outlined"
