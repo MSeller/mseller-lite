@@ -33,13 +33,28 @@ interface DocumentoWeb {
   body: { appendChild(nodo: unknown): void; removeChild(nodo: unknown): void };
 }
 
+/**
+ * The browser's Blob, declared here rather than reusing the global one.
+ *
+ * React Native ships its own `Blob` whose constructor takes only `string | Blob` parts —
+ * it has no `ArrayBuffer` overload, because on a phone there is no DOM Blob to build from
+ * bytes. Referring to the global therefore fails to typecheck for the bytes we hold, on a
+ * code path that only ever runs on the web where the real DOM Blob does exist. Declaring
+ * it locally keeps this shim self-consistent, exactly like the rest of the file.
+ */
+interface BlobWeb {
+  readonly size: number;
+  readonly type: string;
+}
+
 interface GlobalWeb {
   window?: {
     open(url: string, destino: string): VentanaWeb | null;
     setTimeout(fn: () => void, ms: number): number;
   };
   document?: DocumentoWeb;
-  URL?: { createObjectURL(blob: Blob): string; revokeObjectURL(url: string): void };
+  Blob?: new (partes: ArrayBuffer[], opciones?: { type?: string }) => BlobWeb;
+  URL?: { createObjectURL(blob: BlobWeb): string; revokeObjectURL(url: string): void };
 }
 
 const web = globalThis as unknown as GlobalWeb;
@@ -129,7 +144,7 @@ const escribirTemporal = (
  * happens on the server.
  */
 export const canPresentPdf = (): boolean =>
-  esWeb ? !!web.window && !!web.URL : cargarNativos() !== null;
+  esWeb ? !!web.window && !!web.URL && !!web.Blob : cargarNativos() !== null;
 
 // ── Print ───────────────────────────────────────────────────────────────────
 
@@ -215,12 +230,12 @@ export const printPdf = async (
     return;
   }
 
-  if (!web.window || !web.URL) throw new PdfNotSupportedError();
+  if (!web.window || !web.URL || !web.Blob) throw new PdfNotSupportedError();
 
   const destino = reserva.ventana ?? web.window.open("", "_blank");
   if (!destino) throw new PdfNotSupportedError();
 
-  const url = web.URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+  const url = web.URL.createObjectURL(new web.Blob!([bytes], { type: "application/pdf" }));
   destino.location.href = url;
 
   try {
@@ -269,9 +284,9 @@ export const downloadPdf = async (bytes: ArrayBuffer, nombreArchivo: string): Pr
     return;
   }
 
-  if (!web.document || !web.window || !web.URL) throw new PdfNotSupportedError();
+  if (!web.document || !web.window || !web.URL || !web.Blob) throw new PdfNotSupportedError();
 
-  const url = web.URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+  const url = web.URL.createObjectURL(new web.Blob!([bytes], { type: "application/pdf" }));
   const enlace = web.document.createElement("a");
   enlace.href = url;
   enlace.download = nombreArchivo;
