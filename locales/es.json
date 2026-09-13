@@ -541,7 +541,8 @@
         "popupBlocked": "El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio e inténtalo de nuevo."
       },
       "printedOnce": "Impreso 1 vez",
-      "printedTimes": "Impreso {{count}} veces"
+      "printedTimes": "Impreso {{count}} veces",
+      "historyCapped": "Mostrando {{shown}} de {{total}} envíos"
     }
   }
 }

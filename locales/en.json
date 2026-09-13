@@ -518,7 +518,8 @@
         "popupBlocked": "The browser blocked the print window. Allow pop-ups for this site and try again."
       },
       "printedOnce": "Printed once",
-      "printedTimes": "Printed {{count}} times"
+      "printedTimes": "Printed {{count}} times",
+      "historyCapped": "Showing {{shown}} of {{total}} sends"
     }
   }
 }

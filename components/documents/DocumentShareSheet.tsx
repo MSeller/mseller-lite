@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
@@ -66,17 +66,30 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
 
   const pdfDisponible = canPresentPdf();
 
+  // Every load is stamped with the generation current when it started, so a slow response
+  // cannot land after a newer one and repopulate the sheet with a stale history. Not
+  // theoretical: DocumentDetailScreen passes `document?.noPedidoStr ?? noPedidoStr`, so the
+  // prop changes the moment the document finishes loading and a second load starts while the
+  // first may still be in flight. A stale history is not only wrong to read — Re-send acts on
+  // an `envio.id` taken from it, and that would re-send the wrong document's email.
+  const generacion = useRef(0);
+
   const load = useCallback(async () => {
+    const mia = ++generacion.current;
+    const vigente = () => generacion.current === mia;
+
     setLoading(true);
     try {
-      setHistory(await getDocumentShareHistory(noPedidoStr));
+      const historial = await getDocumentShareHistory(noPedidoStr);
+      if (!vigente()) return;
+      setHistory(historial);
       setError("");
     } catch {
       // The history is context, not the feature. Losing it must not take the actions with it,
       // so this records the failure without blocking print or send.
-      setHistory(null);
+      if (vigente()) setHistory(null);
     } finally {
-      setLoading(false);
+      if (vigente()) setLoading(false);
     }
   }, [noPedidoStr]);
 
@@ -344,6 +357,17 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                   <Text variant="labelLarge" style={styles.historyTitle}>
                     {t("documents.share.history")}
                   </Text>
+                  {/* The server caps the list at its newest sends. Without saying so, a
+                      capped history reads as the whole story — which matters here, because
+                      the reason to open this block is to find a send and re-send it. */}
+                  {(history.totalEnvios ?? 0) > history.envios.length && (
+                    <Text variant="bodySmall" style={styles.historyMeta}>
+                      {t("documents.share.historyCapped", {
+                        shown: history.envios.length,
+                        total: history.totalEnvios,
+                      })}
+                    </Text>
+                  )}
                   {history.envios.map((envio) => {
                     const tono = estadoTono(envio.estado);
                     return (
