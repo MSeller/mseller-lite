@@ -68,6 +68,8 @@ export interface DocumentLine {
 }
 
 export interface DocumentDetail extends DocumentSummary {
+  /** The customer's address, used to pre-fill the email recipient. */
+  emailCliente?: string | null;
   nota: string | null;
   fechaVencimiento: string | null;
   localidadId: number;
@@ -242,4 +244,45 @@ export interface CartTotals {
   descuento: number;
   impuesto: number;
   total: number;
+}
+
+// ── Sharing: print, PDF and email ───────────────────────────────────────────
+
+/**
+ * Where a queued email currently stands. `Enviado` means the outbox handed it to
+ * the mail provider — whether it reached the inbox is a different question, which
+ * `entregas` answers once the provider's webhook arrives.
+ */
+export type SendState = "Pendiente" | "Enviando" | "Enviado" | "Fallido" | "Cancelado";
+
+export interface DocumentSend {
+  id: string;
+  documentoId: string;
+  estado: SendState;
+  destinatarios: string[];
+  copia: string[];
+  asunto: string;
+  intentos: number;
+  nombreArchivo?: string | null;
+  errorMensaje?: string | null;
+  creadoEn: string;
+  creadoPor?: string | null;
+  enviadoEn?: string | null;
+  /** Set when this send is a re-send; points at the original. */
+  reenvioDeId?: string | null;
+}
+
+/** Print count and send history — what decides "Print" vs "Re-print". */
+export interface DocumentShareHistory {
+  noPedidoStr: string;
+  vecesImpreso: number;
+  ultimaImpresion?: string | null;
+  ultimoUsuarioImpresion?: string | null;
+  envios: DocumentSend[];
+}
+
+export interface SendDocumentRequest {
+  /** Omit to send to the customer's own address, which the server resolves. */
+  destinatarios?: string[];
+  mensaje?: string;
 }

@@ -22,7 +22,8 @@
     "lastName": "Apellido",
     "search": "Buscar",
     "again": "De Nuevo",
-    "completed": "completado"
+    "completed": "completado",
+    "close": "Cerrar"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -507,6 +508,37 @@
       "customerCreateFailed": "No pudimos crear el cliente.",
       "productSearchFailed": "No pudimos buscar productos. Revisa tu conexión.",
       "productCreateFailed": "No pudimos crear el producto."
+    },
+    "share": {
+      "action": "Imprimir o enviar",
+      "title": "Imprimir y enviar",
+      "print": "Imprimir",
+      "reprint": "Volver a imprimir",
+      "savePdf": "Guardar PDF",
+      "emailIt": "Enviar por correo",
+      "send": "Enviar",
+      "resend": "Reenviar",
+      "isResend": "reenvío",
+      "recipients": "Destinatarios",
+      "recipientsHint": "Vacío envía al correo del cliente",
+      "message": "Mensaje (opcional)",
+      "queued": "El documento se puso en cola de envío.",
+      "history": "Envíos",
+      "noRecipients": "Sin destinatarios",
+      "pdfUnavailable": "La vista de PDF sólo está disponible en la web por ahora. Puedes enviar el documento por correo desde cualquier dispositivo.",
+      "state": {
+        "Pendiente": "En cola",
+        "Enviando": "Enviando",
+        "Enviado": "Enviado",
+        "Fallido": "Falló",
+        "Cancelado": "Cancelado"
+      },
+      "errors": {
+        "failed": "No pudimos completar la acción. Revisa tu conexión e inténtalo de nuevo.",
+        "unavailable": "El envío de documentos no está habilitado para esta cuenta."
+      },
+      "printedOnce": "Impreso 1 vez",
+      "printedTimes": "Impreso {{count}} veces"
     }
   }
 }

@@ -114,6 +114,25 @@ export const formatDateShort = (iso: string | null | undefined): string => {
 };
 
 /**
+ * Date and time of an INSTANT, in the reader's local zone (`dd/MM/yyyy HH:mm`).
+ *
+ * The opposite treatment to `formatDateShort`, and deliberately so. A document's date is a
+ * calendar date — the 13th is the 13th wherever you read it — so that one is formatted off
+ * the string. A print or a send happened at a moment in time, and "sent at 15:40" is only
+ * meaningful in the reader's own zone, so this one goes through `Date`.
+ */
+export const formatDateTime = (iso: string | null | undefined): string => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return (
+    `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}` +
+    ` ${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+};
+
+/**
  * Parses what someone typed into a numeric field. Accepts an empty string as 0
  * and tolerates a comma as the decimal separator, which is what a Spanish
  * keyboard offers.
