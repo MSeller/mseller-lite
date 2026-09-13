@@ -457,6 +457,8 @@
       "title": "New customer",
       "name": "Name or business name",
       "phone": "Phone",
+      "contact": "Contact person",
+      "email": "Email",
       "rnc": "Tax ID",
       "address": "Address",
       "hint": "Only the name is required. You can complete the rest later in the portal.",

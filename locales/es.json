@@ -480,6 +480,8 @@
       "title": "Nuevo cliente",
       "name": "Nombre o razón social",
       "phone": "Teléfono",
+      "contact": "Contacto",
+      "email": "Correo electrónico",
       "rnc": "RNC / Cédula",
       "address": "Dirección",
       "hint": "Solo el nombre es obligatorio. El resto lo puedes completar luego en el portal.",

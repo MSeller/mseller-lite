@@ -120,6 +120,10 @@ export interface NewCustomerRequest {
   direccion?: string;
   ciudad?: string;
   email?: string;
+  /** Person to ask for at this customer — the name on the door, not the business. */
+  contacto?: string;
+  /** WhatsApp number when it differs from the phone; the two are different reachability. */
+  contactoWhatsApp?: string;
   condicionPago?: string;
   localidadId?: number;
   /** Fiscal document type (e.g. "B01"). */
