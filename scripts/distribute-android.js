@@ -75,7 +75,10 @@ console.log(`\n▶ ${variant.name} ${version} (${versionCode}) — ${branch}@${s
 
 // Re-apply the config so the new versionCode lands in android/app/build.gradle.
 run("pnpm", ["exec", "expo", "prebuild", "--platform", "android", "--no-install"], { env });
-run("./gradlew", ["app:assembleRelease", "-x", "lint", "-x", "test"], {
+// Phones are ARM. Skipping the x86 ABIs roughly halves the native compile, which
+// dominates a cold build; override with ANDROID_ARCHITECTURES for an x86 emulator.
+const architectures = process.env.ANDROID_ARCHITECTURES || "armeabi-v7a,arm64-v8a";
+run("./gradlew", ["app:assembleRelease", "-x", "lint", "-x", "test", `-PreactNativeArchitectures=${architectures}`], {
   cwd: path.join(root, "android"),
   env,
 });

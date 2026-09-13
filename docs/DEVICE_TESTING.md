@@ -85,6 +85,7 @@ pnpm distribute:dev -- --groups qa,ops  # other groups (comma-separated aliases)
 - builds the release APK for that environment on your Mac;
 - sets `versionCode` to the git commit count, so each build upgrades the last one;
 - uploads it with release notes: environment, version, `branch@sha` and the last 10 commits.
+- builds ARM only (`armeabi-v7a,arm64-v8a`), which covers phones. Set `ANDROID_ARCHITECTURES=x86_64` to test on an Intel emulator.
 
 It refuses to run with uncommitted changes, because every tester build must match a commit.
 Pass `-- --allow-dirty` to override.
