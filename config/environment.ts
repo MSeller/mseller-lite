@@ -11,7 +11,7 @@ export interface EnvironmentConfig {
   mode: "local" | "production";
 }
 
-const DEFAULT_LOCAL_API_URL = "http://192.168.1.188:7173";
+const DEFAULT_LOCAL_API_URL = "http://192.168.1.187:7173";
 
 const isEmulatorEnabled = (): boolean =>
   process.env.NODE_ENV === "development" &&
