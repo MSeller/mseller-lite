@@ -29,7 +29,7 @@ import {
   pdfFileName,
   printPdf,
   releasePrintWindow,
-  reservePrintWindow,
+  reservePrintTarget,
 } from "../../utils/documentPdf";
 
 interface Props {
@@ -104,16 +104,19 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
   );
 
   const handlePrint = useCallback(async () => {
-    // Reserved synchronously, inside the gesture, before any await — see reservePrintWindow.
-    const ventana = reservePrintWindow();
+    // Reserved synchronously, inside the gesture, before any await — see reservePrintTarget.
+    const reserva = reservePrintTarget();
 
-    // The button only renders when the platform can show a PDF, so a null here means the
-    // browser blocked the popup. Stop before fetching: that request is the non-preview one
-    // and it RECORDS a print, which would leave the history claiming a copy the user never
-    // saw — and the retry inside printPdf happens after an await, which is exactly what a
-    // popup blocker refuses. Better to say what to fix than to lie about what happened.
-    if (!ventana) {
+    // Stop before fetching when there is nowhere to print to: that request is the
+    // non-preview one and it RECORDS a print, which would leave the history claiming a
+    // copy the user never saw. The two reasons get different messages because they have
+    // different fixes — allow pop-ups, versus this build cannot show PDFs at all.
+    if (reserva.estado === "bloqueado") {
       setError(t("documents.share.errors.popupBlocked"));
+      return;
+    }
+    if (reserva.estado === "noDisponible") {
+      setError(t("documents.share.pdfUnavailable"));
       return;
     }
 
@@ -121,13 +124,13 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
     setError("");
     setOk("");
     try {
-      const blob = await getDocumentPdf(noPedidoStr);
-      printPdf(blob, ventana);
+      const bytes = await getDocumentPdf(noPedidoStr);
+      await printPdf(bytes, reserva, pdfFileName(noPedidoStr));
       load();
     } catch (e: any) {
-      // The tab was opened on the gesture and never got a document. Leaving it behind makes
-      // the user clean up after an action that already failed.
-      releasePrintWindow(ventana);
+      // On the web a tab was opened on the gesture and never got a document. Leaving it
+      // behind makes the user clean up after an action that already failed.
+      releasePrintWindow(reserva);
       setError(describirError(e));
     } finally {
       setBusy("none");
@@ -141,8 +144,8 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
     try {
       // preview: saving a copy is not printing it, and the history decides what "Re-print"
       // means.
-      const blob = await getDocumentPdf(noPedidoStr, { preview: true });
-      downloadPdf(blob, pdfFileName(noPedidoStr));
+      const bytes = await getDocumentPdf(noPedidoStr, { preview: true });
+      await downloadPdf(bytes, pdfFileName(noPedidoStr));
     } catch (e: any) {
       setError(describirError(e));
     } finally {

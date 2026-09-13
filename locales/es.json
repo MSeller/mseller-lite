@@ -527,7 +527,7 @@
       "queued": "El documento se puso en cola de envío.",
       "history": "Envíos",
       "noRecipients": "Sin destinatarios",
-      "pdfUnavailable": "La vista de PDF sólo está disponible en la web por ahora. Puedes enviar el documento por correo desde cualquier dispositivo.",
+      "pdfUnavailable": "Esta versión de la app no puede mostrar PDF. Actualiza la app para imprimir desde este dispositivo; el envío por correo funciona igual.",
       "state": {
         "Pendiente": "En cola",
         "Enviando": "Enviando",

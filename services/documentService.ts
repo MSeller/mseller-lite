@@ -74,21 +74,27 @@ export class DocumentService {
   // ── Print, PDF and email ──────────────────────────────────────────────────
 
   /**
-   * The document's PDF as a Blob.
+   * The document's PDF, as raw bytes.
    *
    * Fetched through `restClient` rather than pointed at with a plain URL because the
    * endpoint is authenticated: an `<Image>`/`<a href>` carries no bearer token and would
-   * get a 401. The caller turns this into an object URL to show or share.
+   * get a 401. The caller turns these bytes into an object URL (web) or a cache file
+   * (iOS/Android).
    *
    * `preview` exists so opening the viewer does not record a print. The history is what
    * labels the action "Re-print", and a document nobody printed should not claim otherwise.
    */
-  async getPdf(noPedidoStr: string, { preview = false } = {}): Promise<Blob> {
-    const response = await restClient.get<Blob>(
+  async getPdf(noPedidoStr: string, { preview = false } = {}): Promise<ArrayBuffer> {
+    // arraybuffer rather than blob so one response type serves both platforms: React
+    // Native's Blob carries no `arrayBuffer()`, so bytes fetched as a Blob cannot be
+    // written to a file on a phone, and the web side builds a Blob from these bytes in
+    // one line. Fetching through restClient (rather than expo-file-system's downloader)
+    // keeps the Firebase token on the one interceptor that already owns it.
+    const response = await restClient.get<ArrayBuffer>(
       `${BASE}/${encodeURIComponent(noPedidoStr)}/pdf`,
       {
         params: { registrarImpresion: !preview },
-        responseType: "blob",
+        responseType: "arraybuffer",
       }
     );
     return response.data;

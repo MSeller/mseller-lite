@@ -504,7 +504,7 @@
       "queued": "The document was queued for sending.",
       "history": "Sends",
       "noRecipients": "No recipients",
-      "pdfUnavailable": "PDF viewing is web-only for now. You can email the document from any device.",
+      "pdfUnavailable": "This version of the app can't display PDFs. Update the app to print from this device; sending by email works either way.",
       "state": {
         "Pendiente": "Queued",
         "Enviando": "Sending",
