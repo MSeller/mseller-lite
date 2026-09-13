@@ -12,7 +12,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -43,6 +43,8 @@ interface Props {
  */
 const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   const theme = useTheme() as CustomTheme;
+  // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const router = useRouter();
@@ -118,7 +120,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
           </View>
         )
       ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 32 + insets.bottom }]}>
           <AppCard style={styles.card}>
             <View style={styles.headerCardContent}>
               <View style={styles.headerTop}>

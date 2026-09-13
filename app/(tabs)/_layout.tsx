@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
@@ -20,6 +21,7 @@ export default function TabLayout() {
   // either; DocumentAccessGate still guards the screens themselves.
   const { canCreateDocuments } = useDocumentAccess();
   const palette = Colors[colorScheme ?? "light"];
+  const insets = useSafeAreaInsets();
 
   /**
    * The active destination is marked with a tinted pill behind its icon rather
@@ -70,7 +72,11 @@ export default function TabLayout() {
             backgroundColor: palette.surface,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: palette.border,
-            height: 60,
+            // Android draws edge to edge, so the system navigation bar sits over the
+            // bottom of the window. A fixed height overrides React Navigation's own
+            // inset padding and pushes the icons behind that bar.
+            height: 60 + insets.bottom,
+            paddingBottom: insets.bottom,
             // Android draws its own shadow above the bar unless this is off.
             elevation: 0,
           },

@@ -15,7 +15,7 @@ import {
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useUser } from "../../../contexts/UserContext";
@@ -52,6 +52,8 @@ const newIdempotencyKey = () =>
  */
 const DocumentCreateScreen: React.FC = () => {
   const theme = useTheme() as CustomTheme;
+  // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const router = useRouter();
@@ -473,7 +475,7 @@ const DocumentCreateScreen: React.FC = () => {
           {step === 2 && renderReview()}
         </ScrollView>
 
-        <View style={styles.bottomBar}>
+        <View style={[styles.bottomBar, { paddingBottom: 16 + insets.bottom }]}>
           {!cart.isEmpty && step !== 2 && (
             <View style={styles.bottomSummary}>
               <Text variant="bodySmall" style={styles.bottomSummaryLabel}>
