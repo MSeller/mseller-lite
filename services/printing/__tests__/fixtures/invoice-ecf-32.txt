@@ -42,7 +42,7 @@ mañana. Llamar antes de llegar
 al local.
 <<HR>>
 <<QR>>https://ecf.dgii.gov.do/ecf/ConsultaTimbre?RncEmisor=101000000&RncComprador=131000005&ENCF=E310000000001&FechaEmision=14-09-2026&MontoTotal=5231.83&FechaFirma=14-09-2026%2010:05:11&CodigoSeguridad=Ab12Cd
-<<C>>Código de Seguridad:      Ab12Cd
+<<C>>Código de Seguridad: Ab12Cd
 <<C>>Fecha de Firma:
 <<C>>14-09-2026 10:05:11
 <<HR>>
