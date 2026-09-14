@@ -8,26 +8,37 @@ export type NavSection =
   | "picking"
   | "deliveries"
   | "stockCount"
-  | "products";
+  | "products"
+  /** Catálogo › Clientes: browse and edit the customer master. Administrators only. */
+  | "catalogCustomers"
+  /** Catálogo › Productos: browse and edit the product master. Administrators only. */
+  | "catalogProducts";
 
 type UserType = UserTypes["type"];
 
-const ALL: NavSection[] = ["documents", "picking", "deliveries", "stockCount", "products"];
+/** Every operational module — what a manager sees. */
+const OPERATIONS: NavSection[] = ["documents", "picking", "deliveries", "stockCount", "products"];
+
+/**
+ * Editing master data (customers, products) is an administrator job: the Consumo API
+ * answers 403 to everyone else, so no other role is offered the Catálogo tab.
+ */
+const ADMINISTRATION: NavSection[] = [...OPERATIONS, "catalogCustomers", "catalogProducts"];
 
 /**
  * Which modules each user type is offered. This only shapes the menu — the Consumo
  * API is still what enforces access — so a user is never shown a module that would
  * answer 403, and never has to scroll past ones that are not part of their job.
  */
-const SECTIONS_BY_USER_TYPE: Record<UserType, NavSection[]> = {
+export const SECTIONS_BY_USER_TYPE: Readonly<Record<UserType, readonly NavSection[]>> = {
   seller: ["documents", "products"],
   driver: ["deliveries", "products"],
   inventory: ["documents", "picking", "stockCount", "products"],
   office: ["documents", "picking", "deliveries", "products"],
   accounting: ["documents", "products"],
-  manager: ALL,
-  administrator: ALL,
-  superuser: ALL,
+  manager: OPERATIONS,
+  administrator: ADMINISTRATION,
+  superuser: ADMINISTRATION,
 };
 
 export interface NavigationAccess {
