@@ -1,0 +1,82 @@
+# Store Release
+
+How MSeller Lite gets to Google Play and the App Store. Tester builds keep going through
+Firebase App Distribution (`pnpm distribute:*`, see `.github/workflows/app-distribution.yml`);
+this document covers the store builds only.
+
+| | Android | iOS |
+|---|---|---|
+| Package / bundle id | `app.mseller.msellerlite` | `app.mseller.msellerlite` |
+| EAS profile | `production` (AAB) | `production` (App Store) |
+| Build number | EAS remote, auto-incremented | EAS remote, auto-incremented |
+| Signing | EAS-managed upload key + Play App Signing | EAS-managed distribution certificate |
+| Backend | `mobile-seller-v3` (APP_ENV=production) | same |
+
+## Build and submit
+
+```bash
+pnpm build:store          # both platforms, profile "production"
+pnpm submit:android       # latest Android build → Play internal track, as a draft
+pnpm submit:ios           # latest iOS build → App Store Connect / TestFlight
+```
+
+`version` in `app.config.js` is the user-facing version; bump it for every store release.
+Build numbers are handled by EAS and never need editing.
+
+## Store requirements the app already covers
+
+- **Account creation and deletion.** Sign up is native (`components/auth/SignUpScreen.tsx`)
+  and creates the business with the user as administrator, then runs the setup wizard
+  (`components/onboarding/OnboardingScreen.tsx`), the same flow as cloud.mseller.app. An
+  administrator can delete the account from Más → Eliminar cuenta, which deletes the business
+  and every user in it (`deleteBusinessById`). Apple 5.1.1(v), Play account deletion policy.
+- **Privacy policy and terms** are linked from sign up and from the Más tab
+  (`constants/legal.ts`).
+- **Permission purpose strings** are specific Spanish sentences; unused prompts (microphone,
+  "always" location) and legacy Android storage permissions are removed in `app.config.js`.
+- **Export compliance**: `ITSAppUsesNonExemptEncryption: false`.
+
+## One-time setup
+
+### Google Play
+
+1. Create the app in Play Console (default language Spanish, app, free).
+2. Build once with `eas build -p android --profile production` so EAS creates the upload key,
+   then upload that first AAB manually (Play requires the first upload through the console).
+3. Create a Google Cloud service account with Play Console access (Release manager) and upload
+   its JSON key to EAS: `eas credentials -p android` → Google Service Account. Never commit it.
+4. App content:
+   - Privacy policy: `https://mseller.app/privacy`
+   - Account deletion URL: a page explaining how to delete the account (in-app: Más → Eliminar
+     cuenta) and how to request it by email for users who no longer have the app.
+   - Data safety: name, email, phone (account); precise location (delivery check-in, not
+     shared); photos (product and delivery images); all encrypted in transit; deletion
+     available.
+   - Content rating questionnaire, target audience 18+, no ads.
+   - App access: provide the reviewer demo account (see below).
+5. Personal developer accounts created after Nov 2023 need a closed test with 12 testers for
+   14 days before production access; organization accounts do not.
+
+### App Store
+
+1. Create the app record in App Store Connect for `app.mseller.msellerlite`, then set its
+   numeric Apple ID as `submit.production.ios.ascAppId` in `eas.json`.
+2. Create an App Store Connect API key (App Manager) and let EAS store it on the first
+   `pnpm submit:ios`.
+3. App Privacy: same data as Play's Data safety; none used for tracking.
+4. `supportsTablet` is `true`, so iPad screenshots (13") are required and iPad is reviewed.
+5. Review notes: explain that the app is the field companion of MSeller Cloud, give the demo
+   account, and point at the printer/Bluetooth feature as optional hardware.
+
+### Reviewer demo account
+
+Both stores need a signed-in path with real data. Keep one administrator account on
+production whose business has finished setup, with routes, orders, customers and products,
+and a password that does not rotate. Do not delete it with the in-app flow.
+
+## Listing assets
+
+- Icon: 1024×1024 (`assets/icons/Icon.png`), Play feature graphic 1024×500.
+- Screenshots: phone (Play), 6.9" iPhone and 13" iPad (App Store). Spanish first.
+- Short description (80 chars), full description, keywords (iOS), support URL, marketing URL
+  `https://mseller.app`.

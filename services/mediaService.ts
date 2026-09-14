@@ -10,7 +10,7 @@ import { functions } from "../config/firebase";
  */
 
 /** Where the callable files an image. Mirrors the callable's accepted values. */
-export type MediaType = "products" | "profile" | "documents" | "receipt";
+export type MediaType = "products" | "profile" | "documents" | "receipt" | "logo";
 
 /** One stored image as the callable returns it. */
 export interface MediaItem {

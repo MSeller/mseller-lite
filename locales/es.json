@@ -43,7 +43,32 @@
     "invalidCredentials": "Correo o contraseña inválidos",
     "accountCreated": "Cuenta creada exitosamente",
     "passwordTooWeak": "La contraseña es muy débil",
-    "emailInUse": "El correo ya está en uso"
+    "emailInUse": "El correo ya está en uso",
+    "or": "o",
+    "createAccountTitle": "Crea tu cuenta",
+    "createAccountSubtitle": "Registra tu negocio y empieza a vender en minutos.",
+    "confirmPassword": "Confirmar contraseña",
+    "passwordHint": "Mínimo 6 caracteres, una mayúscula y un número.",
+    "legalNotice": "Al crear una cuenta aceptas los",
+    "legalAnd": "y la",
+    "emailAlreadyRegistered": "Ya existe una cuenta con este correo. Inicia sesión o restablece tu contraseña.",
+    "signUpFailed": "No pudimos crear tu cuenta. Inténtalo de nuevo.",
+    "validation": {
+      "firstNameRequired": "Ingresa tu nombre",
+      "lastNameRequired": "Ingresa tu apellido",
+      "emailRequired": "Ingresa tu correo electrónico",
+      "emailInvalid": "El correo electrónico no es válido",
+      "passwordRequired": "Ingresa una contraseña",
+      "passwordTooShort": "La contraseña debe tener al menos 6 caracteres",
+      "passwordNeedsUppercase": "La contraseña debe tener al menos una letra mayúscula",
+      "passwordNeedsNumber": "La contraseña debe tener al menos un número",
+      "passwordsDoNotMatch": "Las contraseñas no coinciden"
+    },
+    "resetTitle": "Restablecer contraseña",
+    "resetSubtitle": "Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.",
+    "sendResetLink": "Enviar enlace",
+    "resetSentTo": "Enviamos un correo a {{email}}. Revisa tu bandeja de entrada y sigue las instrucciones.",
+    "backToLogin": "Volver a iniciar sesión"
   },
   "profile": {
     "profile": "Perfil",
@@ -58,7 +83,17 @@
     "productionMode": "Modo de Producción",
     "testModeEnabled": "Modo de Prueba Habilitado",
     "productionModeEnabled": "Modo de Producción Habilitado",
-    "profileUpdated": "Perfil actualizado exitosamente"
+    "profileUpdated": "Perfil actualizado exitosamente",
+    "company": "Empresa",
+    "sellerCode": "Código de vendedor",
+    "mode": "Modo",
+    "production": "Producción",
+    "accountCreated": "Cuenta creada",
+    "lastSignIn": "Último acceso",
+    "emailVerified": "Correo verificado",
+    "yes": "Sí",
+    "no": "No",
+    "unknown": "Desconocido"
   },
   "navigation": {
     "home": "Inicio",
@@ -642,5 +677,157 @@
       "E_NOT_CONNECTED": "La impresora no está conectada.",
       "E_WRITE": "Se perdió la conexión mientras se imprimía. Inténtalo de nuevo."
     }
+  },
+  "legal": {
+    "title": "Legal",
+    "privacy": "Política de privacidad",
+    "terms": "Términos y condiciones"
+  },
+  "account": {
+    "deleteTitle": "Eliminar cuenta",
+    "deleteRowDescription": "Elimina tu empresa y todos sus usuarios",
+    "deleteWarning": "Esto elimina la empresa {{business}} y el acceso de todos sus usuarios. No se puede deshacer.",
+    "deleteRetention": "Los documentos fiscales emitidos se conservan el tiempo que exige la ley.",
+    "deletePasswordLabel": "Tu contraseña",
+    "deleteConfirmLabel": "Escribe {{word}} para confirmar",
+    "deleteConfirmWord": "ELIMINAR",
+    "deleteButton": "Eliminar cuenta definitivamente",
+    "deleteWrongPassword": "La contraseña no es correcta",
+    "deleteFailed": "No pudimos eliminar la cuenta. Inténtalo de nuevo.",
+    "deleted": "Tu cuenta fue eliminada"
+  },
+  "onboarding": {
+    "pageTitle": "Configuración de tu Negocio",
+    "pageSubtitle": "Complete estos pasos para configurar su cuenta",
+    "back": "Atrás",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "steps": {
+      "businessName": "Nombre del Negocio",
+      "phone": "Teléfono",
+      "country": "País",
+      "address": "Dirección",
+      "businessType": "Tipo de Negocio",
+      "branding": "Personalización",
+      "dataSetup": "Configuración Inicial"
+    },
+    "configuring": "Configurando {{name}}",
+    "configuringWait": "Por favor espere, esto puede tomar unos minutos...",
+    "errors": {
+      "noUser": "No hay usuario conectado",
+      "configError": "Error al configurar el negocio",
+      "saveError": "Error al guardar la configuración"
+    },
+    "success": "¡Configuración completada exitosamente!",
+    "businessNameStep": {
+      "title": "¿Cuál es el nombre de tu negocio?",
+      "subtitle": "Este nombre aparecerá en tus facturas y documentos",
+      "label": "Nombre del Negocio",
+      "placeholder": "Ej: Mi Empresa SRL"
+    },
+    "phoneStep": {
+      "title": "¿Cuál es tu número de teléfono?",
+      "subtitle": "Lo usaremos para contactarte sobre tu cuenta",
+      "label": "Teléfono",
+      "placeholder": "809-000-0000",
+      "helper": "Formato: 809-000-0000"
+    },
+    "countryStep": {
+      "title": "¿En qué país opera tu negocio?",
+      "subtitle": "Selecciona el país donde está registrado tu negocio",
+      "label": "País",
+      "placeholder": "Selecciona un país",
+      "drAdditionalInfo": "Información adicional requerida para República Dominicana",
+      "rncLabel": "RNC (Registro Nacional de Contribuyentes)",
+      "rncPlaceholder": "000-0000000-0",
+      "rncHelper": "Formato: 000-0000000-0 (9 u 11 dígitos)",
+      "rncOnlyNumbers": "El RNC debe contener solo números",
+      "rncLength": "El RNC debe tener 9 u 11 dígitos",
+      "rncNotVerified": "No se pudo verificar el RNC automáticamente. Puede continuar con la configuración y verificaremos la información manualmente.",
+      "fiscalQuestion": "¿Qué tipo de comprobantes fiscales emitirá su negocio?",
+      "fiscalNcf": "NCF - Comprobante Fiscal en Papel (Sistema Tradicional)",
+      "fiscalEcf": "e-CF - Comprobante Fiscal Electrónico (requiere activación)",
+      "fiscalNone": "Ninguno",
+      "ecfNotice": "La Facturación Electrónica requiere un proceso adicional (certificado digital, autorización DGII y configuración del proveedor). Podrás activarla después de crear tu cuenta usando el botón \"Activar Facturación Electrónica\" en el menú principal."
+    },
+    "addressStep": {
+      "title": "¿Dónde está ubicado tu negocio?",
+      "subtitle": "Ingresa la dirección física de tu negocio",
+      "streetLabel": "Calle / Dirección",
+      "streetPlaceholder": "Calle, número, sector",
+      "cityLabel": "Ciudad",
+      "cityPlaceholder": "Ciudad donde está ubicado el negocio"
+    },
+    "businessTypeStep": {
+      "title": "Cuéntanos sobre tu negocio",
+      "subtitle": "Esto nos ayudará a personalizar tu experiencia",
+      "businessTypeLabel": "Tipo de Negocio",
+      "businessTypePlaceholder": "Selecciona el tipo de negocio",
+      "industryLabel": "Industria",
+      "industryPlaceholder": "Selecciona tu industria",
+      "businessTypes": {
+        "retail": "Retail / Minorista",
+        "wholesale": "Mayorista / Distribuidor",
+        "manufacturing": "Manufactura",
+        "services": "Servicios",
+        "restaurant": "Restaurante / Cafetería",
+        "pharmacy": "Farmacia",
+        "supermarket": "Supermercado",
+        "hardware": "Ferretería",
+        "technology": "Tecnología",
+        "other": "Otro"
+      },
+      "industries": {
+        "foodBeverage": "Alimentos y Bebidas",
+        "construction": "Construcción",
+        "education": "Educación",
+        "electronics": "Electrónica",
+        "pharmaceutical": "Farmacéutico",
+        "fashionTextiles": "Moda y Textiles",
+        "health": "Salud",
+        "technology": "Tecnología",
+        "transport": "Transporte",
+        "tourismHospitality": "Turismo y Hospitalidad",
+        "other": "Otro"
+      }
+    },
+    "brandingStep": {
+      "title": "Dale identidad a tu cuenta",
+      "subtitle": "Sube tu logo y elige el color de tu marca. Aparecerán en tus facturas y en el portal.",
+      "logoLabel": "Logo",
+      "uploadLogo": "Subir logo",
+      "changeLogo": "Cambiar",
+      "removeLogo": "Eliminar",
+      "logoPreview": "Vista previa del logo",
+      "selectLogo": "Seleccionar Logo",
+      "colorLabel": "Color de tu marca",
+      "customColorLabel": "Color personalizado",
+      "skipHint": "Este paso es opcional. Puedes configurarlo más tarde desde la configuración de tu empresa."
+    },
+    "dataSetupStep": {
+      "title": "¿Cómo quieres comenzar?",
+      "subtitle": "Elige la opción que mejor se adapte a tus necesidades",
+      "sampleTitle": "Datos de Ejemplo (Recomendado)",
+      "sampleDescription": "Iniciar con datos de muestra para explorar el sistema",
+      "newTitle": "Configuración Básica",
+      "newDescription": "Comenzar con una configuración limpia y datos básicos",
+      "advancedTitle": "Configuración Avanzada",
+      "advancedDescription": "Comenzar en modo avanzado listo para integraciones",
+      "confirmScratch": "¿Estás seguro que quieres empezar desde cero?",
+      "confirmScratchYes": "Sí, empezar desde cero",
+      "cancel": "Cancelar"
+    },
+    "stepOf": "Paso {{current}} de {{total}}",
+    "signOut": "Salir",
+    "searchCountry": "Buscar país",
+    "rncChecking": "Verificando RNC…",
+    "rncFound": "Registrado como",
+    "uploadingLogo": "Subiendo logo…",
+    "logoTooLarge": "La imagen es muy grande. Elige una más pequeña.",
+    "logoUploadFailed": "No se pudo subir el logo. Inténtalo de nuevo."
+  },
+  "profileUnavailable": {
+    "title": "No pudimos cargar tu cuenta",
+    "body": "Revisa tu conexión e inténtalo de nuevo. Si el problema continúa, cierra sesión y vuelve a entrar."
   }
 }

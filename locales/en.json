@@ -43,7 +43,32 @@
     "invalidCredentials": "Invalid email or password",
     "accountCreated": "Account created successfully",
     "passwordTooWeak": "Password is too weak",
-    "emailInUse": "Email is already in use"
+    "emailInUse": "Email is already in use",
+    "or": "or",
+    "createAccountTitle": "Create your account",
+    "createAccountSubtitle": "Register your business and start selling in minutes.",
+    "confirmPassword": "Confirm password",
+    "passwordHint": "At least 6 characters, one uppercase letter and one number.",
+    "legalNotice": "By creating an account you agree to the",
+    "legalAnd": "and the",
+    "emailAlreadyRegistered": "An account with this email already exists. Sign in or reset your password.",
+    "signUpFailed": "We couldn't create your account. Please try again.",
+    "validation": {
+      "firstNameRequired": "Enter your first name",
+      "lastNameRequired": "Enter your last name",
+      "emailRequired": "Enter your email",
+      "emailInvalid": "The email address is not valid",
+      "passwordRequired": "Enter a password",
+      "passwordTooShort": "The password must be at least 6 characters",
+      "passwordNeedsUppercase": "The password must contain an uppercase letter",
+      "passwordNeedsNumber": "The password must contain a number",
+      "passwordsDoNotMatch": "The passwords do not match"
+    },
+    "resetTitle": "Reset password",
+    "resetSubtitle": "Enter your email and we'll send you a link to reset your password.",
+    "sendResetLink": "Send link",
+    "resetSentTo": "We sent an email to {{email}}. Check your inbox and follow the instructions.",
+    "backToLogin": "Back to sign in"
   },
   "profile": {
     "profile": "Profile",
@@ -55,9 +80,17 @@
     "mode": "Mode",
     "testMode": "Test Mode",
     "productionMode": "Production Mode",
-    "sellerCode": "Seller Code",
+    "sellerCode": "Seller code",
     "updateProfile": "Update Profile",
-    "profileUpdated": "Profile updated successfully"
+    "profileUpdated": "Profile updated successfully",
+    "production": "Production",
+    "accountCreated": "Account created",
+    "lastSignIn": "Last sign in",
+    "emailVerified": "Email verified",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown",
+    "role": "Role"
   },
   "navigation": {
     "home": "Home",
@@ -619,5 +652,157 @@
       "E_NOT_CONNECTED": "The printer is not connected.",
       "E_WRITE": "The connection dropped while printing. Try again."
     }
+  },
+  "legal": {
+    "title": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms and Conditions"
+  },
+  "account": {
+    "deleteTitle": "Delete account",
+    "deleteRowDescription": "Deletes your business and all of its users",
+    "deleteWarning": "This deletes the business {{business}} and access for all of its users. It cannot be undone.",
+    "deleteRetention": "Fiscal documents already issued are kept for as long as the law requires.",
+    "deletePasswordLabel": "Your password",
+    "deleteConfirmLabel": "Type {{word}} to confirm",
+    "deleteConfirmWord": "DELETE",
+    "deleteButton": "Permanently delete account",
+    "deleteWrongPassword": "The password is incorrect",
+    "deleteFailed": "We couldn't delete the account. Please try again.",
+    "deleted": "Your account was deleted"
+  },
+  "onboarding": {
+    "pageTitle": "Set Up Your Business",
+    "pageSubtitle": "Complete these steps to configure your account",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Finish",
+    "steps": {
+      "businessName": "Business Name",
+      "phone": "Phone",
+      "country": "Country",
+      "address": "Address",
+      "businessType": "Business Type",
+      "branding": "Branding",
+      "dataSetup": "Initial Setup"
+    },
+    "configuring": "Setting up {{name}}",
+    "configuringWait": "Please wait, this may take a few minutes...",
+    "errors": {
+      "noUser": "No user is signed in",
+      "configError": "Error configuring the business",
+      "saveError": "Error saving the configuration"
+    },
+    "success": "Setup completed successfully!",
+    "businessNameStep": {
+      "title": "What is your business name?",
+      "subtitle": "This name will appear on your invoices and documents",
+      "label": "Business Name",
+      "placeholder": "e.g. My Company LLC"
+    },
+    "phoneStep": {
+      "title": "What is your phone number?",
+      "subtitle": "We'll use it to contact you about your account",
+      "label": "Phone",
+      "placeholder": "809-000-0000",
+      "helper": "Format: 809-000-0000"
+    },
+    "countryStep": {
+      "title": "In which country does your business operate?",
+      "subtitle": "Select the country where your business is registered",
+      "label": "Country",
+      "placeholder": "Select a country",
+      "drAdditionalInfo": "Additional information required for the Dominican Republic",
+      "rncLabel": "RNC (National Taxpayer Registry)",
+      "rncPlaceholder": "000-0000000-0",
+      "rncHelper": "Format: 000-0000000-0 (9 or 11 digits)",
+      "rncOnlyNumbers": "The RNC must contain only numbers",
+      "rncLength": "The RNC must have 9 or 11 digits",
+      "rncNotVerified": "The RNC could not be verified automatically. You can continue with the setup and we will verify the information manually.",
+      "fiscalQuestion": "What type of fiscal receipts will your business issue?",
+      "fiscalNcf": "NCF - Paper Fiscal Receipt (Traditional System)",
+      "fiscalEcf": "e-CF - Electronic Fiscal Receipt (requires activation)",
+      "fiscalNone": "None",
+      "ecfNotice": "Electronic Invoicing requires an additional process (digital certificate, DGII authorization and provider setup). You can activate it after creating your account using the \"Activate Electronic Invoicing\" button in the main menu."
+    },
+    "addressStep": {
+      "title": "Where is your business located?",
+      "subtitle": "Enter the physical address of your business",
+      "streetLabel": "Street / Address",
+      "streetPlaceholder": "Street, number, area",
+      "cityLabel": "City",
+      "cityPlaceholder": "City where the business is located"
+    },
+    "businessTypeStep": {
+      "title": "Tell us about your business",
+      "subtitle": "This will help us personalize your experience",
+      "businessTypeLabel": "Business Type",
+      "businessTypePlaceholder": "Select the business type",
+      "industryLabel": "Industry",
+      "industryPlaceholder": "Select your industry",
+      "businessTypes": {
+        "retail": "Retail",
+        "wholesale": "Wholesale / Distributor",
+        "manufacturing": "Manufacturing",
+        "services": "Services",
+        "restaurant": "Restaurant / Café",
+        "pharmacy": "Pharmacy",
+        "supermarket": "Supermarket",
+        "hardware": "Hardware Store",
+        "technology": "Technology",
+        "other": "Other"
+      },
+      "industries": {
+        "foodBeverage": "Food and Beverage",
+        "construction": "Construction",
+        "education": "Education",
+        "electronics": "Electronics",
+        "pharmaceutical": "Pharmaceutical",
+        "fashionTextiles": "Fashion and Textiles",
+        "health": "Health",
+        "technology": "Technology",
+        "transport": "Transport",
+        "tourismHospitality": "Tourism and Hospitality",
+        "other": "Other"
+      }
+    },
+    "brandingStep": {
+      "title": "Give your account an identity",
+      "subtitle": "Upload your logo and pick your brand color. They'll appear on your invoices and across the portal.",
+      "logoLabel": "Logo",
+      "uploadLogo": "Upload logo",
+      "changeLogo": "Change",
+      "removeLogo": "Remove",
+      "logoPreview": "Logo preview",
+      "selectLogo": "Select Logo",
+      "colorLabel": "Your brand color",
+      "customColorLabel": "Custom color",
+      "skipHint": "This step is optional. You can set it up later from your business settings."
+    },
+    "dataSetupStep": {
+      "title": "How would you like to start?",
+      "subtitle": "Choose the option that best fits your needs",
+      "sampleTitle": "Sample Data (Recommended)",
+      "sampleDescription": "Start with sample data to explore the system",
+      "newTitle": "Basic Setup",
+      "newDescription": "Start with a clean setup and basic data",
+      "advancedTitle": "Advanced Setup",
+      "advancedDescription": "Start in advanced mode ready for integrations",
+      "confirmScratch": "Are you sure you want to start from scratch?",
+      "confirmScratchYes": "Yes, start from scratch",
+      "cancel": "Cancel"
+    },
+    "stepOf": "Step {{current}} of {{total}}",
+    "signOut": "Sign out",
+    "searchCountry": "Search country",
+    "rncChecking": "Checking RNC…",
+    "rncFound": "Registered as",
+    "uploadingLogo": "Uploading logo…",
+    "logoTooLarge": "The image is too large. Choose a smaller one.",
+    "logoUploadFailed": "The logo couldn't be uploaded. Please try again."
+  },
+  "profileUnavailable": {
+    "title": "We couldn't load your account",
+    "body": "Check your connection and try again. If the problem continues, sign out and sign in again."
   }
 }

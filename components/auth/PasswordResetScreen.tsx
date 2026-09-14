@@ -11,6 +11,7 @@ import {
 } from "react-native-paper";
 import { CustomTheme } from "../../constants/Theme";
 import { useAuthOperations } from "../../hooks/useAuthOperations";
+import { useTranslation } from "../../hooks/useTranslation";
 
 interface PasswordResetScreenProps {
   onNavigateBack?: () => void;
@@ -23,6 +24,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
   const [success, setSuccess] = useState(false);
   const { resetPassword, loading, error, clearError } = useAuthOperations();
   const theme = useTheme() as CustomTheme;
+  const { t } = useTranslation();
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
@@ -51,19 +53,18 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={[styles.title, { color: theme.colors.primary }]}>
-              Reset Password
+              {t("auth.resetTitle")}
             </Title>
             <Paragraph
               style={[styles.subtitle, { color: theme.colors.onSurface }]}
             >
-              Enter your email address and we&apos;ll send you a link to reset
-              your password.
+              {t("auth.resetSubtitle")}
             </Paragraph>
 
             {!success ? (
               <>
                 <TextInput
-                  label="Email"
+                  label={t("common.email")}
                   value={email}
                   onChangeText={setEmail}
                   mode="outlined"
@@ -82,7 +83,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   style={styles.button}
                   contentStyle={styles.buttonContent}
                 >
-                  Send Reset Link
+                  {t("auth.sendResetLink")}
                 </Button>
               </>
             ) : (
@@ -93,8 +94,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                     { color: theme.colors.onSurface },
                   ]}
                 >
-                  Password reset email has been sent to {email}. Please check
-                  your inbox and follow the instructions to reset your password.
+                  {t("auth.resetSentTo", { email: email.trim() })}
                 </Paragraph>
               </View>
             )}
@@ -106,7 +106,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                 disabled={loading}
                 style={styles.textButton}
               >
-                Back to Login
+                {t("auth.backToLogin")}
               </Button>
             )}
           </Card.Content>
@@ -118,7 +118,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
         onDismiss={clearError}
         duration={4000}
         action={{
-          label: "Dismiss",
+          label: t("common.close"),
           onPress: clearError,
         }}
       >

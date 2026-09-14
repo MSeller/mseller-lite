@@ -27,7 +27,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const theme = useTheme() as CustomTheme;
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslation();
 
   const handleSignOut = async () => {
     setLoading(true);
@@ -53,7 +53,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
   };
 
   const formatDate = (date: string): string => {
-    return new Date(date).toLocaleDateString("en-US", {
+    return new Date(date).toLocaleDateString(currentLanguage, {
       year: "numeric",
       month: "long",
       day: "numeric",
@@ -104,7 +104,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                       { color: theme.colors.primary },
                     ]}
                   >
-                    Business Information
+                    {t("profile.businessInfo")}
                   </Title>
 
                   <View style={styles.infoRow}>
@@ -114,7 +114,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         { color: theme.colors.onSurfaceVariant },
                       ]}
                     >
-                      Company:
+                      {t("profile.company")}
                     </Paragraph>
                     <Paragraph
                       style={[
@@ -133,7 +133,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         { color: theme.colors.onSurfaceVariant },
                       ]}
                     >
-                      Role:
+                      {t("profile.role")}
                     </Paragraph>
                     <Paragraph
                       style={[
@@ -141,7 +141,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         { color: theme.colors.onSurface },
                       ]}
                     >
-                      {userProfile.type}
+                      {t(`home.userTypes.${userProfile.type}`)}
                     </Paragraph>
                   </View>
 
@@ -152,7 +152,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         { color: theme.colors.onSurfaceVariant },
                       ]}
                     >
-                      Seller Code:
+                      {t("profile.sellerCode")}
                     </Paragraph>
                     <Paragraph
                       style={[
@@ -171,7 +171,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         { color: theme.colors.onSurfaceVariant },
                       ]}
                     >
-                      Mode:
+                      {t("profile.mode")}
                     </Paragraph>
                     <Paragraph
                       style={[
@@ -183,7 +183,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                         },
                       ]}
                     >
-                      {userProfile.testMode ? "Test Mode" : "Production"}
+                      {userProfile.testMode ? t("profile.testMode") : t("profile.production")}
                     </Paragraph>
                   </View>
                 </View>
@@ -200,14 +200,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                     { color: theme.colors.onSurfaceVariant },
                   ]}
                 >
-                  Account created:
+                  {t("profile.accountCreated")}
                 </Paragraph>
                 <Paragraph
                   style={[styles.infoValue, { color: theme.colors.onSurface }]}
                 >
                   {user.metadata.creationTime
                     ? formatDate(user.metadata.creationTime)
-                    : "Unknown"}
+                    : t("profile.unknown")}
                 </Paragraph>
               </View>
 
@@ -218,14 +218,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                     { color: theme.colors.onSurfaceVariant },
                   ]}
                 >
-                  Last sign in:
+                  {t("profile.lastSignIn")}
                 </Paragraph>
                 <Paragraph
                   style={[styles.infoValue, { color: theme.colors.onSurface }]}
                 >
                   {user.metadata.lastSignInTime
                     ? formatDate(user.metadata.lastSignInTime)
-                    : "Unknown"}
+                    : t("profile.unknown")}
                 </Paragraph>
               </View>
 
@@ -236,7 +236,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                     { color: theme.colors.onSurfaceVariant },
                   ]}
                 >
-                  Email verified:
+                  {t("profile.emailVerified")}
                 </Paragraph>
                 <Paragraph
                   style={[
@@ -248,7 +248,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
                     },
                   ]}
                 >
-                  {user.emailVerified ? "Yes" : "No"}
+                  {user.emailVerified ? t("profile.yes") : t("profile.no")}
                 </Paragraph>
               </View>
             </View>
@@ -264,7 +264,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
               buttonColor={theme.colors.error}
               contentStyle={styles.buttonContent}
             >
-              Sign Out
+              {t("auth.signOut")}
             </Button>
           </Card.Content>
         </Card>
@@ -275,7 +275,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
         onDismiss={() => setError("")}
         duration={4000}
         action={{
-          label: "Dismiss",
+          label: t("common.close"),
           onPress: () => setError(""),
         }}
       >
