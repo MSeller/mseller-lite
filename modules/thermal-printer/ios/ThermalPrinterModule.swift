@@ -15,7 +15,14 @@ public class ThermalPrinterModule: Module {
   private let ble = BleTransport()
   private let tcp = TcpTransport()
   private let io = DispatchQueue(label: "mseller.thermalprinter.io")
-  private var activeKind: String?
+  // Written on `io`, but read by the synchronous `isConnected` on the JS thread. A lock, not
+  // io.sync: connects and writes block `io` for seconds.
+  private let stateLock = NSLock()
+  private var activeKindStorage: String?
+  private var activeKind: String? {
+    get { stateLock.lock(); defer { stateLock.unlock() }; return activeKindStorage }
+    set { stateLock.lock(); defer { stateLock.unlock() }; activeKindStorage = newValue }
+  }
 
   public func definition() -> ModuleDefinition {
     Name("ThermalPrinter")
@@ -105,8 +112,10 @@ public class ThermalPrinterModule: Module {
           }
           promise.resolve(nil)
         } catch let error as PrinterError {
+          if error.code == "E_WRITE" { self.dropAfterFailedWrite() }
           promise.reject(error.code, error.message)
         } catch {
+          self.dropAfterFailedWrite()
           promise.reject("E_WRITE", error.localizedDescription)
         }
       }
@@ -145,6 +154,14 @@ public class ThermalPrinterModule: Module {
     default: break
     }
     activeKind = nil
+  }
+
+  /// Part of the ticket may already be printed and the link is in an unknown state: drop it so
+  /// the next job reconnects (JS does not resend after E_WRITE). Runs on `io`.
+  private func dropAfterFailedWrite() {
+    guard activeKind != nil else { return }
+    closeActive()
+    sendEvent("onConnectionChange", ["connected": false, "error": NSNull()])
   }
 
   private func handleDisconnect(kind: String) {

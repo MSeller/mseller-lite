@@ -67,6 +67,12 @@ class ThermalPrinterModule : Module() {
     }
 
     Function("isBluetoothEnabled") {
+      // Reading the adapter state needs BLUETOOTH_CONNECT from Android 12 on.
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED
+      ) {
+        throw ThermalPrinterException("E_PERMISSION", "Bluetooth permission not granted: ${Manifest.permission.BLUETOOTH_CONNECT}")
+      }
       adapter?.isEnabled == true
     }
 
@@ -124,7 +130,9 @@ class ThermalPrinterModule : Module() {
         } catch (e: CodedException) {
           promise.reject(e)
         } catch (e: Throwable) {
-          if (connection?.isOpen != true) closeConnection(notify = true)
+          // Part of the data may already be printed and the link is in an unknown state:
+          // drop it so the next job reconnects instead of writing into a dead socket.
+          closeConnection(notify = true)
           promise.reject(ThermalPrinterException("E_WRITE", e.message ?: "Could not send data to the printer", e))
         }
       }

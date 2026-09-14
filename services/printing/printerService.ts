@@ -129,6 +129,10 @@ async function ensureConnected(printer: SelectedPrinter): Promise<void> {
 /**
  * Sends bytes, reconnecting once if the link dropped since the last job — printers sleep,
  * and BLE links die silently when the phone locks.
+ *
+ * Only E_NOT_CONNECTED (nothing was sent) is retried. E_WRITE can fail after the printer
+ * already took part of the ticket, and resending it would print a duplicate or a torn
+ * ticket; the native side drops the link on a failed write, so the next job reconnects.
  */
 export async function writeBytes(printer: SelectedPrinter, bytes: Uint8Array): Promise<void> {
   const module = native();
@@ -139,7 +143,7 @@ export async function writeBytes(printer: SelectedPrinter, bytes: Uint8Array): P
     await module.write(payload, options);
   } catch (first) {
     const error = toPrinterError(first);
-    if (error.code !== "E_NOT_CONNECTED" && error.code !== "E_WRITE") throw error;
+    if (error.code !== "E_NOT_CONNECTED") throw error;
     await connect(printer);
     try {
       await module.write(payload, options);

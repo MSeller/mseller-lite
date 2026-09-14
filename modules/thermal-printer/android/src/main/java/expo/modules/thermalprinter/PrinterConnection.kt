@@ -9,7 +9,10 @@ import java.io.IOException
 import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.Timer
+import java.util.TimerTask
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** One open link to a printer. Every method blocks and must run off the main thread. */
 interface PrinterConnection {
@@ -80,24 +83,54 @@ class ClassicConnection(
     // Discovery hogs the radio and makes RFCOMM connects fail or crawl.
     runCatching { adapter.cancelDiscovery() }
 
+    // One deadline for both attempts, so a stalled printer cannot hold the I/O thread.
+    val deadline = System.currentTimeMillis() + timeoutMs.coerceAtLeast(1)
+
     val secure = device.createRfcommSocketToServiceRecord(SPP_UUID)
     try {
-      secure.connect()
+      connectBefore(secure, deadline)
       socket = secure
       return
     } catch (e: IOException) {
       runCatching { secure.close() }
+      if (System.currentTimeMillis() >= deadline) throw e
     }
 
     // Many cheap printers only accept an unauthenticated link.
     val insecure = device.createInsecureRfcommSocketToServiceRecord(SPP_UUID)
     try {
-      insecure.connect()
+      connectBefore(insecure, deadline)
       socket = insecure
     } catch (e: IOException) {
       runCatching { insecure.close() }
       throw e
     }
+  }
+
+  /**
+   * `BluetoothSocket.connect()` has no timeout and only returns early when another thread
+   * closes the socket, so a timer does exactly that at the deadline.
+   */
+  private fun connectBefore(s: BluetoothSocket, deadline: Long) {
+    val remaining = deadline - System.currentTimeMillis()
+    if (remaining <= 0) throw IOException("Timed out connecting to the printer")
+    val timedOut = AtomicBoolean(false)
+    val timer = Timer("thermal-printer-rfcomm-timeout", true)
+    timer.schedule(object : TimerTask() {
+      override fun run() {
+        timedOut.set(true)
+        runCatching { s.close() }
+      }
+    }, remaining)
+    try {
+      s.connect()
+    } catch (e: IOException) {
+      if (timedOut.get()) throw IOException("Timed out connecting to the printer", e)
+      throw e
+    } finally {
+      timer.cancel()
+    }
+    if (timedOut.get()) throw IOException("Timed out connecting to the printer")
   }
 
   override fun write(data: ByteArray, chunkSize: Int, delayMs: Long) {
