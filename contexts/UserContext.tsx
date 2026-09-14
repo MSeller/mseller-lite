@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { updateAxiosConfig } from "../services/api";
 import { initializeUserSession } from "../services/userService";
 import { UserTypes } from "../types/user";
+import { isProfileNotFound } from "../utils/account";
 import { useAuth } from "./AuthContext";
 
 interface UserContextType {
@@ -10,6 +11,8 @@ interface UserContextType {
   userProfile: UserTypes | null;
   loading: boolean;
   error: string | null;
+  /** Signed in (e.g. with Google) but without an MSeller account: offer to create a business. */
+  profileMissing: boolean;
   refreshUserProfile: () => Promise<void>;
 }
 
@@ -18,6 +21,7 @@ const UserContext = createContext<UserContextType>({
   userProfile: null,
   loading: true,
   error: null,
+  profileMissing: false,
   refreshUserProfile: async () => {},
 });
 
@@ -38,11 +42,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<UserTypes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [profileMissing, setProfileMissing] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) {
         setUserProfile(null);
+        setProfileMissing(false);
         setLoading(false);
         return;
       }
@@ -53,6 +59,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         const profile = await initializeUserSession();
         setUserProfile(profile || null);
+        setProfileMissing(false);
 
         // Update axios configuration with user's business config
         if (profile?.business?.config) {
@@ -63,6 +70,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setError(
           err instanceof Error ? err.message : "Failed to fetch user profile"
         );
+        setProfileMissing(isProfileNotFound((err as Error)?.message));
         setUserProfile(null);
       } finally {
         setLoading(false);
@@ -83,6 +91,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
       const profile = await initializeUserSession();
       setUserProfile(profile || null);
+      setProfileMissing(false);
 
       // Update axios configuration with user's business config
       if (profile?.business?.config) {
@@ -90,6 +99,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       }
     } catch (err) {
       console.error("Error refreshing user profile:", err);
+      setProfileMissing(isProfileNotFound((err as Error)?.message));
       setError(
         err instanceof Error ? err.message : "Failed to refresh user profile"
       );
@@ -103,6 +113,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     userProfile,
     loading: authLoading || loading,
     error,
+    profileMissing,
     refreshUserProfile,
   };
 

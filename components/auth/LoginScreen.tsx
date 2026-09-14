@@ -20,6 +20,7 @@ import {
 import { auth } from "../../config/firebase";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginScreenProps {
   onNavigateToSignUp: () => void;
@@ -192,6 +193,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     />
                   </View>
 
+                  <GoogleSignInButton disabled={loading} onError={setError} />
+
                   <Button
                     mode="outlined"
                     onPress={onNavigateToSignUp}
@@ -306,6 +309,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   registerButton: {
+    marginTop: 12,
     borderRadius: 8,
     borderWidth: 1.5,
   },

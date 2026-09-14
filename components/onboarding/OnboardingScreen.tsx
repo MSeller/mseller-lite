@@ -1,4 +1,3 @@
-import { signOut } from "firebase/auth";
 import { Image } from "expo-image";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -27,7 +26,6 @@ import {
 } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth } from "../../config/firebase";
 import {
   BRAND_COLORS,
   BUSINESS_TYPES,
@@ -40,7 +38,12 @@ import {
 import type { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { completeBusinessSetup, lookupRnc, type RncInfo } from "../../services/accountService";
+import {
+  completeBusinessSetup,
+  lookupRnc,
+  signOutCompletely,
+  type RncInfo,
+} from "../../services/accountService";
 import { ImageTooLargeError, toImageDataUri, uploadImages } from "../../services/mediaService";
 import {
   EMPTY_ONBOARDING_FORM,
@@ -501,7 +504,7 @@ const OnboardingScreen: React.FC = () => {
           <Appbar.BackAction onPress={() => setStepIndex((index) => index - 1)} />
         ) : null}
         <Appbar.Content title={t("onboarding.pageTitle")} />
-        <Button onPress={() => signOut(auth)} compact>
+        <Button onPress={signOutCompletely} compact>
           {t("onboarding.signOut")}
         </Button>
       </Appbar.Header>

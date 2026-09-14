@@ -68,7 +68,11 @@
     "resetSubtitle": "Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.",
     "sendResetLink": "Enviar enlace",
     "resetSentTo": "Enviamos un correo a {{email}}. Revisa tu bandeja de entrada y sigue las instrucciones.",
-    "backToLogin": "Volver a iniciar sesión"
+    "backToLogin": "Volver a iniciar sesión",
+    "continueWithGoogle": "Continuar con Google",
+    "googleUnavailable": "Google no está disponible en este dispositivo.",
+    "googleFailed": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
+    "googleAccountExistsWithPassword": "Este correo ya tiene una cuenta con contraseña. Inicia sesión con tu correo y contraseña."
   },
   "profile": {
     "profile": "Perfil",
@@ -694,7 +698,8 @@
     "deleteButton": "Eliminar cuenta definitivamente",
     "deleteWrongPassword": "La contraseña no es correcta",
     "deleteFailed": "No pudimos eliminar la cuenta. Inténtalo de nuevo.",
-    "deleted": "Tu cuenta fue eliminada"
+    "deleted": "Tu cuenta fue eliminada",
+    "deleteGoogleHint": "Te pediremos elegir tu cuenta de Google para confirmar que eres tú."
   },
   "onboarding": {
     "pageTitle": "Configuración de tu Negocio",
@@ -829,5 +834,13 @@
   "profileUnavailable": {
     "title": "No pudimos cargar tu cuenta",
     "body": "Revisa tu conexión e inténtalo de nuevo. Si el problema continúa, cierra sesión y vuelve a entrar."
+  },
+  "createBusiness": {
+    "title": "Crea tu cuenta de empresa",
+    "body": "No encontramos una cuenta de MSeller para {{email}}. Crea una empresa nueva y serás su administrador.",
+    "create": "Crear empresa",
+    "useAnotherAccount": "Usar otra cuenta",
+    "failed": "No pudimos crear la empresa. Inténtalo de nuevo.",
+    "alreadyRegistered": "Este correo ya pertenece a una cuenta de MSeller. Inicia sesión con tu correo y contraseña."
   }
 }

@@ -14,6 +14,7 @@ import "react-native-reanimated";
 import "@/config/i18n";
 
 import AuthScreen from "@/components/auth/AuthScreen";
+import CreateBusinessScreen from "@/components/auth/CreateBusinessScreen";
 import LoadingScreen from "@/components/auth/LoadingScreen";
 import ProfileUnavailableScreen from "@/components/auth/ProfileUnavailableScreen";
 import EnvironmentBadge from "@/components/common/EnvironmentBadge";
@@ -30,7 +31,7 @@ import { needsOnboarding } from "@/utils/account";
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const { user, loading } = useAuth();
-  const { userProfile, loading: profileLoading } = useUser();
+  const { userProfile, loading: profileLoading, profileMissing } = useUser();
   const { t } = useTranslation();
 
   /**
@@ -71,6 +72,11 @@ function RootLayoutContent() {
   // refresh keeps the previous profile, so it never blanks the running app.
   if (!userProfile && profileLoading) {
     return <LoadingScreen />;
+  }
+
+  // A Google login with no MSeller account behind it: offer to create a business.
+  if (!userProfile && profileMissing) {
+    return <CreateBusinessScreen />;
   }
 
   // Without a profile there is no business to talk to and no way to know whether setup is
