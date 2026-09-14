@@ -63,3 +63,8 @@ gha-creds-*.json
 *.swp
 *.swo
 ._*
+
+# Local Expo module build outputs (Gradle / Xcode)
+modules/*/android/build/
+modules/*/android/.gradle/
+modules/*/ios/build/
