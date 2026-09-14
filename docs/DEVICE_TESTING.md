@@ -78,6 +78,8 @@ bundled, so restart Metro after editing an env file.
 pnpm distribute:dev                     # Dev build → "testers" group in mseller-dev-40a08
 pnpm distribute:prod                    # Prod build → "testers" group in mobile-seller-v3
 pnpm distribute:dev -- --groups qa,ops  # other groups (comma-separated aliases)
+pnpm distribute:ios:dev                 # iOS: ad hoc build on EAS → same groups
+pnpm distribute:ios:prod
 ```
 
 `scripts/distribute-android.js`:
@@ -93,6 +95,7 @@ Pass `-- --allow-dirty` to override.
 | | Dev | Prod |
 |---|---|---|
 | Firebase Android app | `1:1077247630111:android:1cd6826322c2465fb42e2a` | `1:744491375680:android:284590bf026c30af3453a5` |
+| Firebase iOS app | `1:1077247630111:ios:acb9fb787dc65a33b42e2a` | `1:744491375680:ios:9808354e5ad788b83453a5` |
 | Console | [mseller-dev-40a08 → App Distribution](https://console.firebase.google.com/project/mseller-dev-40a08/appdistribution) | [mobile-seller-v3 → App Distribution](https://console.firebase.google.com/project/mobile-seller-v3/appdistribution) |
 
 ### Automatic (GitHub Actions)
@@ -101,15 +104,15 @@ Pass `-- --allow-dirty` to override.
 
 | Trigger | Build |
 |---|---|
-| Merge to `main` (code changes, not docs) | Dev and Prod in parallel → `testers` in each project |
-| Actions → App Distribution → *Run workflow* | Pick `both`, `development` or `production`, and the groups |
+| Merge to `main` (code changes, not docs) | Dev and Prod, Android and iOS, in parallel → `testers` in each project |
+| Actions → App Distribution → *Run workflow* | Pick the environment, the platform (`both`, `android`, `ios`) and the groups |
 
-Each environment runs as its own job, so a failed Prod upload doesn't block Dev.
+Each environment and platform runs as its own job, so one failed upload doesn't block the others.
 
 Repo secrets: `ENV_DEV`, `ENV_PROD` (contents of `.env.dev` / `.env.prod`; update them
 whenever you change those files), plus `FIREBASE_SERVICE_ACCOUNT_DEV` and
 `FIREBASE_SERVICE_ACCOUNT_PROD`. Each service account is `app-distribution-ci` in its
-project, with the *Firebase App Distribution Admin* role.
+project, with the *Firebase App Distribution Admin* role. iOS also needs `EXPO_TOKEN`.
 
 ### Manual
 
@@ -129,6 +132,49 @@ Android will ask them to allow installs from unknown sources once.
 same key for everyone. Android only installs an update over an existing app when both
 are signed with the same key. A tester who switches between a Firebase build and an EAS
 build of the same package must uninstall first.
+
+### iOS
+
+iOS builds are **ad hoc**: only iPhones registered in the Apple Developer account
+(team `HDYHZ227JK`) *before* the build can install it. Apple allows 100 iPhones a year.
+
+`scripts/distribute-ios.js` runs `eas build --profile preview-dev|preview-prod` on EAS,
+waits, downloads the IPA and uploads it with the same release notes as Android. EAS holds
+the Apple Distribution certificate and the ad hoc profile, and increments the build number.
+
+**One-time setup (done for both apps; repeat only if the credentials are reset):**
+
+EAS signs in to Apple with an **App Store Connect API key** rather than an Apple ID. Signing
+in with the Apple ID fails with "iTunes service key is empty" (a known EAS CLI issue).
+
+1. App Store Connect → Users and Access → Integrations → **Team Keys** → **+**, role **Admin**.
+   Save the `.p8` as `~/.appstoreconnect/AuthKey_<KEY_ID>.p8` (`chmod 600`), never in the repo.
+2. Create the certificate and ad hoc profiles, one command per app, in one line so the variables apply:
+   ```bash
+   EXPO_ASC_API_KEY_PATH="$HOME/.appstoreconnect/AuthKey_<KEY_ID>.p8" EXPO_ASC_KEY_ID=<KEY_ID> EXPO_ASC_ISSUER_ID=<ISSUER_UUID> EXPO_APPLE_TEAM_ID=HDYHZ227JK EXPO_APPLE_TEAM_TYPE=INDIVIDUAL npx eas-cli@latest build --platform ios --profile preview-dev
+   ```
+   Answer yes to logging in, to reusing or generating the distribution certificate and to the
+   provisioning profile. Then run it again with `--profile preview-prod`.
+3. CI token: create an access token at expo.dev → Account settings → Access tokens, then
+   `gh secret set EXPO_TOKEN --repo MSeller/mseller-lite`.
+
+To upload a build that already finished on EAS instead of starting a new one:
+`pnpm distribute:ios:dev -- --build-id <eas-build-id>`.
+
+**Adding an iOS tester:**
+
+1. Register their iPhone with EAS: `npx eas-cli@latest device:create` → *Website* and send them
+   the link. Or use *Export UDIDs* in Firebase App Distribution after they accept the invite,
+   and add each one with `device:create` → *Input*.
+2. Refresh the profile so it includes the new device: run the step 2 command above for each
+   profile and answer *No, let me choose devices again* when asked to reuse the profile.
+3. The **next** build includes them. Builds made before that won't install on their iPhone.
+
+**What iOS testers do:** accept the invite on the iPhone in Safari, add the App Tester web
+clip, and install from there. Ad hoc builds on iOS 16 or later open only with
+**Developer Mode** on: Settings → Privacy & Security → Developer Mode, then restart the
+iPhone when asked and confirm *Turn On* after it restarts. (Trusting the developer under
+VPN & Device Management is for Enterprise builds, not these.)
 
 ## EAS builds (share with testers)
 

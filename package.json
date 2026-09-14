@@ -15,6 +15,8 @@
     "apk:prod": "node scripts/with-env.js production expo run:android --variant release",
     "distribute:dev": "node scripts/with-env.js development node scripts/distribute-android.js",
     "distribute:prod": "node scripts/with-env.js production node scripts/distribute-android.js",
+    "distribute:ios:dev": "node scripts/distribute-ios.js development",
+    "distribute:ios:prod": "node scripts/distribute-ios.js production",
     "start:dev": "node scripts/with-env.js development expo start --dev-client",
     "start:prod": "node scripts/with-env.js production expo start --dev-client",
     "android:local": "EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true expo start --android",

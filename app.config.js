@@ -33,8 +33,15 @@ export default {
     newArchEnabled: true,
     ios: {
       bundleIdentifier: PACKAGE_ID,
+      // Signs with the MSeller team; EAS holds the certificate and ad hoc profile.
+      appleTeamId: "HDYHZ227JK",
       supportsTablet: true,
       icon: "./assets/icons/Icon.png",
+      infoPlist: {
+        // Only standard HTTPS/TLS, which is exempt: skips the export-compliance
+        // question on every build and upload.
+        ITSAppUsesNonExemptEncryption: false,
+      },
     },
     android: {
       package: PACKAGE_ID,
