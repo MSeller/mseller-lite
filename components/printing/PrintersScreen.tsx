@@ -76,6 +76,22 @@ const PrintersScreen: React.FC = () => {
   );
   const [tcpInput, setTcpInput] = useState(printer?.transport === "tcp" ? printer.address : "");
 
+  // If the screen mounted before the saved printer was read from storage, fill the form once it
+  // arrives. Only the first time: later changes come from this form's own save.
+  const formPrinter = useRef(printer);
+  useEffect(() => {
+    if (!printer || formPrinter.current) return;
+    formPrinter.current = printer;
+    setProfileId(printer.profileId);
+    setTransport(printer.transport);
+    setSelected(
+      printer.transport === "tcp"
+        ? null
+        : { kind: printer.transport, address: printer.address, name: printer.name }
+    );
+    setTcpInput(printer.transport === "tcp" ? printer.address : "");
+  }, [printer]);
+
   const [devices, setDevices] = useState<DiscoveredDevice[]>([]);
   const [scanning, setScanning] = useState(false);
   const [scanned, setScanned] = useState(false);

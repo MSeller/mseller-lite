@@ -112,9 +112,10 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({ child
         await enqueue(disconnectPrinter);
         setConnection("disconnected");
       }
+      // Persist first: if storage fails, memory must not drift from what a restart restores.
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       printerRef.current = next;
       setPrinter(next);
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     },
     [enqueue]
   );
@@ -122,9 +123,9 @@ export const PrinterProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const forgetPrinter = useCallback(async () => {
     await enqueue(disconnectPrinter);
     setConnection("disconnected");
+    await AsyncStorage.removeItem(STORAGE_KEY);
     printerRef.current = null;
     setPrinter(null);
-    await AsyncStorage.removeItem(STORAGE_KEY);
   }, [enqueue]);
 
   const connect = useCallback(
