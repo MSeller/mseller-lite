@@ -101,6 +101,8 @@ export default {
           recordAudioAndroid: false,
         },
       ],
+      // Local module (modules/thermal-printer): Bluetooth permissions for ticket printing.
+      "./modules/thermal-printer/app.plugin.js",
     ],
     experiments: {
       typedRoutes: true,
