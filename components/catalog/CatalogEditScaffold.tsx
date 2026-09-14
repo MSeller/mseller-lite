@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { Appbar, Button, HelperText, Snackbar, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -6,25 +6,27 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
+import { CatalogFormLocked } from "./CatalogFields";
 import { useHardwareBack } from "./useCatalogRecord";
 
 interface Props {
   title: string;
   /** Unsaved changes: leaving asks first. */
   dirty: boolean;
+  /** While true every catalog field inside is disabled. */
   saving: boolean;
   onSave: () => void;
   /** Leaves the form. Called directly when clean, after confirmation when dirty. */
   onClose: () => void;
-  /** The save failure, shown under the fields and in a snackbar. Clear it when a save starts. */
+  /** The save failure, shown at the top of the form and in a snackbar. Clear it when a save starts. */
   error: string;
   children: React.ReactNode;
 }
 
 /**
- * The frame every catalog edit form shares: app bar with back and Guardar, a
- * keyboard-aware scroll, the inline error and a snackbar, and the "discard changes?"
- * question on the app bar back and Android's back button alike.
+ * The frame every catalog edit form shares: app bar with back, a keyboard-aware scroll,
+ * the Guardar bar, the save error, and the "discard changes?" question on the app bar
+ * back and Android's back button alike.
  */
 const CatalogEditScaffold: React.FC<Props> = ({
   title,
@@ -40,12 +42,22 @@ const CatalogEditScaffold: React.FC<Props> = ({
   const tabOverflow = useBottomTabOverflow();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
+  const scrollRef = useRef<ScrollView>(null);
 
-  // The snackbar goes away on its own; the inline error stays until the next save.
+  // Every press of Guardar counts, so a second failure with the same message still gets
+  // feedback: the snackbar comes back and the form scrolls up to the error summary. The
+  // per-field messages sit under their fields from the first failed attempt on.
+  const [attempt, setAttempt] = useState(0);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   useEffect(() => {
     setSnackbarVisible(!!error);
-  }, [error]);
+    if (error) scrollRef.current?.scrollTo({ y: 0, animated: true });
+  }, [error, attempt]);
+
+  const handleSave = useCallback(() => {
+    setAttempt((n) => n + 1);
+    onSave();
+  }, [onSave]);
 
   const requestClose = useCallback(() => {
     if (saving) return;
@@ -84,23 +96,24 @@ const CatalogEditScaffold: React.FC<Props> = ({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         >
-          {children}
           {!!error && (
-            <HelperText type="error" visible style={styles.error}>
+            <HelperText type="error" visible style={styles.error} accessibilityLiveRegion="polite">
               {error}
             </HelperText>
           )}
+          <CatalogFormLocked.Provider value={saving}>{children}</CatalogFormLocked.Provider>
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: 12 + tabOverflow }]}>
           <Button
             mode="contained"
             icon="content-save"
-            onPress={onSave}
+            onPress={handleSave}
             loading={saving}
             disabled={saving || !dirty}
             style={styles.button}
@@ -142,7 +155,7 @@ const createStyles = (theme: CustomTheme) =>
       paddingBottom: 32,
     },
     error: {
-      marginTop: 4,
+      marginBottom: 8,
     },
     footer: {
       paddingHorizontal: 16,

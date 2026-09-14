@@ -5,6 +5,8 @@ import type {
   ProductoEditable,
   ProductoUpdateRequest,
 } from "../types/catalog";
+import { isValidEmail } from "./account";
+import { parseStrictNumericInput } from "./documentFormat";
 
 /**
  * Pure form logic for the admin Catálogo (customers and products).
@@ -31,24 +33,8 @@ export type FieldErrors<K extends string> = Partial<Record<K, ValidationCode>>;
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-/**
- * Strict decimal parse of what someone typed. Accepts a comma as the decimal
- * separator (what a Spanish keyboard offers) and treats an empty field as 0.
- * Returns `null` for anything that is not entirely a number — unlike `parseFloat`,
- * "12abc" is not 12.
- */
-export const parseDecimal = (raw: string): number | null => {
-  const text = raw.replace(/\s/g, "").replace(",", ".");
-  if (text === "") return 0;
-  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(text)) return null;
-  const value = Number(text);
-  return Number.isFinite(value) ? value : null;
-};
-
-/** Number → field text. Whole numbers lose their decimals; others keep what they have. */
-export const numberToField = (value: number | null | undefined): string =>
+/** Number → field text, as the user would have typed it. */
+const numberToField = (value: number | null | undefined): string =>
   value === null || value === undefined || !Number.isFinite(value) ? "0" : String(value);
 
 /** Trimmed text, or `null` when nothing is left — the server stores absent values as NULL. */
@@ -57,15 +43,17 @@ export const textOrNull = (value: string): string | null => {
   return trimmed ? trimmed : null;
 };
 
-export const isValidEmail = (value: string): boolean => EMAIL_PATTERN.test(value.trim());
-
 export const isValidStatus = (value: string): value is CatalogStatus =>
   value === "A" || value === "I";
+
+/** The server compares status case-insensitively; anything but I reads as active. */
+const toStatus = (value: string | null | undefined): CatalogStatus =>
+  value?.toUpperCase() === "I" ? "I" : "A";
 
 type NumberRule = "nonNegative" | "count" | "percent" | "positive";
 
 const checkNumber = (raw: string, rule: NumberRule): ValidationCode | undefined => {
-  const value = parseDecimal(raw);
+  const value = parseStrictNumericInput(raw);
   if (value === null) return "number";
   if (rule === "positive") return value > 0 ? undefined : "positive";
   if (value < 0) return "nonNegative";
@@ -122,7 +110,7 @@ export const customerToForm = (cliente: ClienteEditable): CustomerForm => ({
   limiteCredito: numberToField(cliente.limiteCredito),
   limiteFacturas: numberToField(cliente.limiteFacturas),
   descuento: numberToField(cliente.descuento),
-  status: cliente.status?.toUpperCase() === "I" ? "I" : "A",
+  status: toStatus(cliente.status),
   notas: cliente.notas ?? "",
 });
 
@@ -148,9 +136,9 @@ export const buildCustomerUpdate = (form: CustomerForm): ClienteUpdateRequest =>
   contacto: textOrNull(form.contacto),
   codigoVendedor: textOrNull(form.codigoVendedor),
   condicion: textOrNull(form.condicion),
-  limiteCredito: parseDecimal(form.limiteCredito) ?? 0,
-  limiteFacturas: parseDecimal(form.limiteFacturas) ?? 0,
-  descuento: parseDecimal(form.descuento) ?? 0,
+  limiteCredito: parseStrictNumericInput(form.limiteCredito) ?? 0,
+  limiteFacturas: parseStrictNumericInput(form.limiteFacturas) ?? 0,
+  descuento: parseStrictNumericInput(form.descuento) ?? 0,
   status: form.status,
   notas: textOrNull(form.notas),
 });
@@ -201,7 +189,7 @@ export const productToForm = (producto: ProductoEditable): ProductForm => ({
   impuesto: numberToField(producto.impuesto),
   descuento: numberToField(producto.descuento),
   tipoImpuesto: producto.tipoImpuesto ?? "",
-  status: producto.status?.toUpperCase() === "I" ? "I" : "A",
+  status: toStatus(producto.status),
   visibleTienda: !!producto.visibleTienda,
   promocion: !!producto.promocion,
   esServicio: !!producto.esServicio,
@@ -215,7 +203,7 @@ export const validateProductForm = (form: ProductForm): FieldErrors<keyof Produc
       (field) => [field, checkNumber(form[field], "nonNegative")] as [keyof ProductForm, ValidationCode | undefined]
     ),
     ["costo", checkNumber(form.costo, "nonNegative")],
-    ["impuesto", checkNumber(form.impuesto, "nonNegative")],
+    ["impuesto", checkNumber(form.impuesto, "percent")],
     ["descuento", checkNumber(form.descuento, "percent")],
     ["status", isValidStatus(form.status) ? undefined : "status"],
   ]);
@@ -229,15 +217,15 @@ export const buildProductUpdate = (form: ProductForm): ProductoUpdateRequest => 
   departamento: textOrNull(form.departamento),
   unidad: textOrNull(form.unidad),
   empaque: textOrNull(form.empaque),
-  factor: parseDecimal(form.factor) ?? 1,
-  precio1: parseDecimal(form.precio1) ?? 0,
-  precio2: parseDecimal(form.precio2) ?? 0,
-  precio3: parseDecimal(form.precio3) ?? 0,
-  precio4: parseDecimal(form.precio4) ?? 0,
-  precio5: parseDecimal(form.precio5) ?? 0,
-  costo: parseDecimal(form.costo) ?? 0,
-  impuesto: parseDecimal(form.impuesto) ?? 0,
-  descuento: parseDecimal(form.descuento) ?? 0,
+  factor: parseStrictNumericInput(form.factor) ?? 1,
+  precio1: parseStrictNumericInput(form.precio1) ?? 0,
+  precio2: parseStrictNumericInput(form.precio2) ?? 0,
+  precio3: parseStrictNumericInput(form.precio3) ?? 0,
+  precio4: parseStrictNumericInput(form.precio4) ?? 0,
+  precio5: parseStrictNumericInput(form.precio5) ?? 0,
+  costo: parseStrictNumericInput(form.costo) ?? 0,
+  impuesto: parseStrictNumericInput(form.impuesto) ?? 0,
+  descuento: parseStrictNumericInput(form.descuento) ?? 0,
   tipoImpuesto: textOrNull(form.tipoImpuesto),
   status: form.status,
   visibleTienda: form.visibleTienda,

@@ -13,6 +13,7 @@ import {
   isOnboardingStepValid,
   isProfileNotFound,
   isRncValid,
+  isValidEmail,
   needsOnboarding,
   splitDisplayName,
   validateRegistration,
@@ -48,6 +49,19 @@ describe("validateRegistration", () => {
     [{ confirmPassword: "Secreta2" }, "passwordsDoNotMatch"],
   ])("rejects %j with %s", (patch, expected) => {
     expect(validateRegistration({ ...validForm, ...patch })).toBe(expected);
+  });
+});
+
+describe("isValidEmail", () => {
+  it("accepts an address, ignoring surrounding spaces", () => {
+    expect(isValidEmail("a@b.do")).toBe(true);
+    expect(isValidEmail(" compras@esquina.com.do ")).toBe(true);
+  });
+
+  it("rejects a malformed one", () => {
+    expect(isValidEmail("a@b")).toBe(false);
+    expect(isValidEmail("ab.do")).toBe(false);
+    expect(isValidEmail("no es correo@x.do")).toBe(false);
   });
 });
 

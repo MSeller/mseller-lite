@@ -3,14 +3,15 @@ import { StyleSheet, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { usePagedSearch, type SearchPage } from "../../hooks/usePagedSearch";
 import { useTranslation } from "../../hooks/useTranslation";
 import { searchCustomers } from "../../services/customerService";
 import type { ClienteEditable } from "../../types/catalog";
 import type { CustomerSummary } from "../../types/documents";
 import { formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
-import CatalogBadge from "./CatalogBadge";
-import CatalogList, { CATALOG_PAGE_SIZE, type CatalogListPatch, type CatalogPage } from "./CatalogList";
+import StatusChip from "../ui/StatusChip";
+import CatalogList, { CATALOG_PAGE_SIZE } from "./CatalogList";
 import CustomerDetail from "./CustomerDetail";
 
 interface Props {
@@ -22,8 +23,8 @@ const keyExtractor = (item: CustomerSummary) => item.codigo;
 
 // The whole book, not the admin's own customers (`soloMisClientes: false`), inactive
 // ones included so they can be found and reactivated.
-const fetchCustomers = async (query: string, page: number): Promise<CatalogPage<CustomerSummary>> => {
-  const result = await searchCustomers(query, {
+const fetchCustomers = async (query: string, page: number): Promise<SearchPage<CustomerSummary>> => {
+  const result = await searchCustomers(query.trim(), {
     soloMisClientes: false,
     incluirInactivos: true,
     pageNumber: page,
@@ -60,7 +61,9 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const [selected, setSelected] = useState<CustomerSummary | null>(null);
-  const [patch, setPatch] = useState<CatalogListPatch<CustomerSummary> | null>(null);
+  const [search, setSearch] = useState("");
+  const results = usePagedSearch({ query: search, fetchPage: fetchCustomers });
+  const { setItems } = results;
 
   const renderRow = useCallback(
     (item: CustomerSummary) => {
@@ -84,7 +87,7 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
                 {item.codigo}
                 {meta ? ` · ${meta}` : ""}
               </Text>
-              {item.status === "I" && <CatalogBadge label={t("catalog.inactive")} tone="negative" />}
+              {item.status === "I" && <StatusChip label={t("catalog.inactive")} tone="negative" />}
             </View>
             <Icon source="chevron-right" size={22} color={theme.colors.onSurfaceVariant} />
           </View>
@@ -94,9 +97,13 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
     [styles, theme, t]
   );
 
-  const handleUpdated = useCallback((cliente: ClienteEditable) => {
-    setPatch({ key: cliente.codigo, apply: applyToSummary(cliente) });
-  }, []);
+  const handleUpdated = useCallback(
+    (cliente: ClienteEditable) => {
+      const apply = applyToSummary(cliente);
+      setItems((rows) => rows.map((row) => (row.codigo === cliente.codigo ? apply(row) : row)));
+    },
+    [setItems]
+  );
 
   const handleBack = useCallback(() => setSelected(null), []);
 
@@ -104,10 +111,11 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
     <>
       <View style={selected ? styles.hidden : styles.fill}>
         <CatalogList
-          fetchPage={fetchCustomers}
+          search={search}
+          onSearchChange={setSearch}
+          results={results}
           keyExtractor={keyExtractor}
           renderRow={renderRow}
-          patch={patch}
           headerAccessory={headerAccessory}
           searchPlaceholder={t("catalog.customers.searchPlaceholder")}
           emptyIcon="account-search-outline"

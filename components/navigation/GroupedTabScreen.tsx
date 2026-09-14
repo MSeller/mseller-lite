@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { ActivityIndicator, Icon, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useNavigationAccess, type NavSection } from "../../hooks/useNavigationAccess";
 import { useTranslation } from "../../hooks/useTranslation";
+import EmptyState from "../ui/EmptyState";
 import SectionSwitcher, { type SectionOption } from "./SectionSwitcher";
 
 interface GroupedTabScreenProps<T extends NavSection> {
@@ -50,15 +51,7 @@ export default function GroupedTabScreen<T extends NavSection>({
         {loading ? (
           <ActivityIndicator size="large" />
         ) : (
-          <>
-            <Icon source="lock-outline" size={56} color={theme.colors.onSurfaceVariant} />
-            <Text
-              variant="bodyMedium"
-              style={[styles.emptyText, { color: theme.colors.onSurfaceVariant }]}
-            >
-              {t("navigation.noSections")}
-            </Text>
-          </>
+          <EmptyState icon="lock-outline" message={t("navigation.noSections")} />
         )}
       </SafeAreaView>
     );
@@ -107,8 +100,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 12,
     padding: 32,
-  },
-  emptyText: {
-    textAlign: "center",
   },
 });

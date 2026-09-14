@@ -1,21 +1,27 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import { StyleSheet, View } from "react-native";
-import {
-  HelperText,
-  SegmentedButtons,
-  Switch,
-  Text,
-  TextInput,
-  TouchableRipple,
-  useTheme,
-} from "react-native-paper";
+import { SegmentedButtons, Switch, Text, TouchableRipple, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import type { CatalogStatus } from "../../types/catalog";
-import type { ValidationCode } from "../../utils/catalogValidation";
 import AppCard from "../ui/AppCard";
+import FormField, { type FormFieldProps } from "../ui/FormField";
 import SectionHeader from "../ui/SectionHeader";
+
+/**
+ * Layout and the few inputs only the catalog forms need. Text inputs and selects are
+ * the app's shared `FormField` and `SelectField`; these wrap them for a white card.
+ */
+
+/**
+ * True while the form is saving. `CatalogEditScaffold` provides it, and every field here
+ * reads it, so nothing typed during the request is silently dropped when the form closes.
+ */
+export const CatalogFormLocked = createContext(false);
+
+/** A field is disabled when it asks to be or while its form is saving. */
+const useFieldDisabled = (disabled?: boolean) => useContext(CatalogFormLocked) || !!disabled;
 
 /** A titled card that groups related inputs in an edit form. */
 export const FieldGroup: React.FC<{ title: string; children: React.ReactNode }> = ({
@@ -28,81 +34,19 @@ export const FieldGroup: React.FC<{ title: string; children: React.ReactNode }> 
   </View>
 );
 
-type TextInputProps = React.ComponentProps<typeof TextInput>;
-
-interface FormFieldProps
-  extends Pick<
-    TextInputProps,
-    "autoCapitalize" | "keyboardType" | "inputMode" | "multiline" | "maxLength" | "right" | "autoCorrect"
-  > {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  /** Validation code, shown translated under the field. */
-  error?: ValidationCode;
-  disabled?: boolean;
-}
-
-/** An outlined text input with its validation message underneath. */
-export const FormField: React.FC<FormFieldProps> = ({ label, error, disabled, ...inputProps }) => {
+/**
+ * `FormField` on a card: the outlined input takes the card's surface instead of the
+ * page tone, as the document form's new-customer inputs do.
+ */
+export const CardField: React.FC<FormFieldProps> = ({ style, disabled, ...props }) => {
   const theme = useTheme() as CustomTheme;
-  const { t } = useTranslation();
-
-  return (
-    <View>
-      <TextInput
-        mode="outlined"
-        label={label}
-        error={!!error}
-        disabled={disabled}
-        style={{ backgroundColor: theme.colors.surface }}
-        {...inputProps}
-      />
-      {!!error && (
-        <HelperText type="error" visible style={styles.helper}>
-          {t(`catalog.validation.${error}`)}
-        </HelperText>
-      )}
-    </View>
-  );
+  const locked = useFieldDisabled(disabled);
+  return <FormField style={[{ backgroundColor: theme.colors.surface }, style]} disabled={locked} {...props} />;
 };
 
-/** Looks like a text field, opens a picker. The input itself never takes focus. */
-export const SelectField: React.FC<{
-  label: string;
-  value: string;
-  onPress: () => void;
-  disabled?: boolean;
-}> = ({ label, value, onPress, disabled }) => {
-  const theme = useTheme() as CustomTheme;
-
-  return (
-    <TouchableRipple
-      onPress={onPress}
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={`${label}: ${value}`}
-      borderless
-      style={styles.select}
-    >
-      <View pointerEvents="none">
-        <TextInput
-          mode="outlined"
-          label={label}
-          value={value}
-          editable={false}
-          disabled={disabled}
-          style={{ backgroundColor: theme.colors.surface }}
-          right={<TextInput.Icon icon="menu-down" />}
-        />
-      </View>
-    </TouchableRipple>
-  );
-};
-
-/** A numeric input: decimal keyboard, no autocorrect. */
+/** A numeric `CardField`: decimal keyboard, no autocorrect. */
 export const NumberField: React.FC<Omit<FormFieldProps, "keyboardType" | "inputMode">> = (props) => (
-  <FormField keyboardType="decimal-pad" inputMode="decimal" autoCorrect={false} {...props} />
+  <CardField keyboardType="decimal-pad" inputMode="decimal" autoCorrect={false} {...props} />
 );
 
 /** Activo / Inactivo. */
@@ -110,9 +54,10 @@ export const StatusField: React.FC<{
   value: CatalogStatus;
   onChange: (value: CatalogStatus) => void;
   disabled?: boolean;
-}> = ({ value, onChange, disabled }) => {
+}> = ({ value, onChange, disabled: disabledProp }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
+  const disabled = useFieldDisabled(disabledProp);
 
   return (
     <View style={styles.statusField}>
@@ -145,14 +90,19 @@ export const SwitchField: React.FC<{
   value: boolean;
   onChange: (value: boolean) => void;
   disabled?: boolean;
-}> = ({ label, value, onChange, disabled }) => {
+}> = ({ label, value, onChange, disabled: disabledProp }) => {
   const theme = useTheme() as CustomTheme;
+  const disabled = useFieldDisabled(disabledProp);
 
   return (
+    // One control for assistive technology: the row is the switch, with its label and
+    // checked state; the Switch inside is only its visual and is hidden from the tree.
     <TouchableRipple
       onPress={() => onChange(!value)}
       disabled={disabled}
+      accessible
       accessibilityRole="switch"
+      accessibilityLabel={label}
       accessibilityState={{ checked: value, disabled }}
       style={styles.switchRow}
     >
@@ -160,13 +110,15 @@ export const SwitchField: React.FC<{
         <Text variant="bodyLarge" style={[styles.switchLabel, { color: theme.colors.onSurface }]}>
           {label}
         </Text>
-        <Switch value={value} onValueChange={onChange} disabled={disabled} />
+        <View accessible={false} importantForAccessibility="no-hide-descendants">
+          <Switch value={value} onValueChange={onChange} disabled={disabled} accessible={false} />
+        </View>
       </View>
     </TouchableRipple>
   );
 };
 
-/** Two inputs side by side, for short numbers that belong together. */
+/** Two inputs side by side, for short values that belong together. */
 export const FieldRow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <View style={styles.fieldRow}>
     {React.Children.map(children, (child) => (
@@ -182,12 +134,6 @@ const styles = StyleSheet.create({
   groupContent: {
     padding: 14,
     gap: 10,
-  },
-  select: {
-    borderRadius: 4,
-  },
-  helper: {
-    paddingHorizontal: 4,
   },
   statusField: {
     gap: 8,

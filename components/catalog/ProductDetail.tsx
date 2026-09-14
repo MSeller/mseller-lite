@@ -9,7 +9,7 @@ import type { ProductoEditable } from "../../types/catalog";
 import { PRICE_FIELDS } from "../../utils/catalogValidation";
 import { formatMoney, formatQuantity } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
-import CatalogBadge from "./CatalogBadge";
+import StatusChip from "../ui/StatusChip";
 import CatalogDetailView, { DetailSection } from "./CatalogDetailView";
 import ProductEditForm from "./ProductEditForm";
 import { useCatalogRecord } from "./useCatalogRecord";
@@ -73,13 +73,13 @@ const ProductDetail: React.FC<Props> = ({ codigo, nombre, onBack, onUpdated }) =
                   {record.codigoBarra ? ` · ${record.codigoBarra}` : ""}
                 </Text>
                 <View style={styles.badges}>
-                  <CatalogBadge
+                  <StatusChip
                     label={record.status === "I" ? t("catalog.inactive") : t("catalog.active")}
                     tone={record.status === "I" ? "negative" : "positive"}
                   />
-                  {record.esServicio && <CatalogBadge label={t("catalog.products.service")} />}
+                  {record.esServicio && <StatusChip label={t("catalog.products.service")} tone="neutral" />}
                   {record.promocion && (
-                    <CatalogBadge label={t("catalog.products.promotion")} tone="warning" />
+                    <StatusChip label={t("catalog.products.promotion")} tone="warning" />
                   )}
                 </View>
               </View>

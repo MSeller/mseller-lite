@@ -20,6 +20,7 @@ import {
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { useBarcodeScanner } from "../../../hooks/useBarcodeScanner";
+import { usePagedSearch, type SearchPage } from "../../../hooks/usePagedSearch";
 import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
 import {
   createProduct,
@@ -49,7 +50,11 @@ interface Props {
 
 type Mode = "search" | "create";
 
-const SEARCH_DEBOUNCE_MS = 350;
+/** The picker shows the first page of matches; there is no paging here. */
+const searchProductPage = async (query: string): Promise<SearchPage<Product>> => {
+  const result = await searchProductsForDocument(query.trim());
+  return { items: result.data ?? [], hasMore: false };
+};
 
 /**
  * Full-screen product picker for the document being captured: search the
@@ -71,9 +76,13 @@ const ProductPickerModal: React.FC<Props> = ({
 
   const [mode, setMode] = useState<Mode>("search");
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    items: results,
+    setItems: setResults,
+    loading,
+    error: searchError,
+  } = usePagedSearch({ query: search, fetchPage: searchProductPage, enabled: visible && mode === "search" });
+  const error = searchError ? t("documents.errors.productSearchFailed") : "";
   const [addedCount, setAddedCount] = useState(0);
 
   // New-product form
@@ -109,8 +118,6 @@ const ProductPickerModal: React.FC<Props> = ({
   const resetAll = useCallback(() => {
     setMode("search");
     setSearch("");
-    setResults([]);
-    setError("");
     setAddedCount(0);
     setNombre("");
     setPrecio("");
@@ -130,34 +137,6 @@ const ProductPickerModal: React.FC<Props> = ({
   useEffect(() => {
     if (!visible) resetAll();
   }, [visible, resetAll]);
-
-  useEffect(() => {
-    if (!visible || mode !== "search") return;
-
-    let active = true;
-    setLoading(true);
-    const handle = setTimeout(async () => {
-      try {
-        const result = await searchProductsForDocument(search.trim());
-        if (active) {
-          setResults(result.data ?? []);
-          setError("");
-        }
-      } catch {
-        if (active) {
-          setResults([]);
-          setError(t("documents.errors.productSearchFailed"));
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      active = false;
-      clearTimeout(handle);
-    };
-  }, [search, visible, mode, t]);
 
   const handleAdd = useCallback(
     (product: Product) => {

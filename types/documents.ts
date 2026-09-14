@@ -183,17 +183,25 @@ export interface DocumentListFilters {
 
 // ── Customers & products ────────────────────────────────────────────────────
 
-export interface CustomerSummary {
+/**
+ * The customer fields every customer shape shares under the same name and type: the
+ * search row here, the created customer, and the admin catalog's editable record
+ * (`types/catalog.ts`).
+ */
+export interface CustomerBase {
   codigo: string;
   nombre: string;
-  telefono: string | null;
   rnc: string | null;
   direccion: string | null;
   ciudad: string | null;
-  condicionPago: string | null;
   codigoVendedor: string | null;
-  localidadId: number;
   balance: number;
+}
+
+export interface CustomerSummary extends CustomerBase {
+  telefono: string | null;
+  condicionPago: string | null;
+  localidadId: number;
   /** "A" / "I". Inactive customers are only listed when searching with `incluirInactivos`. */
   status?: string | null;
 }

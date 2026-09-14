@@ -30,12 +30,15 @@ export type RegistrationError =
 
 const EMAIL_PATTERN = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
 
+/** The app's one email format check (sign up, catalog forms). Surrounding spaces are ignored. */
+export const isValidEmail = (email: string): boolean => EMAIL_PATTERN.test(email.trim());
+
 /** The first rule the form breaks, in field order, or null when it can be submitted. */
 export const validateRegistration = (form: RegistrationForm): RegistrationError | null => {
   if (!form.firstName.trim()) return "firstNameRequired";
   if (!form.lastName.trim()) return "lastNameRequired";
   if (!form.email.trim()) return "emailRequired";
-  if (!EMAIL_PATTERN.test(form.email.trim())) return "emailInvalid";
+  if (!isValidEmail(form.email)) return "emailInvalid";
   if (!form.password) return "passwordRequired";
   if (form.password.length < 6) return "passwordTooShort";
   if (!/[A-Z]/.test(form.password)) return "passwordNeedsUppercase";

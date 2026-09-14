@@ -42,6 +42,11 @@ export const useCatalogForm = <F extends object, R>({
 
   const liveErrors = useMemo(() => validate(form), [validate, form]);
   const errors: FieldErrors<Extract<keyof F, string>> = attempted ? liveErrors : {};
+  /** The translated message for a field, or undefined — what `FormField`'s `errorText` takes. */
+  const errorText = (field: Extract<keyof F, string>): string | undefined => {
+    const code = errors[field];
+    return code ? t(`catalog.validation.${code}`) : undefined;
+  };
   const dirty = isFormDirty(initialRef.current, form);
 
   const submit = useCallback(async () => {
@@ -73,5 +78,5 @@ export const useCatalogForm = <F extends object, R>({
     }
   }, [liveErrors, save, form, onSaved, conflictMessage, t]);
 
-  return { form, setField, errors, dirty, saving, error, submit };
+  return { form, setField, errorText, dirty, saving, error, submit };
 };

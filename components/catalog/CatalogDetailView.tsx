@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Banner, Divider, Icon, Snackbar, Text, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Banner, Divider, Snackbar, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import type { CatalogRequestError } from "../../utils/catalogValidation";
 import AppCard from "../ui/AppCard";
+import EmptyState from "../ui/EmptyState";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import SectionHeader from "../ui/SectionHeader";
 import CatalogLockedState from "./CatalogLockedState";
@@ -77,14 +78,11 @@ const CatalogDetailView: React.FC<Props> = ({
     }
     if (!ready) {
       return (
-        <View style={styles.center}>
-          <Icon
-            source={failure?.kind === "notFound" ? "file-remove-outline" : "cloud-alert-outline"}
-            size={56}
-            color={theme.colors.onSurfaceVariant}
-          />
-          <Text style={styles.emptyText}>{failureMessage}</Text>
-        </View>
+        <EmptyState
+          icon={failure?.kind === "notFound" ? "file-remove-outline" : "cloud-alert-outline"}
+          message={failureMessage}
+          style={styles.center}
+        />
       );
     }
     return (
@@ -100,7 +98,7 @@ const CatalogDetailView: React.FC<Props> = ({
         <Appbar.BackAction onPress={onBack} />
         <Appbar.Content title={title} />
         {ready && failure?.kind !== "forbidden" && (
-          <Appbar.Action icon="pencil" accessibilityLabel={t("catalog.edit")} onPress={onEdit} />
+          <Appbar.Action icon="pencil" accessibilityLabel={t("common.edit")} onPress={onEdit} />
         )}
       </Appbar.Header>
 
@@ -108,7 +106,7 @@ const CatalogDetailView: React.FC<Props> = ({
         <Banner
           visible
           icon="alert-circle-outline"
-          actions={[{ label: t("catalog.retry"), onPress: onRetry }]}
+          actions={[{ label: t("common.retry"), onPress: onRetry }]}
         >
           {failureMessage}
         </Banner>
@@ -180,10 +178,6 @@ const createStyles = (theme: CustomTheme) =>
       justifyContent: "center",
       padding: 32,
       gap: 12,
-    },
-    emptyText: {
-      color: theme.colors.onSurfaceVariant,
-      textAlign: "center",
     },
     content: {
       padding: 16,

@@ -1,50 +1,31 @@
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Icon, Text, useTheme } from "react-native-paper";
+import { StyleSheet } from "react-native";
 
 import { useTranslation } from "../../hooks/useTranslation";
-
-interface Props {
-  /** The server's own explanation, when it sent one. */
-  message?: string | null;
-}
+import EmptyState from "../ui/EmptyState";
 
 /**
- * What a 403 from the catalog endpoints looks like. The tab is hidden from everyone
- * but administrators, so this is for a role that changed mid-session or a deep link —
- * a lock and a sentence, not an error banner with a retry that can never succeed.
+ * What a 403 from the catalog endpoints looks like: the app's lock empty state with the
+ * catalog's wording. The tab is hidden from everyone but administrators, so this is for
+ * a role that changed mid-session or a deep link — not an error banner with a retry
+ * that can never succeed.
  */
-const CatalogLockedState: React.FC<Props> = ({ message }) => {
-  const theme = useTheme();
+const CatalogLockedState: React.FC<{ message?: string | null }> = ({ message }) => {
   const { t } = useTranslation();
-
   return (
-    <View style={styles.container}>
-      <Icon source="lock-outline" size={56} color={theme.colors.onSurfaceVariant} />
-      <Text variant="titleMedium" style={[styles.title, { color: theme.colors.onSurface }]}>
-        {t("catalog.forbiddenTitle")}
-      </Text>
-      <Text variant="bodyMedium" style={[styles.body, { color: theme.colors.onSurfaceVariant }]}>
-        {message || t("catalog.forbiddenBody")}
-      </Text>
-    </View>
+    <EmptyState
+      icon="lock-outline"
+      title={t("catalog.forbiddenTitle")}
+      message={message || t("catalog.forbiddenBody")}
+      style={styles.fill}
+    />
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  fill: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     padding: 32,
-    gap: 8,
-  },
-  title: {
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  body: {
-    textAlign: "center",
   },
 });
 

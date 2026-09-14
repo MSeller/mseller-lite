@@ -55,6 +55,7 @@ import {
   type OnboardingForm,
 } from "../../utils/account";
 import { capturePhoto } from "../../utils/photoCapture";
+import SelectField from "../ui/SelectField";
 import OptionPickerModal, { type PickerOption } from "./OptionPickerModal";
 
 const RNC_LOOKUP_DEBOUNCE_MS = 800;
@@ -223,18 +224,13 @@ const OnboardingScreen: React.FC = () => {
 
   /** A read-only outlined field that opens a picker, so choices look like the other inputs. */
   const renderSelect = (kind: Exclude<Picker, null>, label: string, placeholder: string, value: string) => (
-    <Pressable onPress={() => setPicker(kind)} style={styles.field}>
-      <View pointerEvents="none">
-        <TextInput
-          mode="outlined"
-          label={label}
-          placeholder={placeholder}
-          value={labelOf(kind, value)}
-          editable={false}
-          right={<TextInput.Icon icon="chevron-down" />}
-        />
-      </View>
-    </Pressable>
+    <SelectField
+      label={label}
+      placeholder={placeholder}
+      value={labelOf(kind, value)}
+      onPress={() => setPicker(kind)}
+      style={styles.field}
+    />
   );
 
   const renderStep = () => {

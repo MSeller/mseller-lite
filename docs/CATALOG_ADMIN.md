@@ -28,7 +28,22 @@ Productos) in the list header, like Inventario.
 | Searchable list: debounced search, pull-to-refresh, infinite paging, empty, error and locked states | `components/catalog/CatalogList.tsx` |
 | Customers: list rows, detail, edit | `CustomersCatalogScreen.tsx`, `CustomerDetail.tsx`, `CustomerEditForm.tsx` |
 | Products: list rows, detail, edit | `ProductsCatalogScreen.tsx`, `ProductDetail.tsx`, `ProductEditForm.tsx` |
-| Shared detail frame, edit frame (discard prompt, save bar, inline error and snackbar), inputs | `CatalogDetailView.tsx`, `CatalogEditScaffold.tsx`, `CatalogFields.tsx` |
+| Catalog detail frame, edit frame (discard prompt, save bar, error summary and snackbar, fields locked while saving), card inputs | `CatalogDetailView.tsx`, `CatalogEditScaffold.tsx`, `CatalogFields.tsx` |
+
+The catalog reuses the app's shared pieces rather than keeping its own copies:
+
+| Shared piece | Also used by |
+|---|---|
+| `hooks/usePagedSearch.ts` (debounced, paged search) | document form `CustomerPickerModal`, `ProductPickerModal` |
+| `components/ui/StatusChip.tsx` | `DocumentStatusChip` |
+| `components/ui/EmptyState.tsx` | `GroupedTabScreen` (nothing offered for this user type) |
+| `components/ui/FormField.tsx` (outlined input and its message) | `SignUpScreen` |
+| `components/ui/SelectField.tsx` (field that opens a picker) | `OnboardingScreen` |
+| `OptionPickerModal` | onboarding wizard |
+| `isValidEmail` (`utils/account.ts`), `parseStrictNumericInput` (`utils/documentFormat.ts`) | sign up; document form number parsing |
+
+Types build on the existing models: `ProductoEditable` is a `Pick` of `Product`, and
+`ClienteEditable` extends `CustomerBase`, which `CustomerSummary` also extends.
 
 After a save, the detail shows the record the server returned and the list row is updated in
 place. Leaving a form with unsaved changes asks first, whether through the app bar back
@@ -53,10 +68,10 @@ the server's message. Types are in `types/catalog.ts`.
 saving:
 
 - `nombre` is required
-- `email` must be a valid format
-- credit limit, prices, cost and tax must be >= 0
+- `email` must be a valid format (the same check as sign up)
+- credit limit, prices and cost must be >= 0
 - invoice limit must be a whole number >= 0
-- discount must be between 0 and 100
+- discount and tax must be between 0 and 100
 - product `factor` must be > 0
 - status must be `A` or `I`
 

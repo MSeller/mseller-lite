@@ -18,6 +18,7 @@ import {
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
+import { usePagedSearch, type SearchPage } from "../../../hooks/usePagedSearch";
 import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
 import { createCustomer, getNextCustomerCode, searchCustomers } from "../../../services/customerService";
 import type { CustomerSummary, NewCustomerRequest } from "../../../types/documents";
@@ -30,7 +31,11 @@ interface Props {
 
 type Mode = "search" | "create";
 
-const SEARCH_DEBOUNCE_MS = 350;
+/** The picker shows the first page of the seller's book; there is no paging here. */
+const searchCustomerPage = async (query: string): Promise<SearchPage<CustomerSummary>> => {
+  const result = await searchCustomers(query.trim());
+  return { items: result.items ?? [], hasMore: false };
+};
 
 /**
  * Full-screen customer picker: search the seller's book, or register a new
@@ -47,9 +52,14 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
 
   const [mode, setMode] = useState<Mode>("search");
   const [search, setSearch] = useState("");
-  const [results, setResults] = useState<CustomerSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  // Debounced so typing a name doesn't fire a request per keystroke against the
+  // shared API — the list catches up a beat after the finger stops.
+  const {
+    items: results,
+    loading,
+    error: searchError,
+  } = usePagedSearch({ query: search, fetchPage: searchCustomerPage, enabled: visible && mode === "search" });
+  const error = searchError ? t("documents.errors.customerSearchFailed") : "";
 
   // New-customer form
   const [nombre, setNombre] = useState("");
@@ -68,8 +78,6 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
   const resetAll = useCallback(() => {
     setMode("search");
     setSearch("");
-    setResults([]);
-    setError("");
     setNombre("");
     setTelefono("");
     setRnc("");
@@ -83,36 +91,6 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
   useEffect(() => {
     if (!visible) resetAll();
   }, [visible, resetAll]);
-
-  // Debounced so typing a name doesn't fire a request per keystroke against the
-  // shared API — the list catches up a beat after the finger stops.
-  useEffect(() => {
-    if (!visible || mode !== "search") return;
-
-    let active = true;
-    setLoading(true);
-    const handle = setTimeout(async () => {
-      try {
-        const result = await searchCustomers(search.trim());
-        if (active) {
-          setResults(result.items ?? []);
-          setError("");
-        }
-      } catch {
-        if (active) {
-          setResults([]);
-          setError(t("documents.errors.customerSearchFailed"));
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      active = false;
-      clearTimeout(handle);
-    };
-  }, [search, visible, mode, t]);
 
   const handleCreate = useCallback(async () => {
     const trimmed = nombre.trim();

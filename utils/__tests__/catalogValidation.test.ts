@@ -8,8 +8,6 @@ import {
   describeCatalogError,
   hasErrors,
   isFormDirty,
-  isValidEmail,
-  parseDecimal,
   productToForm,
   validateCustomerForm,
   validateProductForm,
@@ -59,35 +57,6 @@ const producto: ProductoEditable = {
   promocion: false,
   esServicio: false,
 };
-
-describe("parseDecimal", () => {
-  it("reads plain and comma decimals", () => {
-    expect(parseDecimal("12")).toBe(12);
-    expect(parseDecimal("12.5")).toBe(12.5);
-    expect(parseDecimal("12,5")).toBe(12.5);
-    expect(parseDecimal(" 1 000 ")).toBe(1000);
-    expect(parseDecimal("-3")).toBe(-3);
-  });
-
-  it("treats an empty field as 0", () => {
-    expect(parseDecimal("")).toBe(0);
-  });
-
-  it("rejects anything that is not entirely a number", () => {
-    expect(parseDecimal("12abc")).toBeNull();
-    expect(parseDecimal("1.2.3")).toBeNull();
-    expect(parseDecimal("abc")).toBeNull();
-  });
-});
-
-describe("isValidEmail", () => {
-  it("accepts an address and rejects a malformed one", () => {
-    expect(isValidEmail("a@b.do")).toBe(true);
-    expect(isValidEmail(" a@b.do ")).toBe(true);
-    expect(isValidEmail("a@b")).toBe(false);
-    expect(isValidEmail("ab.do")).toBe(false);
-  });
-});
 
 describe("customer form", () => {
   it("round-trips a record into the PUT body without code or balance", () => {
@@ -200,6 +169,12 @@ describe("product form", () => {
       impuesto: "nonNegative",
       descuento: "maxPercent",
     });
+  });
+
+  it("caps the tax percentage at 100", () => {
+    const base = productToForm(producto);
+    expect(validateProductForm({ ...base, impuesto: "118" })).toEqual({ impuesto: "maxPercent" });
+    expect(validateProductForm({ ...base, impuesto: "100" })).toEqual({});
   });
 
   it("flags text typed into a price", () => {

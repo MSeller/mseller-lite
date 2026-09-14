@@ -8,7 +8,7 @@ import { getEditableCustomer } from "../../services/customerService";
 import type { ClienteEditable } from "../../types/catalog";
 import { formatMoney, formatQuantity } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
-import CatalogBadge from "./CatalogBadge";
+import StatusChip from "../ui/StatusChip";
 import CatalogDetailView, { DetailSection } from "./CatalogDetailView";
 import CustomerEditForm from "./CustomerEditForm";
 import { useCatalogRecord } from "./useCatalogRecord";
@@ -69,7 +69,7 @@ const CustomerDetail: React.FC<Props> = ({ codigo, nombre, onBack, onUpdated }) 
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                   {record.codigo}
                 </Text>
-                <CatalogBadge
+                <StatusChip
                   label={record.status === "I" ? t("catalog.inactive") : t("catalog.active")}
                   tone={record.status === "I" ? "negative" : "positive"}
                 />

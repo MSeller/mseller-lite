@@ -3,14 +3,15 @@ import { StyleSheet, View } from "react-native";
 import { Icon, Text, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { usePagedSearch, type SearchPage } from "../../hooks/usePagedSearch";
 import { useTranslation } from "../../hooks/useTranslation";
 import { searchProductsForDocument } from "../../services/ProductService";
 import type { ProductoEditable } from "../../types/catalog";
 import type { Product } from "../../types/inventory";
 import { formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
-import CatalogBadge from "./CatalogBadge";
-import CatalogList, { CATALOG_PAGE_SIZE, type CatalogListPatch, type CatalogPage } from "./CatalogList";
+import StatusChip from "../ui/StatusChip";
+import CatalogList, { CATALOG_PAGE_SIZE } from "./CatalogList";
 import ProductDetail from "./ProductDetail";
 
 interface Props {
@@ -21,8 +22,8 @@ interface Props {
 const keyExtractor = (item: Product) => item.codigo;
 
 // `buscar-productos` pages from 0 and answers 404 (handled as empty) when nothing matches.
-const fetchProducts = async (query: string, page: number): Promise<CatalogPage<Product>> => {
-  const result = await searchProductsForDocument(query, page - 1, CATALOG_PAGE_SIZE);
+const fetchProducts = async (query: string, page: number): Promise<SearchPage<Product>> => {
+  const result = await searchProductsForDocument(query.trim(), page - 1, CATALOG_PAGE_SIZE);
   const items = result.data ?? [];
   const hasMore = result.totalPages ? page < result.totalPages : items.length === CATALOG_PAGE_SIZE;
   return { items, hasMore };
@@ -32,28 +33,16 @@ const fetchProducts = async (query: string, page: number): Promise<CatalogPage<P
 const applyToProduct =
   (producto: ProductoEditable) =>
   (item: Product): Product => ({
+    // Every editable field is a `Product` field of the same name; only the text fields
+    // the editable record may send as null go back to the list's empty strings.
     ...item,
-    nombre: producto.nombre,
+    ...producto,
     codigoBarra: producto.codigoBarra ?? "",
-    descripcion: producto.descripcion,
     area: producto.area ?? "",
     departamento: producto.departamento ?? "",
     unidad: producto.unidad ?? "",
     empaque: producto.empaque ?? "",
-    factor: producto.factor,
-    precio1: producto.precio1,
-    precio2: producto.precio2,
-    precio3: producto.precio3,
-    precio4: producto.precio4,
-    precio5: producto.precio5,
-    costo: producto.costo,
-    impuesto: producto.impuesto,
-    descuento: producto.descuento,
     tipoImpuesto: producto.tipoImpuesto ?? "",
-    status: producto.status,
-    visibleTienda: producto.visibleTienda,
-    promocion: producto.promocion,
-    esServicio: producto.esServicio,
   });
 
 /**
@@ -67,7 +56,9 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const [selected, setSelected] = useState<Product | null>(null);
-  const [patch, setPatch] = useState<CatalogListPatch<Product> | null>(null);
+  const [search, setSearch] = useState("");
+  const results = usePagedSearch({ query: search, fetchPage: fetchProducts });
+  const { setItems } = results;
 
   const renderRow = useCallback(
     (item: Product) => (
@@ -93,7 +84,7 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
               {item.codigo}
               {item.codigoBarra ? ` · ${item.codigoBarra}` : ""}
             </Text>
-            {item.status === "I" && <CatalogBadge label={t("catalog.inactive")} tone="negative" />}
+            {item.status === "I" && <StatusChip label={t("catalog.inactive")} tone="negative" />}
           </View>
           <Icon source="chevron-right" size={22} color={theme.colors.onSurfaceVariant} />
         </View>
@@ -102,9 +93,13 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
     [styles, theme, t]
   );
 
-  const handleUpdated = useCallback((producto: ProductoEditable) => {
-    setPatch({ key: producto.codigo, apply: applyToProduct(producto) });
-  }, []);
+  const handleUpdated = useCallback(
+    (producto: ProductoEditable) => {
+      const apply = applyToProduct(producto);
+      setItems((rows) => rows.map((row) => (row.codigo === producto.codigo ? apply(row) : row)));
+    },
+    [setItems]
+  );
 
   const handleBack = useCallback(() => setSelected(null), []);
 
@@ -112,10 +107,11 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
     <>
       <View style={selected ? styles.hidden : styles.fill}>
         <CatalogList
-          fetchPage={fetchProducts}
+          search={search}
+          onSearchChange={setSearch}
+          results={results}
           keyExtractor={keyExtractor}
           renderRow={renderRow}
-          patch={patch}
           headerAccessory={headerAccessory}
           searchPlaceholder={t("catalog.products.searchPlaceholder")}
           emptyIcon="package-variant"
