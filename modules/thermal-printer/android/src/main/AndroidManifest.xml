@@ -1,0 +1,3 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Permissions are declared by app.plugin.js so their SDK bounds live in one place. -->
+</manifest>

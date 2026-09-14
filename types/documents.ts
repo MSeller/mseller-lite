@@ -328,3 +328,18 @@ export interface SendDocumentRequest {
   destinatarios?: string[];
   mensaje?: string;
 }
+
+/**
+ * `GET consumo/Documento/{no}/ticket`: the document rendered for a thermal printer.
+ * `texto` is marker text — see services/printing/markup/parse.ts for the format.
+ */
+export interface DocumentTicket {
+  texto: string;
+  ancho: 32 | 48;
+  /** Code page the server laid the text out for (850 by default). */
+  codePage: number;
+  tipoDocumento: DocumentType;
+  /** The tenant template used, or null when the built-in default was. */
+  plantillaId: number | null;
+  incluyeQr: boolean;
+}

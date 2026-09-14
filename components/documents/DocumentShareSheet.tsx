@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -14,13 +15,17 @@ import {
 } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { usePrinter } from "../../contexts/PrinterContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import {
   getDocumentPdf,
   getDocumentShareHistory,
+  getDocumentTicket,
   resendDocument,
   sendDocument,
 } from "../../services/documentService";
+import { parseTicketMarkup } from "../../services/printing/markup/parse";
+import type { Ticket } from "../../services/printing/markup/types";
 import type { DocumentSend, DocumentShareHistory } from "../../types/documents";
 import { formatDateTime } from "../../utils/documentFormat";
 import {
@@ -31,6 +36,8 @@ import {
   releasePrintWindow,
   reservePrintTarget,
 } from "../../utils/documentPdf";
+import { describePrinterError } from "../printing/printerErrors";
+import TicketPreview from "../printing/TicketPreview";
 
 interface Props {
   visible: boolean;
@@ -40,7 +47,7 @@ interface Props {
   emailCliente?: string | null;
 }
 
-type Busy = "none" | "print" | "download" | "send" | "resend";
+type Busy = "none" | "print" | "download" | "send" | "resend" | "ticket" | "ticketPrint";
 
 /**
  * Everything you can do with a document once it exists: print it, save the PDF, email it to
@@ -54,6 +61,8 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
+  const router = useRouter();
+  const { available: ticketDisponible, printer, profile, printTicket } = usePrinter();
 
   const [history, setHistory] = useState<DocumentShareHistory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,6 +72,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
   const [emailMode, setEmailMode] = useState(false);
   const [destinatarios, setDestinatarios] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [ticket, setTicket] = useState<Ticket | null>(null);
 
   const pdfDisponible = canPresentPdf();
 
@@ -100,6 +110,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
     setEmailMode(false);
     setDestinatarios(emailCliente ?? "");
     setMensaje("");
+    setTicket(null);
     load();
   }, [visible, emailCliente, load]);
 
@@ -149,6 +160,45 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
       setBusy("none");
     }
   }, [noPedidoStr, load, describirError, t]);
+
+  // Thermal ticket: the preview is fetched without recording a print; only handlePrintTicket,
+  // which asks the server again with registrarImpresion, counts in the history.
+  const handleOpenTicket = useCallback(async () => {
+    if (!printer || !profile) {
+      onDismiss();
+      router.push("/impresoras");
+      return;
+    }
+    setBusy("ticket");
+    setError("");
+    setOk("");
+    try {
+      const respuesta = await getDocumentTicket(noPedidoStr, { ancho: profile.columns });
+      setTicket(parseTicketMarkup(respuesta.texto));
+    } catch (e: any) {
+      setError(describePrinterError(e, t));
+    } finally {
+      setBusy("none");
+    }
+  }, [printer, profile, noPedidoStr, onDismiss, router, t]);
+
+  const handlePrintTicket = useCallback(async () => {
+    setBusy("ticketPrint");
+    setError("");
+    setOk("");
+    try {
+      await printTicket(noPedidoStr);
+      setTicket(null);
+      setOk(t("documents.share.ticketSent"));
+      load();
+    } catch (e: any) {
+      setError(describePrinterError(e, t));
+      // The server may have recorded the print before the printer failed.
+      load();
+    } finally {
+      setBusy("none");
+    }
+  }, [printTicket, noPedidoStr, load, t]);
 
   const handleDownload = useCallback(async () => {
     setBusy("download");
@@ -234,6 +284,37 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
 
           {loading ? (
             <ActivityIndicator style={styles.loader} />
+          ) : ticket && profile ? (
+            <View style={styles.ticketBlock}>
+              <Text variant="labelLarge" style={styles.historyTitle}>
+                {t("documents.share.ticketTitle")}
+              </Text>
+              <Text variant="bodySmall" style={styles.historyMeta}>
+                {`${printer?.name || printer?.address || ""} · ${profile.brand} ${profile.model}`}
+              </Text>
+              <TicketPreview ticket={ticket} columns={profile.columns} hasCutter={profile.hasCutter} />
+              <View style={styles.formActions}>
+                <Button
+                  mode="text"
+                  onPress={() => setTicket(null)}
+                  disabled={ocupado}
+                  contentStyle={styles.actionContent}
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  mode="contained"
+                  icon="printer-pos"
+                  onPress={handlePrintTicket}
+                  loading={busy === "ticketPrint"}
+                  disabled={ocupado}
+                  style={styles.sendButton}
+                  contentStyle={styles.actionContent}
+                >
+                  {t("documents.share.printTicketNow")}
+                </Button>
+              </View>
+            </View>
           ) : (
             <>
               {!!history?.ultimaImpresion && (
@@ -252,10 +333,24 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                 </View>
               )}
 
+              {ticketDisponible && (
+                <Button
+                  mode="contained"
+                  icon="printer-pos"
+                  onPress={handleOpenTicket}
+                  loading={busy === "ticket"}
+                  disabled={ocupado}
+                  style={styles.action}
+                  contentStyle={styles.actionContent}
+                >
+                  {printer ? t("documents.share.printTicket") : t("documents.share.setupPrinter")}
+                </Button>
+              )}
+
               {pdfDisponible ? (
                 <View style={styles.actions}>
                   <Button
-                    mode="contained"
+                    mode={ticketDisponible ? "contained-tonal" : "contained"}
                     // printer-check, not printer-refresh: the latter is not in the bundled
                     // MaterialCommunityIcons set and renders as a literal "?" on the button.
                     icon={yaImpreso ? "printer-check" : "printer"}
@@ -488,6 +583,7 @@ const createStyles = (theme: CustomTheme) =>
     stateChip: { alignSelf: "flex-end" },
     stateChipText: { fontSize: 11, fontWeight: "600", marginVertical: 2 },
     banner: { borderRadius: theme.custom.radius.sm, padding: 12 },
+    ticketBlock: { gap: 8 },
   });
 
 export default DocumentShareSheet;

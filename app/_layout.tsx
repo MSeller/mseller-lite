@@ -19,6 +19,7 @@ import EnvironmentBadge from "@/components/common/EnvironmentBadge";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { PrinterProvider } from "@/contexts/PrinterContext";
 import { UserProvider } from "@/contexts/UserContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -72,6 +73,7 @@ function RootLayoutContent() {
         />
         <Stack.Screen name="entrega" options={{ headerShown: false }} />
         <Stack.Screen name="documentos" options={{ headerShown: false }} />
+        <Stack.Screen name="impresoras" options={{ headerShown: false }} />
         <Stack.Screen name="api-test" options={{ title: t("navigation.apiTest") }} />
         <Stack.Screen name="+not-found" />
       </Stack>
@@ -145,8 +147,10 @@ export default function RootLayout() {
       <PaperProvider theme={theme}>
         <AuthProvider>
           <UserProvider>
-            <RootLayoutContent />
-            <EnvironmentBadge />
+            <PrinterProvider>
+              <RootLayoutContent />
+              <EnvironmentBadge />
+            </PrinterProvider>
           </UserProvider>
         </AuthProvider>
       </PaperProvider>

@@ -81,7 +81,8 @@
     },
     "language": "Language",
     "developer": "Developer",
-    "noSections": "There is nothing here for your user type."
+    "noSections": "There is nothing here for your user type.",
+    "printers": "Printers"
   },
   "api": {
     "testApi": "Test API",
@@ -507,7 +508,13 @@
       },
       "printedOnce": "Printed once",
       "printedTimes": "Printed {{count}} times",
-      "historyCapped": "Showing {{shown}} of {{total}} sends"
+      "historyCapped": "Showing {{shown}} of {{total}} sends",
+      "printTicket": "Print ticket",
+      "ticketTitle": "Ticket preview",
+      "printTicketNow": "Print",
+      "ticketSent": "Ticket sent to the printer.",
+      "setupPrinter": "Set up printer",
+      "ticketLoadFailed": "Could not load the ticket. Check your connection and try again."
     },
     "productPhoto": {
       "takePhoto": "Take photo",
@@ -559,5 +566,58 @@
     "permission": "Allow camera access to scan barcodes.",
     "allowCamera": "Allow camera",
     "unavailable": "This version of the app can't scan with the camera. Update the app; a built-in scanner still works."
+  },
+  "printers": {
+    "title": "Printers",
+    "menuDescription": "Thermal ticket printer",
+    "notConfigured": "No printer set up",
+    "unavailable": "This version of the app does not include ticket printing. Update the app to use a thermal printer.",
+    "current": "Saved printer",
+    "model": "Model",
+    "connectionType": "Connection",
+    "device": "Device",
+    "transport": {
+      "ble": "Bluetooth LE",
+      "bt-classic": "Bluetooth",
+      "tcp": "Wi-Fi / Network"
+    },
+    "state": {
+      "connected": "Connected",
+      "connecting": "Connecting…",
+      "disconnected": "Disconnected"
+    },
+    "paper": "{{width}} mm paper · {{columns}} columns",
+    "scan": "Find printers",
+    "scanning": "Searching…",
+    "stopScan": "Stop",
+    "noDevices": "No printers found. Turn the printer on and bring it close to the phone.",
+    "showUnnamed": "Show unnamed devices",
+    "unnamed": "Unnamed",
+    "bonded": "Paired printers",
+    "bondedHint": "Pair the printer in the phone's Bluetooth settings (PIN is usually 0000 or 1234), then come back.",
+    "refresh": "Refresh list",
+    "noBonded": "No paired Bluetooth devices.",
+    "tcpAddress": "IP address",
+    "tcpHint": "Example: 192.168.1.50 or 192.168.1.50:9100",
+    "tcpInvalid": "Enter a valid IP address, optionally with a port.",
+    "save": "Save printer",
+    "saved": "Printer saved.",
+    "selectDevice": "Pick a printer from the list.",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "forget": "Forget printer",
+    "test": "Print test page",
+    "testSent": "Test page sent.",
+    "errors": {
+      "UNAVAILABLE": "This version of the app does not include ticket printing.",
+      "NO_PRINTER": "Set up a printer first.",
+      "UNSUPPORTED_TRANSPORT": "This phone does not support that connection type.",
+      "E_PERMISSION": "Allow Bluetooth access for the app in the phone's settings.",
+      "E_BLUETOOTH_OFF": "Turn on the phone's Bluetooth.",
+      "E_BLUETOOTH_UNAVAILABLE": "Bluetooth is not available on this phone.",
+      "E_CONNECT": "Could not connect to the printer. Check that it is on and nearby.",
+      "E_NOT_CONNECTED": "The printer is not connected.",
+      "E_WRITE": "The connection dropped while printing. Try again."
+    }
   }
 }

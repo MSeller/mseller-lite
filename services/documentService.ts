@@ -6,6 +6,7 @@ import type {
   DocumentShareHistory,
   DocumentSend,
   DocumentSummary,
+  DocumentTicket,
   PagedResult,
   SendDocumentRequest,
 } from "../types/documents";
@@ -100,6 +101,24 @@ export class DocumentService {
     return response.data;
   }
 
+  /**
+   * The document laid out as a thermal-printer ticket: marker text (`<<C>>`, `<<B>>`, `<<QR>>`…)
+   * at `ancho` columns, which services/printing encodes for the printer on this device.
+   *
+   * `registrarImpresion` defaults to false, the opposite of getPdf: fetching a ticket is
+   * usually for the preview, and only the actual print should count as one in the history.
+   */
+  async getTicket(
+    noPedidoStr: string,
+    { ancho = 48, registrarImpresion = false }: { ancho?: 32 | 48; registrarImpresion?: boolean } = {}
+  ): Promise<DocumentTicket> {
+    const response = await restClient.get<DocumentTicket>(
+      `${BASE}/${encodeURIComponent(noPedidoStr)}/ticket`,
+      { params: { ancho, registrarImpresion } }
+    );
+    return response.data;
+  }
+
   /** Queues the document to be emailed. Resolves as soon as it is queued, not delivered. */
   async send(noPedidoStr: string, request: SendDocumentRequest = {}): Promise<DocumentSend> {
     const response = await restClient.post<DocumentSend>(
@@ -133,6 +152,10 @@ export const listDocuments = (filters?: DocumentListFilters) => documentService.
 export const getDocument = (noPedidoStr: string) => documentService.get(noPedidoStr);
 export const getDocumentPdf = (noPedidoStr: string, options?: { preview?: boolean }) =>
   documentService.getPdf(noPedidoStr, options);
+export const getDocumentTicket = (
+  noPedidoStr: string,
+  options?: { ancho?: 32 | 48; registrarImpresion?: boolean }
+) => documentService.getTicket(noPedidoStr, options);
 export const sendDocument = (noPedidoStr: string, request?: SendDocumentRequest) =>
   documentService.send(noPedidoStr, request);
 export const resendDocument = (envioId: string, destinatarios?: string[]) =>
