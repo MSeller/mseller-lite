@@ -169,3 +169,25 @@ describe("bytesToBase64", () => {
     }
   });
 });
+
+describe("encodeEscPos on a core-api fixture", () => {
+  it("encodes the e-CF ticket for 58mm without unmappable characters and with a raster QR", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { readFileSync } = require("fs") as typeof import("fs");
+    const texto = readFileSync(`${__dirname}/fixtures/invoice-ecf-32.txt`, "utf8");
+    const profile = getPrinterProfile("2connect-58") as PrinterProfile;
+    const ticket = parseTicketMarkup(texto);
+    const bytes = Array.from(encodeEscPos(ticket, profile, { codePage: 850 }));
+
+    // Every character of every text line has a CP850 byte: no "?" the source did not have.
+    for (const node of ticket.nodes) {
+      if (node.kind !== "text") continue;
+      const encoded = encodeText(node.text, CP850);
+      expect(encoded).toHaveLength(node.text.length);
+      expect(encoded.filter((b) => b === 0x3f)).toHaveLength((node.text.match(/\?/g) ?? []).length);
+    }
+    // Raster QR present, no cut on a printer without cutter.
+    expect(bytes.join(",")).toContain([0x1d, 0x76, 0x30, 0x00].join(","));
+    expect(bytes.slice(-4)).toEqual(FEED4);
+  });
+});

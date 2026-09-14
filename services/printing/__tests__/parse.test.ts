@@ -1,4 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 import { parseTicketMarkup } from "../markup/parse";
 import { PLAIN_STYLE } from "../markup/types";
@@ -74,12 +76,26 @@ describe("parseTicketMarkup", () => {
   });
 
   it("clamps FEED to 1..10", () => {
-    const { nodes } = parseTicketMarkup("<<FEED 0>>\n<<FEED 25>>\n<<FEED>>\n<<FEED -2>>");
+    const { nodes } = parseTicketMarkup("<<FEED 0>>\n<<FEED 25>>\n<<FEED>>\n<<feed 3>>");
     expect(nodes).toEqual([
       { kind: "feed", lines: 1 },
       { kind: "feed", lines: 10 },
       { kind: "feed", lines: 1 },
-      { kind: "feed", lines: 1 },
+      { kind: "feed", lines: 3 },
+    ]);
+  });
+
+  it("only treats token-shaped groups as markers, like the server", () => {
+    // Not a token: printed as text, and it ends marker parsing for the line.
+    expect(parseTicketMarkup("<<B>><<Oferta: 2x1>> hoy").nodes).toEqual([
+      { kind: "text", text: "<<Oferta: 2x1>> hoy", style: { ...PLAIN_STYLE, bold: true } },
+    ]);
+    expect(parseTicketMarkup("<<FEED -2>>").nodes[0]).toMatchObject({ kind: "text", text: "<<FEED -2>>" });
+    expect(parseTicketMarkup("<< B >>x").nodes[0]).toMatchObject({ kind: "text", text: "<< B >>x" });
+    expect(parseTicketMarkup("<<ABCDEFGHIJKLM>>x").nodes[0]).toMatchObject({ kind: "text" });
+    // Token-shaped but unknown: stripped. Case-insensitive.
+    expect(parseTicketMarkup("<<ABCDEFGHIJKL>><<c>>x").nodes).toEqual([
+      { kind: "text", text: "x", style: { ...PLAIN_STYLE, align: "center" } },
     ]);
   });
 
@@ -101,4 +117,22 @@ describe("parseTicketMarkup", () => {
     expect(parseTicketMarkup(null).nodes).toEqual([]);
     expect(parseTicketMarkup("").nodes).toEqual([]);
   });
+});
+
+describe("core-api TicketMovil fixtures", () => {
+  for (const ancho of [32, 48] as const) {
+    it(`parses invoice-ecf-${ancho} with nothing literal left and every line fitting`, () => {
+      const texto = readFileSync(join(__dirname, "fixtures", `invoice-ecf-${ancho}.txt`), "utf8");
+      const { nodes } = parseTicketMarkup(texto);
+
+      expect(nodes.filter((n) => n.kind === "qr")).toHaveLength(1);
+      expect(nodes.filter((n) => n.kind === "hr").length).toBeGreaterThan(0);
+      for (const node of nodes) {
+        if (node.kind !== "text") continue;
+        expect(node.text).not.toContain("<<");
+        const limit = node.style.doubleWidth ? ancho / 2 : ancho;
+        expect(node.text.length).toBeLessThanOrEqual(limit);
+      }
+    });
+  }
 });

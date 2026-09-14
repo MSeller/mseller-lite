@@ -13,8 +13,11 @@ import { PLAIN_STYLE, type Ticket, type TicketNode, type TicketTextStyle } from 
  * - `<<HR>>`, `<<QR>>`, `<<FEED n>>` and `<<CUT>>` are block markers: once one is read the
  *   line is that block (for QR, the rest of the line is the data) and earlier style markers
  *   are ignored.
- * - Unknown tokens are dropped rather than printed — a template newer than the app must not
- *   leak `<<SOMETHING>>` onto a customer's receipt.
+ * - A `<<...>>` group is a marker only when its token looks like one: 1-12 letters/digits,
+ *   optionally a space and a 1-3 digit argument (`<<FEED 2>>`), case-insensitive — the same
+ *   rule as the server. Anything else (`<<Oferta: 2x1>>`) is content and ends the markers.
+ * - Unknown tokens that do look like markers are dropped rather than printed — a template
+ *   newer than the app must not leak `<<SOMETHING>>` onto a customer's receipt.
  * - Blank lines are dropped, as on the server's receipt builder: Scriban control flow leaves
  *   empty lines behind, and on thermal paper they are wasted paper. `<<FEED n>>` is the way
  *   to ask for vertical space.
@@ -32,6 +35,7 @@ export function parseTicketMarkup(text: string | null | undefined): Ticket {
 }
 
 const MAX_FEED = 10;
+const TOKEN = /^[A-Za-z0-9]{1,12}( [0-9]{1,3})?$/;
 
 function parseLine(line: string): TicketNode | null {
   const style: TicketTextStyle = { ...PLAIN_STYLE };
@@ -39,10 +43,12 @@ function parseLine(line: string): TicketNode | null {
 
   while (rest.startsWith("<<")) {
     const close = rest.indexOf(">>", 2);
-    // An unterminated "<<" is content, not a marker.
+    // An unterminated "<<", or one around something that is not a token, is content.
     if (close < 0) break;
+    const raw = rest.slice(2, close);
+    if (!TOKEN.test(raw)) break;
 
-    const token = rest.slice(2, close).trim().toUpperCase();
+    const token = raw.toUpperCase();
     rest = rest.slice(close + 2);
 
     switch (token) {
@@ -74,7 +80,7 @@ function parseLine(line: string): TicketNode | null {
         return data ? { kind: "qr", data } : null;
       }
       default: {
-        const feed = /^FEED(?:\s+(-?\d+))?$/.exec(token);
+        const feed = /^FEED(?: (\d+))?$/.exec(token);
         if (feed) {
           const n = feed[1] === undefined ? 1 : parseInt(feed[1], 10);
           return { kind: "feed", lines: Math.min(MAX_FEED, Math.max(1, n)) };

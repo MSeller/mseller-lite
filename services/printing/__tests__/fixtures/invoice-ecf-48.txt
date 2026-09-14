@@ -1,0 +1,46 @@
+<<C>><<B>><<2H>>COMERCIAL ZYL
+<<C>>RNC: 101000000
+<<C>>Calle Isabel la Católica No. 25, Zona Colonial,
+<<C>>Santo Domingo
+<<C>>Tel: 809-555-0100
+<<HR>>
+<<C>><<B>>Factura de Crédito Fiscal Electrónica
+<<C>>e-NCF: E310000000001
+<<C>>Vence secuencia: 31/12/2027
+<<HR>>
+No.:                                FAC-TKT-0001
+Fecha emisión:                        14/09/2026
+Vence:                                14/10/2026
+Condición:                       Crédito 30 días
+Cliente:
+Distribuidora Los Almendros, S.R.L. Sucursal
+Santiago
+RNC/Cédula:                            131000005
+Vendedor:                             Juan Pérez
+<<HR>>
+CANT x PRECIO                 ITBIS        VALOR
+<<HR>>
+Café Molido Santo Domingo 1lb
+  2 UND x 150.00              54.00       300.00
+Arroz Selecto Premium Grano Largo Saco 125 libra
+  1.50 SACO x 2,450.75       661.70     3,676.13
+Agua Planeta Azul 20oz
+  24 x 25.00                   0.00       600.00
+  Descuento                               -60.00
+<<HR>>
+                       Subtotal:     RD$4,576.13
+                      Descuento:       -RD$60.00
+                          ITBIS:       RD$715.70
+<<B>><<2H>>                          TOTAL:     RD$5,231.83
+<<HR>>
+Nota:
+Entregar en horario de la mañana. Llamar antes
+de llegar al local.
+<<HR>>
+<<QR>>https://ecf.dgii.gov.do/ecf/ConsultaTimbre?RncEmisor=101000000&RncComprador=131000005&ENCF=E310000000001&FechaEmision=14-09-2026&MontoTotal=5231.83&FechaFirma=14-09-2026%2010:05:11&CodigoSeguridad=Ab12Cd
+<<C>>Código de Seguridad:                      Ab12Cd
+<<C>>Fecha de Firma:              14-09-2026 10:05:11
+<<HR>>
+<<C>>¡Gracias por su compra!
+<<C>>www.comercialzyl.com.do
+<<C>>Generado: 14/09/2026 14:30
