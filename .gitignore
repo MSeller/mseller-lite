@@ -57,3 +57,9 @@ yarn.lock
 
 # google-github-actions/auth writes its credentials into the workspace
 gha-creds-*.json
+
+# Editor swap files and macOS AppleDouble metadata. A tracked app/._layout.tsx.swp
+# made EAS iOS builds fail to unpack the project ("Failed to restore metadata").
+*.swp
+*.swo
+._*
