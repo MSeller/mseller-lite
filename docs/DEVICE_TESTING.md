@@ -142,26 +142,32 @@ iOS builds are **ad hoc**: only iPhones registered in the Apple Developer accoun
 waits, downloads the IPA and uploads it with the same release notes as Android. EAS holds
 the Apple Distribution certificate and the ad hoc profile, and increments the build number.
 
-**One-time setup (needs your Apple ID, so run it in your own terminal):**
+**One-time setup (done for both apps; repeat only if the credentials are reset):**
 
-1. Register your own iPhone: `eas device:create`. Open the link on the iPhone and install the profile.
-2. Create the credentials for each app. Sign in with Apple when asked and let EAS generate
-   the certificate and profile:
+EAS signs in to Apple with an **App Store Connect API key** rather than an Apple ID. Signing
+in with the Apple ID fails with "iTunes service key is empty" (a known EAS CLI issue).
+
+1. App Store Connect → Users and Access → Integrations → **Team Keys** → **+**, role **Admin**.
+   Save the `.p8` as `~/.appstoreconnect/AuthKey_<KEY_ID>.p8` (`chmod 600`), never in the repo.
+2. Create the certificate and ad hoc profiles, one command per app, in one line so the variables apply:
    ```bash
-   eas build --platform ios --profile preview-dev
-   eas build --platform ios --profile preview-prod
+   EXPO_ASC_API_KEY_PATH="$HOME/.appstoreconnect/AuthKey_<KEY_ID>.p8" EXPO_ASC_KEY_ID=<KEY_ID> EXPO_ASC_ISSUER_ID=<ISSUER_UUID> EXPO_APPLE_TEAM_ID=HDYHZ227JK EXPO_APPLE_TEAM_TYPE=INDIVIDUAL npx eas-cli@latest build --platform ios --profile preview-dev
    ```
+   Answer yes to logging in, to reusing or generating the distribution certificate and to the
+   provisioning profile. Then run it again with `--profile preview-prod`.
 3. CI token: create an access token at expo.dev → Account settings → Access tokens, then
    `gh secret set EXPO_TOKEN --repo MSeller/mseller-lite`.
 
+To upload a build that already finished on EAS instead of starting a new one:
+`pnpm distribute:ios:dev -- --build-id <eas-build-id>`.
+
 **Adding an iOS tester:**
 
-1. Send them the link from `eas device:create`, or use *Export UDIDs* in Firebase
-   App Distribution after they accept the invite, and add those with
-   `eas device:create` → *Input*.
-2. Refresh the profile so it includes the new device: `eas credentials --platform ios` →
-   the build profile → *Provisioning profile* → regenerate. Or run step 2 above again
-   and accept adding the new devices.
+1. Register their iPhone with EAS: `npx eas-cli@latest device:create` → *Website* and send them
+   the link. Or use *Export UDIDs* in Firebase App Distribution after they accept the invite,
+   and add each one with `device:create` → *Input*.
+2. Refresh the profile so it includes the new device: run the step 2 command above for each
+   profile and answer *No, let me choose devices again* when asked to reuse the profile.
 3. The **next** build includes them. Builds made before that won't install on their iPhone.
 
 **What iOS testers do:** accept the invite on the iPhone in Safari, add the App Tester web
