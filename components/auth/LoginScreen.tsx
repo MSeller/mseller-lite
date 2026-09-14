@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import {
   Image,
   KeyboardAvoidingView,
-  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -58,18 +57,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  const handleRegister = async () => {
-    try {
-      await Linking.openURL("https://cloud.mseller.app/register/");
-    } catch (error) {
-      console.error("Error opening registration URL:", error);
-      // Fallback to onNavigateToSignUp if available
-      if (onNavigateToSignUp) {
-        onNavigateToSignUp();
-      }
-    }
-  };
-
   const getErrorMessage = (errorCode: string): string => {
     switch (errorCode) {
       case "auth/invalid-email":
@@ -79,6 +66,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       case "auth/user-not-found":
         return t("auth.invalidCredentials");
       case "auth/wrong-password":
+      case "auth/invalid-credential":
         return t("auth.invalidCredentials");
       case "auth/too-many-requests":
         return t("errors.timeoutError");
@@ -194,7 +182,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                         { color: theme.colors.onSurfaceVariant },
                       ]}
                     >
-                      or
+                      {t("auth.or")}
                     </Text>
                     <View
                       style={[
@@ -206,7 +194,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
                   <Button
                     mode="outlined"
-                    onPress={handleRegister}
+                    onPress={onNavigateToSignUp}
                     disabled={loading}
                     style={styles.registerButton}
                     contentStyle={styles.buttonContent}

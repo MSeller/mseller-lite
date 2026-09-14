@@ -1,95 +1,93 @@
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { openBrowserAsync } from "expo-web-browser";
 import React, { useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  View,
-} from "react-native";
-import {
-  Button,
-  Card,
-  Paragraph,
-  Snackbar,
-  TextInput,
-  Title,
-  useTheme,
-} from "react-native-paper";
-import { auth } from "../../config/firebase";
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Button, Card, HelperText, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
+
+import { LEGAL_URLS } from "../../constants/legal";
 import { CustomTheme } from "../../constants/Theme";
+import { useTranslation } from "../../hooks/useTranslation";
+import { EmailAlreadyRegisteredError, registerBusinessAccount } from "../../services/accountService";
+import {
+  validateRegistration,
+  type RegistrationError,
+  type RegistrationForm,
+} from "../../utils/account";
 
 interface SignUpScreenProps {
   onNavigateToLogin?: () => void;
 }
 
+/** The field each validation rule is shown under. */
+const FIELD_OF_ERROR: Record<RegistrationError, keyof RegistrationForm> = {
+  firstNameRequired: "firstName",
+  lastNameRequired: "lastName",
+  emailRequired: "email",
+  emailInvalid: "email",
+  passwordRequired: "password",
+  passwordTooShort: "password",
+  passwordNeedsUppercase: "password",
+  passwordNeedsNumber: "password",
+  passwordsDoNotMatch: "confirmPassword",
+};
+
+const EMPTY_FORM: RegistrationForm = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+};
+
+/**
+ * Native self-signup. Creating the account also creates the user's business, with the user
+ * as its administrator; once signed in, the root layout hands over to the setup wizard.
+ */
 const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const theme = useTheme() as CustomTheme;
+  const { t } = useTranslation();
+  const [form, setForm] = useState<RegistrationForm>(EMPTY_FORM);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+
+  const validationError = validateRegistration(form);
+  const set = (field: keyof RegistrationForm) => (value: string) =>
+    setForm((current) => ({ ...current, [field]: value }));
 
   const handleSignUp = async () => {
-    if (
-      !name.trim() ||
-      !email.trim() ||
-      !password.trim() ||
-      !confirmPassword.trim()
-    ) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long");
-      return;
-    }
+    setSubmitted(true);
+    if (validationError) return;
 
     setLoading(true);
     setError("");
-
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
+      // On success the auth listener swaps this screen out; nothing to reset here.
+      await registerBusinessAccount(form);
+    } catch (err) {
+      console.error("Sign up error:", err);
+      setError(
+        err instanceof EmailAlreadyRegisteredError
+          ? t("auth.emailAlreadyRegistered")
+          : t("auth.signUpFailed"),
       );
-
-      // Update user profile with display name
-      await updateProfile(userCredential.user, {
-        displayName: name.trim(),
-      });
-    } catch (error: any) {
-      console.error("Sign up error:", error);
-      setError(getErrorMessage(error.code));
-    } finally {
       setLoading(false);
     }
   };
 
-  const getErrorMessage = (errorCode: string): string => {
-    switch (errorCode) {
-      case "auth/email-already-in-use":
-        return "This email is already registered";
-      case "auth/invalid-email":
-        return "Invalid email address";
-      case "auth/weak-password":
-        return "Password is too weak";
-      case "auth/operation-not-allowed":
-        return "Email/password accounts are not enabled";
-      default:
-        return "An error occurred. Please try again";
-    }
+  // Only the first broken rule is shown, under its own field, once the user has tried to submit.
+  const fieldError = (field: keyof RegistrationForm) =>
+    submitted && validationError && FIELD_OF_ERROR[validationError] === field
+      ? t(`auth.validation.${validationError}`)
+      : "";
+
+  const renderError = (field: keyof RegistrationForm) => {
+    const message = fieldError(field);
+    return message ? (
+      <HelperText type="error" visible>
+        {message}
+      </HelperText>
+    ) : null;
   };
 
   return (
@@ -97,78 +95,128 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
         <View style={styles.content}>
-          <Card elevation={0}
-            style={[styles.card, { backgroundColor: theme.colors.surface }]}
-          >
-            <Card.Content>
-              <Title style={[styles.title, { color: theme.colors.primary }]}>
-                Create Account
-              </Title>
-              <Paragraph
-                style={[styles.subtitle, { color: theme.colors.onSurface }]}
+          <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content style={styles.cardContent}>
+              <Text variant="headlineSmall" style={[styles.title, { color: theme.colors.onSurface }]}>
+                {t("auth.createAccountTitle")}
+              </Text>
+              <Text
+                variant="bodyMedium"
+                style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}
               >
-                Sign up to get started
-              </Paragraph>
+                {t("auth.createAccountSubtitle")}
+              </Text>
 
               <TextInput
-                label="Full Name"
-                value={name}
-                onChangeText={setName}
+                label={t("common.firstName")}
+                value={form.firstName}
+                onChangeText={set("firstName")}
                 mode="outlined"
-                autoCapitalize="words"
-                autoComplete="name"
-                style={styles.input}
+                autoComplete="given-name"
+                textContentType="givenName"
                 disabled={loading}
+                left={<TextInput.Icon icon="account" />}
+                error={!!fieldError("firstName")}
               />
+              {renderError("firstName")}
 
               <TextInput
-                label="Email"
-                value={email}
-                onChangeText={setEmail}
+                label={t("common.lastName")}
+                value={form.lastName}
+                onChangeText={set("lastName")}
+                mode="outlined"
+                autoComplete="family-name"
+                textContentType="familyName"
+                disabled={loading}
+                style={styles.input}
+                left={<TextInput.Icon icon="account-outline" />}
+                error={!!fieldError("lastName")}
+              />
+              {renderError("lastName")}
+
+              <TextInput
+                label={t("common.email")}
+                value={form.email}
+                onChangeText={set("email")}
                 mode="outlined"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
-                style={styles.input}
+                textContentType="emailAddress"
                 disabled={loading}
+                style={styles.input}
+                left={<TextInput.Icon icon="email" />}
+                error={!!fieldError("email")}
               />
+              {renderError("email")}
 
               <TextInput
-                label="Password"
-                value={password}
-                onChangeText={setPassword}
+                label={t("common.password")}
+                value={form.password}
+                onChangeText={set("password")}
                 mode="outlined"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
-                autoComplete="password"
-                style={styles.input}
+                autoComplete="new-password"
+                textContentType="newPassword"
                 disabled={loading}
+                style={styles.input}
+                left={<TextInput.Icon icon="lock" />}
                 right={
                   <TextInput.Icon
                     icon={showPassword ? "eye-off" : "eye"}
                     onPress={() => setShowPassword(!showPassword)}
                   />
                 }
+                error={!!fieldError("password")}
               />
+              {fieldError("password") ? (
+                renderError("password")
+              ) : (
+                <HelperText type="info" visible>
+                  {t("auth.passwordHint")}
+                </HelperText>
+              )}
 
               <TextInput
-                label="Confirm Password"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                label={t("auth.confirmPassword")}
+                value={form.confirmPassword}
+                onChangeText={set("confirmPassword")}
                 mode="outlined"
-                secureTextEntry={!showConfirmPassword}
+                secureTextEntry={!showPassword}
                 autoCapitalize="none"
-                style={styles.input}
+                autoComplete="new-password"
+                textContentType="newPassword"
                 disabled={loading}
-                right={
-                  <TextInput.Icon
-                    icon={showConfirmPassword ? "eye-off" : "eye"}
-                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                  />
-                }
+                left={<TextInput.Icon icon="lock-check" />}
+                error={!!fieldError("confirmPassword")}
               />
+              {renderError("confirmPassword")}
+
+              <Text
+                variant="bodySmall"
+                style={[styles.legal, { color: theme.colors.onSurfaceVariant }]}
+              >
+                {t("auth.legalNotice")}{" "}
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.primary }}
+                  onPress={() => openBrowserAsync(LEGAL_URLS.terms)}
+                >
+                  {t("legal.terms")}
+                </Text>{" "}
+                {t("auth.legalAnd")}{" "}
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.primary }}
+                  onPress={() => openBrowserAsync(LEGAL_URLS.privacy)}
+                >
+                  {t("legal.privacy")}
+                </Text>
+                .
+              </Text>
 
               <Button
                 mode="contained"
@@ -178,17 +226,12 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 style={styles.button}
                 contentStyle={styles.buttonContent}
               >
-                Sign Up
+                {t("auth.createAccount")}
               </Button>
 
               {onNavigateToLogin && (
-                <Button
-                  mode="text"
-                  onPress={onNavigateToLogin}
-                  disabled={loading}
-                  style={styles.textButton}
-                >
-                  Already have an account? Sign In
+                <Button mode="text" onPress={onNavigateToLogin} disabled={loading}>
+                  {t("auth.alreadyHaveAccount")} {t("auth.signIn")}
                 </Button>
               )}
             </Card.Content>
@@ -199,11 +242,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
       <Snackbar
         visible={!!error}
         onDismiss={() => setError("")}
-        duration={4000}
-        action={{
-          label: "Dismiss",
-          onPress: () => setError(""),
-        }}
+        duration={6000}
+        action={{ label: t("common.close"), onPress: () => setError("") }}
       >
         {error}
       </Snackbar>
@@ -218,38 +258,43 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     justifyContent: "center",
-    padding: 16,
+    padding: 20,
   },
   content: {
-    flex: 1,
-    justifyContent: "center",
+    maxWidth: 400,
+    alignSelf: "center",
+    width: "100%",
   },
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
+  },
+  cardContent: {
+    padding: 24,
   },
   title: {
     textAlign: "center",
-    fontSize: 28,
     fontWeight: "bold",
     marginBottom: 8,
   },
   subtitle: {
     textAlign: "center",
-    fontSize: 16,
     marginBottom: 24,
   },
   input: {
-    marginBottom: 16,
+    marginTop: 8,
+  },
+  legal: {
+    marginTop: 16,
+    textAlign: "center",
+    lineHeight: 18,
   },
   button: {
-    marginTop: 8,
-    marginBottom: 16,
+    marginTop: 16,
+    marginBottom: 8,
+    borderRadius: 8,
   },
   buttonContent: {
-    paddingVertical: 8,
-  },
-  textButton: {
-    marginTop: 8,
+    paddingVertical: 12,
   },
 });
 

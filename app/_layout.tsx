@@ -17,16 +17,19 @@ import AuthScreen from "@/components/auth/AuthScreen";
 import LoadingScreen from "@/components/auth/LoadingScreen";
 import EnvironmentBadge from "@/components/common/EnvironmentBadge";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
+import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PrinterProvider } from "@/contexts/PrinterContext";
-import { UserProvider } from "@/contexts/UserContext";
+import { UserProvider, useUser } from "@/contexts/UserContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useTranslation } from "@/hooks/useTranslation";
+import { needsOnboarding } from "@/utils/account";
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
   const { user, loading } = useAuth();
+  const { userProfile, loading: profileLoading } = useUser();
   const { t } = useTranslation();
 
   /**
@@ -61,6 +64,16 @@ function RootLayoutContent() {
 
   if (!user) {
     return <AuthScreen />;
+  }
+
+  // Wait for the first profile, which decides between the app and business setup. A later
+  // refresh keeps the previous profile, so it never blanks the running app.
+  if (!userProfile && profileLoading) {
+    return <LoadingScreen />;
+  }
+
+  if (needsOnboarding(userProfile)) {
+    return <OnboardingScreen />;
   }
 
   return (

@@ -10,6 +10,7 @@ export type ThemeColor =
 
 export interface UserTypes {
   userId: string;
+  businessId?: string;
   password: string;
   email: string;
   photoURL: string;
@@ -127,6 +128,9 @@ export interface IBusiness {
   subscriptionId?: string;
   subscriptionStatus?: string;
   tier?: Tiers;
+  /** False on a business created by self-signup until its owner finishes the setup wizard. */
+  hasCompletedOnboarding?: boolean;
+  hasSeenWelcome?: boolean;
 }
 
 export interface IConfig {
