@@ -1,4 +1,4 @@
-const { APP_ENVS, resolveAppEnv, getPackageId } = require("./app.variants");
+const { APP_ENVS, resolveAppEnv, getPackageId, getGoogleIosUrlScheme } = require("./app.variants");
 
 // scripts/with-env.js has already loaded exactly one environment's file and set
 // EXPO_NO_DOTENV. Reading .env on top of it would leak production keys into Dev.
@@ -117,6 +117,11 @@ export default {
           recordAudioAndroid: false,
         },
       ],
+      // Native Google sign-in. The URL scheme is the iOS OAuth client's callback.
+      [
+        "@react-native-google-signin/google-signin",
+        { iosUrlScheme: getGoogleIosUrlScheme(APP_ENV) },
+      ],
       // Local module (modules/thermal-printer): Bluetooth permissions for ticket printing.
       "./modules/thermal-printer/app.plugin.js",
     ],
@@ -134,6 +139,8 @@ export default {
       firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
       firebaseDatabaseUrl: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
       firebaseMeasurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
+      googleWebClientId: variant.googleWebClientId,
+      googleIosClientId: variant.googleIosClientId,
       eas: {
         projectId: "8e865fbc-598d-4e71-9f6f-28964c977efb",
       },

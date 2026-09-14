@@ -7,6 +7,7 @@ import { LEGAL_URLS } from "../../constants/legal";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import { EmailAlreadyRegisteredError, registerBusinessAccount } from "../../services/accountService";
+import GoogleSignInButton from "./GoogleSignInButton";
 import {
   validateRegistration,
   type RegistrationError,
@@ -229,6 +230,10 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 {t("auth.createAccount")}
               </Button>
 
+              <View style={styles.googleButton}>
+                <GoogleSignInButton disabled={loading} onError={setError} />
+              </View>
+
               {onNavigateToLogin && (
                 <Button mode="text" onPress={onNavigateToLogin} disabled={loading}>
                   {t("auth.alreadyHaveAccount")} {t("auth.signIn")}
@@ -295,6 +300,9 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 12,
+  },
+  googleButton: {
+    marginBottom: 8,
   },
 });
 

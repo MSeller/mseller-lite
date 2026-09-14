@@ -2,6 +2,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   signInWithEmailAndPassword,
+  signOut,
   type User,
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
@@ -13,11 +14,13 @@ import {
   buildCompleteOnboardingPayload,
   buildConfigurePayload,
   buildRegistrationPayload,
+  buildSocialRegistrationPayload,
   isEmailAlreadyRegistered,
   type OnboardingForm,
   type RegistrationForm,
 } from "../utils/account";
 import { restClient } from "./api";
+import { getGoogleCredential, signOutOfGoogle } from "./googleSignIn";
 
 /**
  * Self-service account lifecycle, on the same backend calls the portal (cloud.mseller.app)
@@ -53,6 +56,20 @@ export const registerBusinessAccount = async (form: RegistrationForm): Promise<v
     }
   }
   await signInWithEmailAndPassword(auth, payload.user_email, payload.user_password);
+};
+
+/**
+ * Creates the business for a login that has no MSeller account yet (a Google sign-in), with the
+ * user as its administrator — the portal's Google registration. The caller reloads the profile
+ * afterwards, which forces a fresh token carrying the new role and business claims.
+ */
+export const createBusinessForSignedInUser = async (user: User): Promise<void> => {
+  await httpsCallable(functions, "addPortalBusiness")(buildSocialRegistrationPayload(user));
+};
+
+/** Signs out of Firebase and forgets the Google account on the device. */
+export const signOutCompletely = async (): Promise<void> => {
+  await Promise.all([signOut(auth), signOutOfGoogle()]);
 };
 
 /**
@@ -96,17 +113,30 @@ export const completeBusinessSetup = async (
   await httpsCallable(functions, "completeOnboarding")(buildCompleteOnboardingPayload(user.uid, form));
 };
 
+export class ReauthenticationCancelledError extends Error {
+  constructor() {
+    super("REAUTHENTICATION_CANCELLED");
+    this.name = "ReauthenticationCancelledError";
+  }
+}
+
 /**
- * Deletes the business and every user in it. Firebase only lets a recent sign-in do this
- * kind of thing, and the user must prove it is really them, so the password is checked first.
+ * Deletes the business and every user in it. The user proves it is really them first — with
+ * the password, or by picking their Google account again when they have no password.
  */
 export const deleteBusinessAccount = async (
   user: User,
-  password: string,
+  proof: { password: string } | { google: true },
   businessId: string,
 ): Promise<void> => {
-  if (!user.email) throw new Error("NO_EMAIL");
-  await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, password));
+  if ("password" in proof) {
+    if (!user.email) throw new Error("NO_EMAIL");
+    await reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email, proof.password));
+  } else {
+    const credential = await getGoogleCredential();
+    if (!credential) throw new ReauthenticationCancelledError();
+    await reauthenticateWithCredential(user, credential);
+  }
   await httpsCallable(functions, "deleteBusinessById")({ businessId });
 };
 

@@ -1,4 +1,3 @@
-import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -11,10 +10,10 @@ import {
   Title,
   useTheme,
 } from "react-native-paper";
-import { auth } from "../../config/firebase";
 import { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import { signOutCompletely } from "../../services/accountService";
 
 interface ProfileScreenProps {
   /** Extra settings rows, shown above Sign Out (the Más tab adds language and developer tools). */
@@ -34,7 +33,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
     setError("");
 
     try {
-      await signOut(auth);
+      await signOutCompletely();
       setSuccess(t("auth.signOut"));
     } catch (error: any) {
       console.error("Sign out error:", error);

@@ -1,13 +1,12 @@
-import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { Button, Icon, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { auth } from "../../config/firebase";
 import type { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import { signOutCompletely } from "../../services/accountService";
 
 /**
  * Signed in, but the profile could not be loaded (offline, or the profile call failed). Without
@@ -42,7 +41,7 @@ const ProfileUnavailableScreen: React.FC = () => {
         <Button mode="contained" onPress={handleRetry} loading={retrying} disabled={retrying} style={styles.button}>
           {t("common.retry")}
         </Button>
-        <Button mode="text" onPress={() => signOut(auth)} disabled={retrying}>
+        <Button mode="text" onPress={signOutCompletely} disabled={retrying}>
           {t("auth.signOut")}
         </Button>
       </View>
