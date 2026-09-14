@@ -41,6 +41,10 @@ const profile = PROFILES[appEnv];
 const groups = testerGroups();
 
 const existingBuildId = flagValue("--build-id");
+if (existingBuildId === null) {
+  // Without this, a bare --build-id would silently start (and pay for) a new EAS build.
+  fail("--build-id needs an EAS build ID.");
+}
 
 requireCli("eas", "Install it with `npm install -g eas-cli` and run `eas login`.");
 if (!existingBuildId) requireCleanTree();
@@ -103,4 +107,7 @@ const main = async () => {
   }
 };
 
-main().catch((error) => fail(error.message));
+main().catch((error) => {
+  console.error(`\n✖ ${error.message}\n`);
+  process.exit(error.status ?? 1);
+});

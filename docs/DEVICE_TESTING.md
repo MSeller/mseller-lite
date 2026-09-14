@@ -171,8 +171,10 @@ To upload a build that already finished on EAS instead of starting a new one:
 3. The **next** build includes them. Builds made before that won't install on their iPhone.
 
 **What iOS testers do:** accept the invite on the iPhone in Safari, add the App Tester web
-clip, and install from there. The first time, trust the developer in Settings →
-General → VPN & Device Management.
+clip, and install from there. Ad hoc builds on iOS 16 or later open only with
+**Developer Mode** on: Settings → Privacy & Security → Developer Mode, then restart the
+iPhone when asked and confirm *Turn On* after it restarts. (Trusting the developer under
+VPN & Device Management is for Enterprise builds, not these.)
 
 ## EAS builds (share with testers)
 

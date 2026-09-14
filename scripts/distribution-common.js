@@ -16,9 +16,27 @@ const fail = (message) => {
   process.exit(1);
 };
 
+/** A command that exited non-zero; its status becomes the script's exit code. */
+class CommandError extends Error {
+  constructor(message, status) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// run() throws instead of exiting so `finally` cleanup (release notes, a downloaded IPA)
+// still runs; the error only surfaces here, after the stack has unwound.
+process.on("uncaughtException", (error) => {
+  console.error(`\n✖ ${error.message}\n`);
+  process.exit(error instanceof CommandError ? error.status : 1);
+});
+
+/** The value after `name`; undefined when the flag is absent, null when it has no value. */
 const flagValue = (name) => {
   const index = args.indexOf(name);
-  return index === -1 ? undefined : args[index + 1];
+  if (index === -1) return undefined;
+  const value = args[index + 1];
+  return value && !value.startsWith("--") ? value : null;
 };
 
 const git = (...gitArgs) => {
@@ -29,8 +47,10 @@ const git = (...gitArgs) => {
 
 const run = (cmd, cmdArgs, options = {}) => {
   const result = spawnSync(cmd, cmdArgs, { cwd: root, stdio: "inherit", ...options });
-  if (result.error) fail(`${cmd}: ${result.error.message}`);
-  if (result.status !== 0) process.exit(result.status ?? 1);
+  if (result.error) throw new CommandError(`${cmd}: ${result.error.message}`, 1);
+  if (result.status !== 0) {
+    throw new CommandError(`${cmd} exited with status ${result.status ?? 1}`, result.status ?? 1);
+  }
 };
 
 const requireCli = (cmd, installHint) => {
@@ -53,7 +73,11 @@ const gitInfo = () => ({
   branch: process.env.GITHUB_REF_NAME || git("rev-parse", "--abbrev-ref", "HEAD"),
 });
 
-const testerGroups = () => flagValue("--groups") || process.env.FIREBASE_TESTER_GROUPS || "testers";
+const testerGroups = () => {
+  const groups = flagValue("--groups");
+  if (groups === null) fail("--groups needs a comma-separated list of group aliases.");
+  return groups || process.env.FIREBASE_TESTER_GROUPS || "testers";
+};
 
 /**
  * Uploads a built APK or IPA to App Distribution with release notes carrying the
