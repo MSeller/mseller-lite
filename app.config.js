@@ -59,6 +59,9 @@ export default {
       crashReporting: {
         enabled: true,
       },
+      // expo-camera's library manifest declares RECORD_AUDIO. The app only scans barcodes
+      // and never records sound, so the permission is removed rather than shipped unused.
+      blockedPermissions: ["android.permission.RECORD_AUDIO"],
     },
     web: {
       bundler: "metro",
@@ -88,6 +91,14 @@ export default {
         {
           cameraPermission:
             "MSeller Lite usa la cámara para tomar la foto de prueba de entrega.",
+        },
+      ],
+      [
+        "expo-camera",
+        {
+          cameraPermission:
+            "MSeller Lite usa la cámara para leer códigos de barras y tomar fotos de productos.",
+          recordAudioAndroid: false,
         },
       ],
     ],

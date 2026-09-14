@@ -485,7 +485,8 @@
       "hint": "Nombre y precio son obligatorios. El código lo genera el servidor.",
       "save": "Guardar producto",
       "nameRequired": "El nombre del producto es obligatorio.",
-      "priceRequired": "El precio de venta debe ser mayor que cero."
+      "priceRequired": "El precio de venta debe ser mayor que cero.",
+      "barcode": "Código de barras"
     },
     "errors": {
       "loadFailed": "No pudimos cargar los documentos. Revisa tu conexión e inténtalo de nuevo.",
@@ -543,6 +544,10 @@
       "save": "Guardar foto",
       "attachFailed": "No pudimos guardar la foto en el producto. Inténtalo de nuevo.",
       "addToExisting": "Agregar foto al producto"
+    },
+    "code": {
+      "label": "Código",
+      "assignedOnSave": "Se asigna al guardar"
     }
   },
   "home": {
@@ -568,5 +573,14 @@
       "administrator": "Administrador",
       "superuser": "Superusuario"
     }
+  },
+  "scan": {
+    "scanProducts": "Escanear productos",
+    "scanBarcode": "Escanear código de barras",
+    "added": "{{name}} agregado",
+    "lookupFailed": "No pudimos buscar ese código. Revisa tu conexión e inténtalo de nuevo.",
+    "permission": "Permite el acceso a la cámara para escanear códigos de barras.",
+    "allowCamera": "Permitir cámara",
+    "unavailable": "Esta versión de la app no puede usar la cámara para escanear. Actualiza la app; un lector integrado sigue funcionando."
   }
 }

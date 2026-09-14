@@ -1,5 +1,6 @@
-import { requireOptionalNativeModule } from "expo";
 import { Platform } from "react-native";
+
+import { hasNativeModules } from "./nativeModules";
 
 /**
  * Opening a document's PDF for printing, saving or sharing.
@@ -104,7 +105,7 @@ let nativos: ModulosNativos | null | undefined;
 const cargarNativos = (): ModulosNativos | null => {
   if (nativos !== undefined) return nativos;
 
-  if (esWeb || MODULOS_NATIVOS_REQUERIDOS.some((nombre) => !requireOptionalNativeModule(nombre))) {
+  if (esWeb || !hasNativeModules(...MODULOS_NATIVOS_REQUERIDOS)) {
     nativos = null;
     return nativos;
   }
