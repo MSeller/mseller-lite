@@ -82,7 +82,8 @@
     },
     "language": "Idioma",
     "developer": "Desarrollo",
-    "noSections": "No hay nada aquí para tu tipo de usuario."
+    "noSections": "No hay nada aquí para tu tipo de usuario.",
+    "printers": "Impresoras"
   },
   "api": {
     "testApi": "Probar API",
@@ -530,7 +531,13 @@
       },
       "printedOnce": "Impreso 1 vez",
       "printedTimes": "Impreso {{count}} veces",
-      "historyCapped": "Mostrando {{shown}} de {{total}} envíos"
+      "historyCapped": "Mostrando {{shown}} de {{total}} envíos",
+      "printTicket": "Imprimir ticket",
+      "ticketTitle": "Vista previa del ticket",
+      "printTicketNow": "Imprimir",
+      "ticketSent": "Ticket enviado a la impresora.",
+      "setupPrinter": "Configurar impresora",
+      "ticketLoadFailed": "No pudimos cargar el ticket. Revisa tu conexión e inténtalo de nuevo."
     },
     "productPhoto": {
       "takePhoto": "Tomar foto",
@@ -582,5 +589,58 @@
     "permission": "Permite el acceso a la cámara para escanear códigos de barras.",
     "allowCamera": "Permitir cámara",
     "unavailable": "Esta versión de la app no puede usar la cámara para escanear. Actualiza la app; un lector integrado sigue funcionando."
+  },
+  "printers": {
+    "title": "Impresoras",
+    "menuDescription": "Impresora térmica para tickets",
+    "notConfigured": "Sin impresora configurada",
+    "unavailable": "Esta versión de la app no incluye impresión de tickets. Actualiza la app para usar una impresora térmica.",
+    "current": "Impresora guardada",
+    "model": "Modelo",
+    "connectionType": "Conexión",
+    "device": "Dispositivo",
+    "transport": {
+      "ble": "Bluetooth LE",
+      "bt-classic": "Bluetooth",
+      "tcp": "Wi-Fi / Red"
+    },
+    "state": {
+      "connected": "Conectada",
+      "connecting": "Conectando…",
+      "disconnected": "Desconectada"
+    },
+    "paper": "Papel {{width}} mm · {{columns}} columnas",
+    "scan": "Buscar impresoras",
+    "scanning": "Buscando…",
+    "stopScan": "Detener",
+    "noDevices": "No se encontraron impresoras. Enciende la impresora y acércala al teléfono.",
+    "showUnnamed": "Mostrar dispositivos sin nombre",
+    "unnamed": "Sin nombre",
+    "bonded": "Impresoras emparejadas",
+    "bondedHint": "Empareja la impresora en los ajustes de Bluetooth del teléfono (PIN habitual 0000 o 1234) y vuelve aquí.",
+    "refresh": "Actualizar lista",
+    "noBonded": "No hay dispositivos Bluetooth emparejados.",
+    "tcpAddress": "Dirección IP",
+    "tcpHint": "Ejemplo: 192.168.1.50 o 192.168.1.50:9100",
+    "tcpInvalid": "Escribe una dirección IP válida, con puerto opcional.",
+    "save": "Guardar impresora",
+    "saved": "Impresora guardada.",
+    "selectDevice": "Elige una impresora de la lista.",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "forget": "Olvidar impresora",
+    "test": "Imprimir prueba",
+    "testSent": "Página de prueba enviada.",
+    "errors": {
+      "UNAVAILABLE": "Esta versión de la app no incluye impresión de tickets.",
+      "NO_PRINTER": "Configura una impresora primero.",
+      "UNSUPPORTED_TRANSPORT": "Este teléfono no admite ese tipo de conexión.",
+      "E_PERMISSION": "Permite el acceso a Bluetooth para la app en los ajustes del teléfono.",
+      "E_BLUETOOTH_OFF": "Activa el Bluetooth del teléfono.",
+      "E_BLUETOOTH_UNAVAILABLE": "Este teléfono no tiene Bluetooth disponible.",
+      "E_CONNECT": "No pudimos conectar con la impresora. Verifica que esté encendida y cerca.",
+      "E_NOT_CONNECTED": "La impresora no está conectada.",
+      "E_WRITE": "Se perdió la conexión mientras se imprimía. Inténtalo de nuevo."
+    }
   }
 }

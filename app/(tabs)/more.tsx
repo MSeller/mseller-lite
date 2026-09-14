@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import ProfileScreen from "../../components/auth/ProfileScreen";
 import { LanguageSelector } from "../../components/common/LanguageSelector";
+import { usePrinter } from "../../contexts/PrinterContext";
 import { AVAILABLE_LANGUAGES, useTranslation } from "../../hooks/useTranslation";
 
 // The API test screen is a developer tool: offered in local and Dev builds only.
@@ -17,6 +18,7 @@ export default function MoreTab() {
   const router = useRouter();
   const { t, currentLanguage } = useTranslation();
   const [languageMenuVisible, setLanguageMenuVisible] = useState(false);
+  const { available: printingAvailable, printer } = usePrinter();
 
   const languageName =
     AVAILABLE_LANGUAGES.find((language) => language.code === currentLanguage)?.nativeName ??
@@ -38,6 +40,16 @@ export default function MoreTab() {
             />
           }
         />
+        {/* Web and builds without the native printer module have nothing to configure. */}
+        {printingAvailable && (
+          <List.Item
+            title={t("printers.title")}
+            description={printer ? printer.name || printer.address : t("printers.notConfigured")}
+            left={(props) => <List.Icon {...props} icon="printer-pos" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => router.push("/impresoras")}
+          />
+        )}
         {showDeveloperTools && (
           <List.Item
             title={t("navigation.apiTest")}
