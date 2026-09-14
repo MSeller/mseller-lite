@@ -89,7 +89,8 @@
     "emailVerified": "Email verified",
     "yes": "Yes",
     "no": "No",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "role": "Role"
   },
   "navigation": {
     "home": "Home",
@@ -799,5 +800,9 @@
     "uploadingLogo": "Uploading logo…",
     "logoTooLarge": "The image is too large. Choose a smaller one.",
     "logoUploadFailed": "The logo couldn't be uploaded. Please try again."
+  },
+  "profileUnavailable": {
+    "title": "We couldn't load your account",
+    "body": "Check your connection and try again. If the problem continues, sign out and sign in again."
   }
 }

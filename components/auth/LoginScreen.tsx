@@ -22,7 +22,7 @@ import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 
 interface LoginScreenProps {
-  onNavigateToSignUp?: () => void;
+  onNavigateToSignUp: () => void;
   onNavigateToPasswordReset?: () => void;
 }
 

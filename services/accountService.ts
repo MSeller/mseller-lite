@@ -110,6 +110,8 @@ export const deleteBusinessAccount = async (
   await httpsCallable(functions, "deleteBusinessById")({ businessId });
 };
 
+const RNC_LOOKUP_TIMEOUT_MS = 10000;
+
 export interface RncInfo {
   businessName: string;
   commercialName: string;
@@ -122,9 +124,14 @@ export interface RncInfo {
  * the wizard lets the user continue either way.
  */
 export const lookupRnc = async (digits: string): Promise<RncInfo | null> => {
+  // A stalled registry must not leave the wizard saying "checking" forever.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RNC_LOOKUP_TIMEOUT_MS);
   try {
     const response = await fetch(
       `https://rnc.megaplus.com.do/api/consulta?rnc=${encodeURIComponent(digits)}&source=mseller`,
+      // React Native's AbortSignal type differs from the DOM one fetch is typed with; same object.
+      { signal: controller.signal as unknown as RequestInit["signal"] },
     );
     if (!response.ok) return null;
     const body = (await response.json()) as Record<string, any>;
@@ -136,5 +143,7 @@ export const lookupRnc = async (digits: string): Promise<RncInfo | null> => {
     };
   } catch {
     return null;
+  } finally {
+    clearTimeout(timeout);
   }
 };

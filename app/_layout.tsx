@@ -15,6 +15,7 @@ import "@/config/i18n";
 
 import AuthScreen from "@/components/auth/AuthScreen";
 import LoadingScreen from "@/components/auth/LoadingScreen";
+import ProfileUnavailableScreen from "@/components/auth/ProfileUnavailableScreen";
 import EnvironmentBadge from "@/components/common/EnvironmentBadge";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
@@ -70,6 +71,12 @@ function RootLayoutContent() {
   // refresh keeps the previous profile, so it never blanks the running app.
   if (!userProfile && profileLoading) {
     return <LoadingScreen />;
+  }
+
+  // Without a profile there is no business to talk to and no way to know whether setup is
+  // pending, so the app must not open behind it.
+  if (!userProfile) {
+    return <ProfileUnavailableScreen />;
   }
 
   if (needsOnboarding(userProfile)) {

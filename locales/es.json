@@ -825,5 +825,9 @@
     "uploadingLogo": "Subiendo logo…",
     "logoTooLarge": "La imagen es muy grande. Elige una más pequeña.",
     "logoUploadFailed": "No se pudo subir el logo. Inténtalo de nuevo."
+  },
+  "profileUnavailable": {
+    "title": "No pudimos cargar tu cuenta",
+    "body": "Revisa tu conexión e inténtalo de nuevo. Si el problema continúa, cierra sesión y vuelve a entrar."
   }
 }
