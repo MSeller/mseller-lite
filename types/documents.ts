@@ -194,6 +194,8 @@ export interface CustomerSummary {
   codigoVendedor: string | null;
   localidadId: number;
   balance: number;
+  /** "A" / "I". Inactive customers are only listed when searching with `incluirInactivos`. */
+  status?: string | null;
 }
 
 export interface CreatedCustomer extends CustomerSummary {
