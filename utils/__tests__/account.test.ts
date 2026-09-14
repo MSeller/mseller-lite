@@ -5,13 +5,16 @@ import {
   buildCompleteOnboardingPayload,
   buildConfigurePayload,
   buildRegistrationPayload,
+  buildSocialRegistrationPayload,
   canDeleteAccount,
   EMPTY_ONBOARDING_FORM,
   formatPhone,
   isEmailAlreadyRegistered,
   isOnboardingStepValid,
+  isProfileNotFound,
   isRncValid,
   needsOnboarding,
+  splitDisplayName,
   validateRegistration,
   type OnboardingForm,
   type RegistrationForm,
@@ -62,6 +65,40 @@ describe("buildRegistrationPayload", () => {
       reCaptchaToken: "simple-registration",
       terms: true,
     });
+  });
+});
+
+describe("Google sign-up", () => {
+  it("splits the display name like the portal", () => {
+    expect(splitDisplayName("Ana María Pérez", "ana@gmail.com")).toEqual({ firstName: "Ana", lastName: "María Pérez" });
+    expect(splitDisplayName("Ana", "ana@gmail.com")).toEqual({ firstName: "Ana", lastName: "Google" });
+    expect(splitDisplayName(null, "ana.p@gmail.com")).toEqual({ firstName: "ana.p", lastName: "Google" });
+    expect(splitDisplayName("", null)).toEqual({ firstName: "User", lastName: "Google" });
+  });
+
+  it("registers the signed-in login by uid, without a password", () => {
+    expect(
+      buildSocialRegistrationPayload({ uid: "g1", email: "ana@gmail.com", displayName: "Ana Pérez" }),
+    ).toEqual({
+      business_name: "Ana Pérez's Business",
+      user_email: "ana@gmail.com",
+      user_password: "",
+      user_first_name: "Ana",
+      user_last_name: "Pérez",
+      phone: "",
+      address: "",
+      country: "",
+      reCaptchaToken: "google-social-login",
+      terms: true,
+      uid: "g1",
+    });
+  });
+
+  it("recognises a login that has no MSeller profile", () => {
+    expect(
+      isProfileNotFound("user abc not found on users File: users.ts functions server. Might be because is looking on Emulator DB"),
+    ).toBe(true);
+    expect(isProfileNotFound("internal")).toBe(false);
   });
 });
 

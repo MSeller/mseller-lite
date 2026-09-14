@@ -30,6 +30,11 @@ Build numbers are handled by EAS and never need editing.
   (`components/onboarding/OnboardingScreen.tsx`), the same flow as cloud.mseller.app. An
   administrator can delete the account from Más → Eliminar cuenta, which deletes the business
   and every user in it (`deleteBusinessById`). Apple 5.1.1(v), Play account deletion policy.
+- **Google sign-in (Android)**: "Continuar con Google" on the login and sign-up screens. A
+  Google login with an MSeller account opens it; one without an account is offered to create a
+  business (same `addPortalBusiness` call as the portal's Google registration), then the setup
+  wizard. Hidden on iOS until Sign in with Apple is added (guideline 4.8); see
+  `services/googleSignIn.ts`.
 - **Privacy policy and terms** are linked from sign up and from the Más tab
   (`constants/legal.ts`).
 - **Permission purpose strings** are specific Spanish sentences; unused prompts (microphone,
@@ -56,6 +61,25 @@ Build numbers are handled by EAS and never need editing.
    - App access: provide the reviewer demo account (see below).
 5. Personal developer accounts created after Nov 2023 need a closed test with 12 testers for
    14 days before production access; organization accounts do not.
+
+### Google sign-in fingerprints
+
+Google sign-in on Android only works for builds whose signing certificate's SHA-1 is registered
+on the Firebase Android app (otherwise it fails with `DEVELOPER_ERROR`). Register each key on
+both projects' apps (`mobile-seller-v3` → `app.mseller.msellerlite`, `mseller-dev-40a08` →
+`app.mseller.msellerlite.dev`):
+
+| Key | Where to get the SHA-1 |
+|---|---|
+| Debug / tester builds (`pnpm distribute:*`, `expo run:android`) | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` (React Native template debug keystore) |
+| EAS upload key | `eas credentials -p android` after the first store build |
+| Play App Signing key (what users install) | Play Console → Test and release → App integrity |
+
+```bash
+firebase apps:android:sha:create <firebase-android-app-id> <sha1> --project <project>
+```
+
+The OAuth client IDs live in `app.variants.js` (`googleWebClientId`, `googleIosClientId`).
 
 ### App Store
 

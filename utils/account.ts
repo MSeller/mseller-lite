@@ -80,6 +80,51 @@ export const buildRegistrationPayload = (form: RegistrationForm): AddPortalBusin
 };
 
 /**
+ * Splits a Google display name into first and last name the way the portal's Google
+ * registration does: first word, then the rest, falling back to the email prefix and "Google".
+ */
+export const splitDisplayName = (
+  displayName: string | null | undefined,
+  email: string | null | undefined,
+): { firstName: string; lastName: string } => {
+  const parts = (displayName ?? "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length > 0) {
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") || "Google" };
+  }
+  return { firstName: (email ?? "").split("@")[0] || "User", lastName: "Google" };
+};
+
+/**
+ * `addPortalBusiness` for a user already signed in with Google: no password, and the Firebase
+ * uid so the server attaches the business to that login instead of creating a new one.
+ */
+export const buildSocialRegistrationPayload = (user: {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+}): AddPortalBusinessRequest & { uid: string } => {
+  const { firstName, lastName } = splitDisplayName(user.displayName, user.email);
+  return {
+    ...buildRegistrationPayload({
+      firstName,
+      lastName,
+      email: user.email ?? "",
+      password: "",
+      confirmPassword: "",
+    }),
+    reCaptchaToken: "google-social-login",
+    uid: user.uid,
+  };
+};
+
+/**
+ * `getUserProfileV2` answers a login without a `users/{uid}` document with "user <id> not found
+ * on users …". That is a Google login that has no MSeller account yet, not a failure.
+ */
+export const isProfileNotFound = (message: string | undefined): boolean =>
+  !!message && /not found on users/i.test(message);
+
+/**
  * The server rejects an existing email with "Email x already exist" (sic). Matching the stem
  * also keeps working if that message is ever corrected.
  */

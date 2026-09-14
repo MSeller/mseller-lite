@@ -1,13 +1,16 @@
-import { signOut } from "firebase/auth";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { Button, Dialog, HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
 
-import { auth } from "../../config/firebase";
 import type { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { deleteBusinessAccount } from "../../services/accountService";
+import {
+  deleteBusinessAccount,
+  ReauthenticationCancelledError,
+  signOutCompletely,
+} from "../../services/accountService";
+import { hasPasswordLogin } from "../../services/googleSignIn";
 import { getBusinessId } from "../../utils/account";
 
 interface Props {
@@ -19,8 +22,9 @@ const WRONG_PASSWORD_CODES = ["auth/wrong-password", "auth/invalid-credential", 
 
 /**
  * Deletes the administrator's business and every login in it. Two deliberate hurdles, since
- * there is no undo: the password (which Firebase also needs for a fresh sign-in) and typing a
- * confirmation word.
+ * there is no undo: proving it is really them (the password, or picking their Google account
+ * again when they signed up with Google — Firebase needs a fresh sign-in either way) and typing
+ * a confirmation word.
  */
 const DeleteAccountDialog: React.FC<Props> = ({ visible, onDismiss }) => {
   const theme = useTheme() as CustomTheme;
@@ -33,8 +37,12 @@ const DeleteAccountDialog: React.FC<Props> = ({ visible, onDismiss }) => {
 
   const confirmWord = t("account.deleteConfirmWord");
   const businessId = getBusinessId(userProfile);
+  const usesPassword = hasPasswordLogin(user);
   const canDelete =
-    !!password && confirmation.trim().toLocaleUpperCase() === confirmWord && !!businessId && !deleting;
+    (!usesPassword || !!password) &&
+    confirmation.trim().toLocaleUpperCase() === confirmWord &&
+    !!businessId &&
+    !deleting;
 
   const close = () => {
     if (deleting) return;
@@ -49,10 +57,14 @@ const DeleteAccountDialog: React.FC<Props> = ({ visible, onDismiss }) => {
     setDeleting(true);
     setError("");
     try {
-      await deleteBusinessAccount(user, password, businessId);
+      await deleteBusinessAccount(user, usesPassword ? { password } : { google: true }, businessId);
       // The server already removed the login; signing out clears what is left on the device.
-      await signOut(auth).catch(() => undefined);
+      await signOutCompletely().catch(() => undefined);
     } catch (err: any) {
+      if (err instanceof ReauthenticationCancelledError) {
+        setDeleting(false);
+        return;
+      }
       console.error("Delete account error:", err);
       setError(
         WRONG_PASSWORD_CODES.includes(err?.code)
@@ -76,17 +88,23 @@ const DeleteAccountDialog: React.FC<Props> = ({ visible, onDismiss }) => {
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               {t("account.deleteRetention")}
             </Text>
-            <TextInput
-              mode="outlined"
-              label={t("account.deletePasswordLabel")}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoComplete="current-password"
-              textContentType="password"
-              disabled={deleting}
-            />
+            {usesPassword ? (
+              <TextInput
+                mode="outlined"
+                label={t("account.deletePasswordLabel")}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                autoComplete="current-password"
+                textContentType="password"
+                disabled={deleting}
+              />
+            ) : (
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                {t("account.deleteGoogleHint")}
+              </Text>
+            )}
             <TextInput
               mode="outlined"
               label={t("account.deleteConfirmLabel", { word: confirmWord })}

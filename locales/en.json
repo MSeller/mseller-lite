@@ -68,7 +68,11 @@
     "resetSubtitle": "Enter your email and we'll send you a link to reset your password.",
     "sendResetLink": "Send link",
     "resetSentTo": "We sent an email to {{email}}. Check your inbox and follow the instructions.",
-    "backToLogin": "Back to sign in"
+    "backToLogin": "Back to sign in",
+    "continueWithGoogle": "Continue with Google",
+    "googleUnavailable": "Google sign-in is not available on this device.",
+    "googleFailed": "Couldn't sign in with Google. Please try again.",
+    "googleAccountExistsWithPassword": "This email already has a password account. Sign in with your email and password."
   },
   "profile": {
     "profile": "Profile",
@@ -669,7 +673,8 @@
     "deleteButton": "Permanently delete account",
     "deleteWrongPassword": "The password is incorrect",
     "deleteFailed": "We couldn't delete the account. Please try again.",
-    "deleted": "Your account was deleted"
+    "deleted": "Your account was deleted",
+    "deleteGoogleHint": "We'll ask you to pick your Google account to confirm it's you."
   },
   "onboarding": {
     "pageTitle": "Set Up Your Business",
@@ -804,5 +809,13 @@
   "profileUnavailable": {
     "title": "We couldn't load your account",
     "body": "Check your connection and try again. If the problem continues, sign out and sign in again."
+  },
+  "createBusiness": {
+    "title": "Create your business account",
+    "body": "We couldn't find an MSeller account for {{email}}. Create a new business and you'll be its administrator.",
+    "create": "Create business",
+    "useAnotherAccount": "Use another account",
+    "failed": "We couldn't create the business. Please try again.",
+    "alreadyRegistered": "This email already belongs to an MSeller account. Sign in with your email and password."
   }
 }
