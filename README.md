@@ -163,15 +163,15 @@ pnpm validate-template
 
 ## 🚀 Deployment
 
-### Production Build
+### Store Build
 
 ```bash
-# Android production build
-pnpm build:android:prod
-
-# Or using EAS CLI directly
-eas build --platform android --profile production
+pnpm build:store      # Android AAB + iOS App Store build (EAS profile "production")
+pnpm submit:android   # Play internal track, draft
+pnpm submit:ios       # App Store Connect / TestFlight
 ```
+
+See [docs/STORE_RELEASE.md](docs/STORE_RELEASE.md) for the store checklist.
 
 ### CI/CD
 

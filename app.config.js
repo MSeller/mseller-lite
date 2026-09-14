@@ -21,6 +21,10 @@ if (
   );
 }
 
+// expo-camera and expo-image-picker both write NSCameraUsageDescription; one string covers every use.
+const CAMERA_USAGE =
+  "MSeller Lite usa la cámara para leer códigos de barras, tomar fotos de productos y la foto de prueba de entrega.";
+
 export default {
   expo: {
     name: variant.name,
@@ -61,7 +65,13 @@ export default {
       },
       // expo-camera's library manifest declares RECORD_AUDIO. The app only scans barcodes
       // and never records sound, so the permission is removed rather than shipped unused.
-      blockedPermissions: ["android.permission.RECORD_AUDIO"],
+      // Legacy storage permissions come from libraries; the app picks images through the system
+      // photo picker, which needs none, and Play asks apps to justify broad storage access.
+      blockedPermissions: [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+      ],
     },
     web: {
       bundler: "metro",
@@ -84,20 +94,26 @@ export default {
         {
           locationWhenInUsePermission:
             "MSeller Lite usa tu ubicación para registrar la entrega de los pedidos.",
+          // Location is only read while the app is open. `false` drops the "Always" purpose
+          // strings, which would otherwise ship as Expo's generic English placeholder.
+          locationAlwaysAndWhenInUsePermission: false,
+          locationAlwaysPermission: false,
         },
       ],
       [
         "expo-image-picker",
         {
-          cameraPermission:
-            "MSeller Lite usa la cámara para tomar la foto de prueba de entrega.",
+          cameraPermission: CAMERA_USAGE,
+          photosPermission:
+            "MSeller Lite usa tus fotos para adjuntar imágenes de productos, entregas y el logo de tu empresa.",
+          microphonePermission: false,
         },
       ],
       [
         "expo-camera",
         {
-          cameraPermission:
-            "MSeller Lite usa la cámara para leer códigos de barras y tomar fotos de productos.",
+          cameraPermission: CAMERA_USAGE,
+          microphonePermission: false,
           recordAudioAndroid: false,
         },
       ],

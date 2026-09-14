@@ -12,9 +12,6 @@
         "APP_ENV": "development"
       }
     },
-    "preview": {
-      "distribution": "internal"
-    },
     "preview-dev": {
       "distribution": "internal",
       "environment": "development",
@@ -51,22 +48,25 @@
         "buildType": "apk"
       }
     },
-    "production-playstore": {
-      "distribution": "store",
-      "environment": "production",
-      "env": {
-        "APP_ENV": "production"
-      }
-    },
     "production": {
+      "distribution": "store",
       "autoIncrement": true,
       "environment": "production",
       "env": {
         "APP_ENV": "production"
+      },
+      "android": {
+        "buildType": "app-bundle"
       }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      },
+      "ios": {}
+    }
   }
 }
