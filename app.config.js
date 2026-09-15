@@ -67,10 +67,13 @@ export default {
       // and never records sound, so the permission is removed rather than shipped unused.
       // Legacy storage permissions come from libraries; the app picks images through the system
       // photo picker, which needs none, and Play asks apps to justify broad storage access.
+      // SYSTEM_ALERT_WINDOW ("display over other apps") comes from Expo's native template and
+      // React Native's debug manifest; the app never draws overlays.
       blockedPermissions: [
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW",
       ],
     },
     web: {
