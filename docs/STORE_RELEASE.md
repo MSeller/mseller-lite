@@ -43,24 +43,68 @@ Build numbers are handled by EAS and never need editing.
 
 ## One-time setup
 
+### Accounts and where credentials live
+
+Three Google accounts are involved and they are not interchangeable:
+
+| What | Account | Notes |
+|---|---|---|
+| Google Play Console (developer `5110848621709968202`, app `4976182033406865940`) | victors1681@gmail.com | Owner. Invites users and service accounts. |
+| Service account that uploads builds | `eas-submit@mobile-seller-212715.iam.gserviceaccount.com` | Google Cloud project `mobile-seller-212715` (managed from victors1681@gmail.com). Google Play Android Developer API enabled. Invited in Play Console → Users and permissions with release-to-testing permissions for MSeller Lite. |
+| Firebase projects (`mobile-seller-v3`, `mseller-dev-40a08`) | asdominicana@gmail.com | Auth, functions, OAuth clients and the Android SHA-1 fingerprints for Google sign-in. Unrelated to Play uploads. |
+| EAS / Expo (`victors1681/mseller-lite`) | victors1681 | Holds the Android upload keystore, the Play service account key and the App Store Connect key. |
+
+- The service account's **JSON key is stored only on EAS** (expo.dev → mseller-lite → Credentials
+  → Android → `app.mseller.msellerlite` → Google Service Account Key for Play Store Submissions).
+  It is not in the repo, in CI secrets or on anyone's machine. To rotate it: create a new key on
+  the service account, upload it there, then delete the old key in Cloud Console.
+- If the submit fails with a permissions error, check the Play Console invite still has release
+  permissions for MSeller Lite, and that the Play Android Developer API is enabled in
+  `mobile-seller-212715`.
+- `eas submit --non-interactive` cannot create the key; it has to be uploaded as above first.
+
 ### Google Play
 
-1. Create the app in Play Console (default language Spanish, app, free).
-2. Build once with `eas build -p android --profile production` so EAS creates the upload key,
-   then upload that first AAB manually (Play requires the first upload through the console).
-3. Create a Google Cloud service account with Play Console access (Release manager) and upload
-   its JSON key to EAS: `eas credentials -p android` → Google Service Account. Never commit it.
-4. App content:
-   - Privacy policy: `https://mseller.app/privacy`
-   - Account deletion URL: a page explaining how to delete the account (in-app: Más → Eliminar
-     cuenta) and how to request it by email for users who no longer have the app.
-   - Data safety: name, email, phone (account); precise location (delivery check-in, not
-     shared); photos (product and delivery images); all encrypted in transit; deletion
-     available.
-   - Content rating questionnaire, target audience 18+, no ads.
-   - App access: provide the reviewer demo account (see below).
-5. Personal developer accounts created after Nov 2023 need a closed test with 12 testers for
-   14 days before production access; organization accounts do not.
+App: [MSeller Lite in Play Console](https://play.google.com/console/u/1/developers/5110848621709968202/app/4976182033406865940/app-dashboard).
+
+Release flow for every version:
+
+```bash
+pnpm build:android:prod   # or: eas build -p android --profile production
+pnpm submit:android       # latest build → internal track, as a draft
+```
+
+Then in Play Console → Test and release → Internal testing, review the draft release and roll it
+out. Promote to closed/open testing or production from there.
+
+History:
+
+| Date | Version | versionCode | Track | EAS build | Commit |
+|---|---|---|---|---|---|
+| 2026-09-14 | 1.0.1 | 9 | internal (draft) | `e7596603` | `054805cd` |
+
+One-time setup (done):
+
+1. App created in Play Console (default language Spanish, app, free).
+2. Upload keystore: EAS-managed (`eas credentials -p android`). Play App Signing re-signs
+   releases with Google's key.
+3. Service account created and its key uploaded to EAS (see *Accounts* above).
+
+Still to complete in Play Console before a release can roll out:
+
+- App content:
+  - Privacy policy: `https://mseller.app/privacy`
+  - Delete account URL: `https://mseller.app/es/delete-account` (in-app: Más → Eliminar
+    cuenta; by email: privacy@mseller.app).
+  - Data safety: name, email, phone (account); precise location (delivery check-in, not
+    shared); photos (product and delivery images); all encrypted in transit; deletion
+    available.
+  - Content rating questionnaire, target audience 18+, no ads.
+  - App access: provide the reviewer demo account (see below).
+- Personal developer accounts created after Nov 2023 need a closed test with 12 testers for
+  14 days before production access; organization accounts do not.
+- Register the Play **app signing** and **upload** key SHA-1s (Play Console → Test and release →
+  App integrity) on the `mobile-seller-v3` Android app, or Google sign-in fails for Play installs.
 
 ### Google sign-in fingerprints
 
@@ -72,7 +116,7 @@ both projects' apps (`mobile-seller-v3` → `app.mseller.msellerlite`, `mseller-
 | Key | Where to get the SHA-1 |
 |---|---|
 | Debug / tester builds (`pnpm distribute:*`, `expo run:android`) | `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25` (React Native template debug keystore) |
-| EAS upload key | `eas credentials -p android` after the first store build |
+| EAS upload key | Play Console → App integrity → Upload key certificate, or `eas credentials -p android` |
 | Play App Signing key (what users install) | Play Console → Test and release → App integrity |
 
 ```bash
