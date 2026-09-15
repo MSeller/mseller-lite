@@ -25,10 +25,12 @@ export default function TabLayout() {
   const hideUnless = (allowed: boolean) => (allowed ? undefined : null);
 
   /**
-   * Five destinations at most: related modules share a tab and switch at the top
-   * (Rutas: Preparación / Entregas; Inventario: Conteo / Productos), and account
-   * settings live under Más. That leaves room for labels again, which read far
-   * better than icons alone.
+   * Five destinations at most for every operational role: related modules share a
+   * tab and switch at the top (Rutas: Preparación / Entregas; Inventario: Conteo /
+   * Productos), and account settings live under Más. That leaves room for labels
+   * again, which read far better than icons alone. Administrators and superusers are
+   * the one exception, with a sixth tab — Catálogo: Clientes / Productos — for editing
+   * master data; six labelled tabs still fit, and no other role is offered it.
    *
    * The active destination is also marked with a tinted pill behind its icon — at
    * icon size a tint change alone is easy to miss.
@@ -115,6 +117,15 @@ export default function TabLayout() {
           tabBarAccessibilityLabel: t("navigation.stock"),
           href: hideUnless(can("stockCount") || can("products")),
           tabBarIcon: icon("archivebox.fill"),
+        }}
+      />
+      <Tabs.Screen
+        name="catalog"
+        options={{
+          title: t("navigation.catalog"),
+          tabBarAccessibilityLabel: t("navigation.catalog"),
+          href: hideUnless(can("catalogCustomers") || can("catalogProducts")),
+          tabBarIcon: icon("books.vertical.fill"),
         }}
       />
       <Tabs.Screen

@@ -112,12 +112,15 @@
     "documents": "Documentos",
     "routes": "Rutas",
     "stock": "Inventario",
+    "catalog": "Catálogo",
     "more": "Más",
     "sections": {
       "picking": "Preparación",
       "deliveries": "Entregas",
       "stockCount": "Conteo",
-      "products": "Productos"
+      "products": "Productos",
+      "catalogCustomers": "Clientes",
+      "catalogProducts": "Productos"
     },
     "language": "Idioma",
     "developer": "Desarrollo",
@@ -842,5 +845,112 @@
     "useAnotherAccount": "Usar otra cuenta",
     "failed": "No pudimos crear la empresa. Inténtalo de nuevo.",
     "alreadyRegistered": "Este correo ya pertenece a una cuenta de MSeller. Inicia sesión con tu correo y contraseña."
+  },
+  "catalog": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "status": "Estado",
+    "noValue": "—",
+    "loadMoreFailed": "No se pudieron cargar más resultados.",
+    "loadFailed": "No se pudo cargar la lista. Revisa tu conexión e inténtalo de nuevo.",
+    "detailLoadFailed": "No se pudo cargar el registro. Revisa tu conexión e inténtalo de nuevo.",
+    "notFound": "Este registro ya no existe.",
+    "forbiddenTitle": "Acceso restringido",
+    "forbiddenBody": "Solo los administradores y superusuarios pueden ver y editar el catálogo.",
+    "saved": "Cambios guardados",
+    "saveFailed": "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+    "fixErrors": "Revisa los campos marcados antes de guardar.",
+    "discardTitle": "¿Descartar cambios?",
+    "discardBody": "Tienes cambios sin guardar. Si sales ahora se perderán.",
+    "discard": "Descartar",
+    "keepEditing": "Seguir editando",
+    "yes": "Sí",
+    "no": "No",
+    "validation": {
+      "required": "Este campo es obligatorio.",
+      "email": "Correo electrónico no válido.",
+      "number": "Ingresa un número válido.",
+      "nonNegative": "No puede ser negativo.",
+      "integer": "Debe ser un número entero.",
+      "maxPercent": "No puede ser mayor que 100.",
+      "positive": "Debe ser mayor que cero.",
+      "status": "Estado no válido."
+    },
+    "customers": {
+      "searchPlaceholder": "Buscar cliente por código o nombre",
+      "emptyTitle": "No hay clientes",
+      "emptyBody": "Los clientes registrados aparecerán aquí.",
+      "emptySearchTitle": "Sin resultados",
+      "emptySearchBody": "Ningún cliente coincide con tu búsqueda.",
+      "editTitle": "Editar cliente",
+      "conflict": "Otro cliente ya usa estos datos.",
+      "sections": {
+        "general": "Datos generales",
+        "contact": "Contacto",
+        "address": "Dirección",
+        "credit": "Crédito y condiciones",
+        "notes": "Notas"
+      },
+      "fields": {
+        "codigo": "Código",
+        "nombre": "Nombre",
+        "rnc": "RNC / Cédula",
+        "telefono1": "Teléfono",
+        "email": "Correo electrónico",
+        "direccion": "Dirección",
+        "referenciaDireccion": "Referencia",
+        "ciudad": "Ciudad",
+        "contacto": "Persona de contacto",
+        "codigoVendedor": "Código de vendedor",
+        "condicion": "Condición de pago",
+        "limiteCredito": "Límite de crédito",
+        "limiteFacturas": "Límite de facturas",
+        "descuento": "Descuento (%)",
+        "notas": "Notas",
+        "balance": "Balance"
+      },
+      "conditionPicker": {
+        "title": "Condición de pago",
+        "search": "Buscar condición",
+        "none": "Sin condición"
+      }
+    },
+    "products": {
+      "searchPlaceholder": "Buscar producto por código, nombre o código de barras",
+      "emptyTitle": "No hay productos",
+      "emptyBody": "Los productos registrados aparecerán aquí.",
+      "emptySearchTitle": "Sin resultados",
+      "emptySearchBody": "Ningún producto coincide con tu búsqueda.",
+      "editTitle": "Editar producto",
+      "conflict": "Ese código de barras ya pertenece a otro producto.",
+      "service": "Servicio",
+      "promotion": "Promoción",
+      "sections": {
+        "general": "Datos generales",
+        "classification": "Clasificación y empaque",
+        "pricing": "Precios",
+        "costs": "Costo e impuestos",
+        "options": "Opciones"
+      },
+      "fields": {
+        "codigo": "Código",
+        "codigoBarra": "Código de barras",
+        "nombre": "Nombre",
+        "descripcion": "Descripción",
+        "area": "Área",
+        "departamento": "Departamento",
+        "unidad": "Unidad",
+        "empaque": "Empaque",
+        "factor": "Factor",
+        "precio": "Precio {{n}}",
+        "costo": "Costo",
+        "impuesto": "Impuesto (%)",
+        "descuento": "Descuento (%)",
+        "tipoImpuesto": "Tipo de impuesto",
+        "visibleTienda": "Visible en la tienda",
+        "promocion": "En promoción",
+        "esServicio": "Es un servicio (sin inventario)"
+      }
+    }
   }
 }

@@ -109,12 +109,15 @@
     "documents": "Documents",
     "routes": "Routes",
     "stock": "Inventory",
+    "catalog": "Catalog",
     "more": "More",
     "sections": {
       "picking": "Picking",
       "deliveries": "Deliveries",
       "stockCount": "Count",
-      "products": "Products"
+      "products": "Products",
+      "catalogCustomers": "Customers",
+      "catalogProducts": "Products"
     },
     "language": "Language",
     "developer": "Developer",
@@ -817,5 +820,112 @@
     "useAnotherAccount": "Use another account",
     "failed": "We couldn't create the business. Please try again.",
     "alreadyRegistered": "This email already belongs to an MSeller account. Sign in with your email and password."
+  },
+  "catalog": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "status": "Status",
+    "noValue": "—",
+    "loadMoreFailed": "Could not load more results.",
+    "loadFailed": "Could not load the list. Check your connection and try again.",
+    "detailLoadFailed": "Could not load the record. Check your connection and try again.",
+    "notFound": "This record no longer exists.",
+    "forbiddenTitle": "Restricted access",
+    "forbiddenBody": "Only administrators and superusers can view and edit the catalog.",
+    "saved": "Changes saved",
+    "saveFailed": "Could not save the changes. Please try again.",
+    "fixErrors": "Check the highlighted fields before saving.",
+    "discardTitle": "Discard changes?",
+    "discardBody": "You have unsaved changes. They will be lost if you leave now.",
+    "discard": "Discard",
+    "keepEditing": "Keep editing",
+    "yes": "Yes",
+    "no": "No",
+    "validation": {
+      "required": "This field is required.",
+      "email": "Invalid email address.",
+      "number": "Enter a valid number.",
+      "nonNegative": "Cannot be negative.",
+      "integer": "Must be a whole number.",
+      "maxPercent": "Cannot be greater than 100.",
+      "positive": "Must be greater than zero.",
+      "status": "Invalid status."
+    },
+    "customers": {
+      "searchPlaceholder": "Search customers by code or name",
+      "emptyTitle": "No customers",
+      "emptyBody": "Registered customers will show up here.",
+      "emptySearchTitle": "No results",
+      "emptySearchBody": "No customer matches your search.",
+      "editTitle": "Edit customer",
+      "conflict": "Another customer already uses this data.",
+      "sections": {
+        "general": "General",
+        "contact": "Contact",
+        "address": "Address",
+        "credit": "Credit and terms",
+        "notes": "Notes"
+      },
+      "fields": {
+        "codigo": "Code",
+        "nombre": "Name",
+        "rnc": "Tax ID",
+        "telefono1": "Phone",
+        "email": "Email",
+        "direccion": "Address",
+        "referenciaDireccion": "Address reference",
+        "ciudad": "City",
+        "contacto": "Contact person",
+        "codigoVendedor": "Seller code",
+        "condicion": "Payment condition",
+        "limiteCredito": "Credit limit",
+        "limiteFacturas": "Invoice limit",
+        "descuento": "Discount (%)",
+        "notas": "Notes",
+        "balance": "Balance"
+      },
+      "conditionPicker": {
+        "title": "Payment condition",
+        "search": "Search condition",
+        "none": "No condition"
+      }
+    },
+    "products": {
+      "searchPlaceholder": "Search products by code, name or barcode",
+      "emptyTitle": "No products",
+      "emptyBody": "Registered products will show up here.",
+      "emptySearchTitle": "No results",
+      "emptySearchBody": "No product matches your search.",
+      "editTitle": "Edit product",
+      "conflict": "That barcode already belongs to another product.",
+      "service": "Service",
+      "promotion": "Promotion",
+      "sections": {
+        "general": "General",
+        "classification": "Classification and packaging",
+        "pricing": "Prices",
+        "costs": "Cost and taxes",
+        "options": "Options"
+      },
+      "fields": {
+        "codigo": "Code",
+        "codigoBarra": "Barcode",
+        "nombre": "Name",
+        "descripcion": "Description",
+        "area": "Area",
+        "departamento": "Department",
+        "unidad": "Unit",
+        "empaque": "Packaging",
+        "factor": "Factor",
+        "precio": "Price {{n}}",
+        "costo": "Cost",
+        "impuesto": "Tax (%)",
+        "descuento": "Discount (%)",
+        "tipoImpuesto": "Tax type",
+        "visibleTienda": "Visible in the store",
+        "promocion": "On promotion",
+        "esServicio": "Is a service (no stock)"
+      }
+    }
   }
 }

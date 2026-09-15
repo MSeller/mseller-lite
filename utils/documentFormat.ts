@@ -132,6 +132,9 @@ export const formatDateTime = (iso: string | null | undefined): string => {
   );
 };
 
+/** Spaces removed and a decimal comma turned into a point: the shape both parsers read. */
+const normalizeNumericInput = (raw: string): string => raw.replace(/\s/g, "").replace(",", ".");
+
 /**
  * Parses what someone typed into a numeric field. Accepts an empty string as 0
  * and tolerates a comma as the decimal separator, which is what a Spanish
@@ -139,7 +142,19 @@ export const formatDateTime = (iso: string | null | undefined): string => {
  */
 export const parseNumericInput = (raw: string): number => {
   if (!raw) return 0;
-  const normalized = raw.replace(/\s/g, "").replace(",", ".");
-  const parsed = Number.parseFloat(normalized);
+  const parsed = Number.parseFloat(normalizeNumericInput(raw));
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/**
+ * The strict sibling of `parseNumericInput`, for forms that validate before saving:
+ * same comma and empty-field handling, but `null` when the text is not entirely a
+ * number — "12abc" is rejected rather than read as 12.
+ */
+export const parseStrictNumericInput = (raw: string): number | null => {
+  const normalized = normalizeNumericInput(raw);
+  if (normalized === "") return 0;
+  if (!/^-?(\d+\.?\d*|\.\d+)$/.test(normalized)) return null;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : null;
 };

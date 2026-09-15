@@ -1,4 +1,5 @@
 import type { CreatedProduct, NewProductRequest, ProductImage, ProductPhoto } from "../types/documents";
+import type { ProductoEditable, ProductoUpdateRequest } from "../types/catalog";
 import type { Product } from "../types/inventory";
 import { restClient } from "./api";
 
@@ -137,6 +138,26 @@ export class ProductService {
     });
     return response.data;
   }
+
+  /**
+   * The full, editable product record for the admin Catálogo. Administrator and
+   * superuser only: the server answers 403 for anyone else.
+   */
+  async obtenerEditable(codigo: string): Promise<ProductoEditable> {
+    const response = await restClient.get<ProductoEditable>(
+      `${this.baseEndpoint}/${encodeURIComponent(codigo)}/editable`
+    );
+    return response.data;
+  }
+
+  /** Saves the product and returns it as stored. 409 when the barcode belongs to another product. */
+  async actualizar(codigo: string, request: ProductoUpdateRequest): Promise<ProductoEditable> {
+    const response = await restClient.put<ProductoEditable>(
+      `${this.baseEndpoint}/${encodeURIComponent(codigo)}`,
+      request
+    );
+    return response.data;
+  }
 }
 
 // Export singleton instance
@@ -220,3 +241,17 @@ export const addProductImages = async (
  */
 export const getNextProductCode = async (nombre: string): Promise<string | null> =>
   productService.siguienteCodigo(nombre);
+
+/**
+ * Editable product record for the admin Catálogo - Convenience function for UI components
+ */
+export const getEditableProduct = (codigo: string): Promise<ProductoEditable> =>
+  productService.obtenerEditable(codigo);
+
+/**
+ * Save a product from the admin Catálogo - Convenience function for UI components
+ */
+export const updateProduct = (
+  codigo: string,
+  request: ProductoUpdateRequest
+): Promise<ProductoEditable> => productService.actualizar(codigo, request);

@@ -1,12 +1,13 @@
 import { openBrowserAsync } from "expo-web-browser";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, HelperText, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
+import { Button, Card, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
 
 import { LEGAL_URLS } from "../../constants/legal";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import { EmailAlreadyRegisteredError, registerBusinessAccount } from "../../services/accountService";
+import FormField from "../ui/FormField";
 import GoogleSignInButton from "./GoogleSignInButton";
 import {
   validateRegistration,
@@ -82,15 +83,6 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
       ? t(`auth.validation.${validationError}`)
       : "";
 
-  const renderError = (field: keyof RegistrationForm) => {
-    const message = fieldError(field);
-    return message ? (
-      <HelperText type="error" visible>
-        {message}
-      </HelperText>
-    ) : null;
-  };
-
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -110,38 +102,33 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 {t("auth.createAccountSubtitle")}
               </Text>
 
-              <TextInput
+              <FormField
                 label={t("common.firstName")}
                 value={form.firstName}
                 onChangeText={set("firstName")}
-                mode="outlined"
                 autoComplete="given-name"
                 textContentType="givenName"
                 disabled={loading}
                 left={<TextInput.Icon icon="account" />}
-                error={!!fieldError("firstName")}
+                errorText={fieldError("firstName")}
               />
-              {renderError("firstName")}
 
-              <TextInput
+              <FormField
                 label={t("common.lastName")}
                 value={form.lastName}
                 onChangeText={set("lastName")}
-                mode="outlined"
                 autoComplete="family-name"
                 textContentType="familyName"
                 disabled={loading}
                 style={styles.input}
                 left={<TextInput.Icon icon="account-outline" />}
-                error={!!fieldError("lastName")}
+                errorText={fieldError("lastName")}
               />
-              {renderError("lastName")}
 
-              <TextInput
+              <FormField
                 label={t("common.email")}
                 value={form.email}
                 onChangeText={set("email")}
-                mode="outlined"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -149,15 +136,13 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 disabled={loading}
                 style={styles.input}
                 left={<TextInput.Icon icon="email" />}
-                error={!!fieldError("email")}
+                errorText={fieldError("email")}
               />
-              {renderError("email")}
 
-              <TextInput
+              <FormField
                 label={t("common.password")}
                 value={form.password}
                 onChangeText={set("password")}
-                mode="outlined"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoComplete="new-password"
@@ -171,30 +156,22 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                     onPress={() => setShowPassword(!showPassword)}
                   />
                 }
-                error={!!fieldError("password")}
+                errorText={fieldError("password")}
+                helperText={t("auth.passwordHint")}
               />
-              {fieldError("password") ? (
-                renderError("password")
-              ) : (
-                <HelperText type="info" visible>
-                  {t("auth.passwordHint")}
-                </HelperText>
-              )}
 
-              <TextInput
+              <FormField
                 label={t("auth.confirmPassword")}
                 value={form.confirmPassword}
                 onChangeText={set("confirmPassword")}
-                mode="outlined"
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 autoComplete="new-password"
                 textContentType="newPassword"
                 disabled={loading}
                 left={<TextInput.Icon icon="lock-check" />}
-                error={!!fieldError("confirmPassword")}
+                errorText={fieldError("confirmPassword")}
               />
-              {renderError("confirmPassword")}
 
               <Text
                 variant="bodySmall"
