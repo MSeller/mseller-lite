@@ -284,6 +284,7 @@
     "items": "ITEMS",
     "tabPicking": "PICKING",
     "tabLoading": "LOADING",
+    "loadingNotAllowed": "Loading the truck is the driver's or the back office's job.",
     "tabInventory": "INVENTORY",
     "loadingProgressLabel": "Loading Progress",
     "loadingClientsShort": "{{loaded}} of {{total}} clients",

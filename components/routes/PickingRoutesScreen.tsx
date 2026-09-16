@@ -17,6 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../services/preparacionService";
 import {
@@ -46,6 +47,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
+  const { can, loading: accessLoading } = useNavigationAccess();
 
   const [rutas, setRutas] = useState<RutaPreparacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +80,11 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   }, [loadRutas]);
 
   const handleRutaPress = (ruta: RutaPreparacion) => {
-    if (ruta.status === "lista_despacho") {
+    // A prepared route opens on the truck load for those who load it; a picker, who does
+    // not, stays on the picking list. While the profile is still loading nothing is
+    // allowed yet, so the card waits rather than sending a loader to the wrong screen.
+    if (accessLoading) return;
+    if (ruta.status === "lista_despacho" && can("truckLoading")) {
       router.push(`/preparacion/${ruta.rutaId}/loading` as any);
     } else {
       router.push(`/preparacion/${ruta.rutaId}/picking` as any);

@@ -3,6 +3,7 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, Text, useTheme } from "react-native-paper";
+import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 
 function TabHeader({ rutaId }: { rutaId: string }) {
@@ -64,6 +65,7 @@ function TabHeader({ rutaId }: { rutaId: string }) {
 export default function RutaIdLayout() {
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
   const { t } = useTranslation();
+  const { can } = useNavigationAccess();
   // A fixed tab bar height overrides React Navigation's inset padding, which put the
   // tabs behind Android's navigation bar (and the iOS home indicator).
   const insets = useSafeAreaInsets();
@@ -94,6 +96,10 @@ export default function RutaIdLayout() {
       <Tabs.Screen
         name="loading"
         options={{
+          // Inventory pickers prepare the route; loading it is the driver's and back
+          // office's job. This only hides the tab — expo-router keeps the screen
+          // routable — so loading.tsx guards itself as well.
+          href: can("truckLoading") ? undefined : null,
           title: t("preparacion.tabLoading"),
           tabBarIcon: ({ color, size }) => (
             <Icon source="truck-outline" size={size} color={color} />

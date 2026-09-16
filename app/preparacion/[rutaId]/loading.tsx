@@ -20,7 +20,9 @@ import {
 } from "react-native-paper";
 
 import type { CustomTheme } from "@/constants/Theme";
+import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
+import EmptyState from "../../../components/ui/EmptyState";
 import { preparacionService } from "../../../services/preparacionService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
 
@@ -36,6 +38,7 @@ const vehiculoTipoLabel = (tipo?: string | null) => {
 export default function LoadingScreen() {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
+  const { can, loading: accessLoading } = useNavigationAccess();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
   const numericRutaId = parseInt(rutaId ?? "0", 10);
 
@@ -290,6 +293,21 @@ export default function LoadingScreen() {
       </Card>
     );
   };
+
+  // The tab is hidden for a picker, but expo-router keeps the screen routable, so a deep
+  // link or a stale navigation state can still land here. Say whose job this is rather
+  // than letting the screen load and fail on the API's 403.
+  if (accessLoading || !can("truckLoading")) {
+    return (
+      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]}>
+        {accessLoading ? (
+          <ActivityIndicator size="large" />
+        ) : (
+          <EmptyState icon="lock-outline" message={t("preparacion.loadingNotAllowed")} />
+        )}
+      </SafeAreaView>
+    );
+  }
 
   if (loading) {
     return (
