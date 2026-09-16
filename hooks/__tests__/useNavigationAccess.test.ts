@@ -10,11 +10,17 @@ type UserType = UserTypes["type"];
 
 const CATALOG: NavSection[] = ["catalogCustomers", "catalogProducts"];
 
-/** What every role was offered before the Catálogo tab existed. */
+/** Roles that may load a prepared route onto the truck from Preparación. */
+const LOADERS: UserType[] = ["office", "manager", "administrator", "superuser"];
+
+/**
+ * What every role was offered before the Catálogo tab existed — except inventory, which
+ * has since lost Documentos: pickers only work Rutas (preparación) and Inventario.
+ */
 const PREVIOUS: Record<UserType, NavSection[]> = {
   seller: ["documents", "products"],
   driver: ["deliveries", "products"],
-  inventory: ["documents", "picking", "stockCount", "products"],
+  inventory: ["picking", "stockCount", "products"],
   office: ["documents", "picking", "deliveries", "products"],
   accounting: ["documents", "products"],
   manager: ["documents", "picking", "deliveries", "stockCount", "products"],
@@ -37,8 +43,25 @@ describe("SECTIONS_BY_USER_TYPE", () => {
   );
 
   it.each(Object.keys(PREVIOUS) as UserType[])("keeps every section %s had before", (type) => {
-    const expected = type === "administrator" || type === "superuser" ? [...PREVIOUS[type], ...CATALOG] : PREVIOUS[type];
+    const expected = [
+      ...PREVIOUS[type],
+      ...(type === "administrator" || type === "superuser" ? CATALOG : []),
+      ...(LOADERS.includes(type) ? (["truckLoading"] as NavSection[]) : []),
+    ];
     expect([...SECTIONS_BY_USER_TYPE[type]].sort()).toEqual([...expected].sort());
+  });
+
+  it("offers inventory only picking and the Inventario modules", () => {
+    expect([...SECTIONS_BY_USER_TYPE.inventory].sort()).toEqual(["picking", "products", "stockCount"]);
+  });
+
+  it.each<UserType>(["inventory", "driver", "seller", "accounting"])("does not let %s load the truck from Preparación", (type) => {
+    expect(SECTIONS_BY_USER_TYPE[type]).not.toContain("truckLoading");
+  });
+
+  it("offers the driver deliveries but not picking", () => {
+    expect(SECTIONS_BY_USER_TYPE.driver).toContain("deliveries");
+    expect(SECTIONS_BY_USER_TYPE.driver).not.toContain("picking");
   });
 
   it("covers every user type", () => {

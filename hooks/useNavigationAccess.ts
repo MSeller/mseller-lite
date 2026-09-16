@@ -6,6 +6,8 @@ import type { UserTypes } from "../types/user";
 export type NavSection =
   | "documents"
   | "picking"
+  /** Loading a prepared route onto the truck from Preparación. Not for inventory pickers. */
+  | "truckLoading"
   | "deliveries"
   | "stockCount"
   | "products"
@@ -17,7 +19,7 @@ export type NavSection =
 type UserType = UserTypes["type"];
 
 /** Every operational module — what a manager sees. */
-const OPERATIONS: NavSection[] = ["documents", "picking", "deliveries", "stockCount", "products"];
+const OPERATIONS: NavSection[] = ["documents", "picking", "truckLoading", "deliveries", "stockCount", "products"];
 
 /**
  * Editing master data (customers, products) is an administrator job: the Consumo API
@@ -33,8 +35,9 @@ const ADMINISTRATION: NavSection[] = [...OPERATIONS, "catalogCustomers", "catalo
 export const SECTIONS_BY_USER_TYPE: Readonly<Record<UserType, readonly NavSection[]>> = {
   seller: ["documents", "products"],
   driver: ["deliveries", "products"],
-  inventory: ["documents", "picking", "stockCount", "products"],
-  office: ["documents", "picking", "deliveries", "products"],
+  // Pickers work Rutas (preparación only — the driver loads the truck) and Inventario.
+  inventory: ["picking", "stockCount", "products"],
+  office: ["documents", "picking", "truckLoading", "deliveries", "products"],
   accounting: ["documents", "products"],
   manager: OPERATIONS,
   administrator: ADMINISTRATION,
