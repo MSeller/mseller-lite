@@ -309,6 +309,7 @@
     "items": "ARTÍCULOS",
     "tabPicking": "PREPARACIÓN",
     "tabLoading": "CARGA",
+    "loadingNotAllowed": "La carga del camión la realiza el chofer o la oficina.",
     "tabInventory": "INVENTARIO",
     "loadingProgressLabel": "Progreso de carga",
     "loadingClientsShort": "{{loaded}} de {{total}} clientes",

@@ -47,7 +47,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const { can } = useNavigationAccess();
+  const { can, loading: accessLoading } = useNavigationAccess();
 
   const [rutas, setRutas] = useState<RutaPreparacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,9 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
 
   const handleRutaPress = (ruta: RutaPreparacion) => {
     // A prepared route opens on the truck load for those who load it; a picker, who does
-    // not, stays on the picking list.
+    // not, stays on the picking list. While the profile is still loading nothing is
+    // allowed yet, so the card waits rather than sending a loader to the wrong screen.
+    if (accessLoading) return;
     if (ruta.status === "lista_despacho" && can("truckLoading")) {
       router.push(`/preparacion/${ruta.rutaId}/loading` as any);
     } else {

@@ -97,7 +97,8 @@ export default function RutaIdLayout() {
         name="loading"
         options={{
           // Inventory pickers prepare the route; loading it is the driver's and back
-          // office's job. `href: null` hides the tab and unregisters its route.
+          // office's job. This only hides the tab — expo-router keeps the screen
+          // routable — so loading.tsx guards itself as well.
           href: can("truckLoading") ? undefined : null,
           title: t("preparacion.tabLoading"),
           tabBarIcon: ({ color, size }) => (
