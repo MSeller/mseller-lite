@@ -75,8 +75,11 @@ export default function LoadingScreen() {
   }, [numericRutaId, t]);
 
   useEffect(() => {
+    // The access guard below only stops the render; without this the first effect would
+    // still fire a request that the API answers 403.
+    if (accessLoading || !can("truckLoading")) return;
     loadCarga();
-  }, [loadCarga]);
+  }, [accessLoading, can, loadCarga]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
