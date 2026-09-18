@@ -86,10 +86,17 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/Icon-square.png",
-          imageWidth: 200,
+          // Full MSeller wordmark; the white-text version on a dark system theme.
+          image: "./assets/images/mseller-logo-dark.png",
+          imageWidth: 240,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
+          dark: {
+            image: "./assets/images/mseller-logo-light.png",
+            backgroundColor: "#0E1216",
+          },
+          // Android 12+ masks the splash icon to a circle; narrower keeps the wordmark whole.
+          android: { imageWidth: 180 },
         },
       ],
       [

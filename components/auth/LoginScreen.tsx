@@ -1,7 +1,6 @@
 import { signInWithEmailAndPassword } from "firebase/auth";
 import React, { useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -20,6 +19,7 @@ import {
 import { auth } from "../../config/firebase";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
+import MSellerLogo from "../common/MSellerLogo";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginScreenProps {
@@ -87,11 +87,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
             <View style={styles.content}>
               {/* App Logo/Branding */}
               <View style={styles.logoContainer}>
-                <Image
-                  source={require("../../assets/images/mseller-logo-dark.png")}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
+                <MSellerLogo style={styles.logo} />
               </View>
 
               {/* Login Card */}
