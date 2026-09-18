@@ -5,6 +5,7 @@ import {
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useMemo } from "react";
 import { PaperProvider } from "react-native-paper";
@@ -27,6 +28,10 @@ import { UserProvider, useUser } from "@/contexts/UserContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { needsOnboarding } from "@/utils/account";
+
+// Keep the launch screen up while Firebase restores the saved session, so a signed-in user
+// goes straight into the app instead of flashing the login screen.
+SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 function RootLayoutContent() {
   const colorScheme = useColorScheme();
@@ -59,6 +64,10 @@ function RootLayoutContent() {
       },
     };
   }, [colorScheme]);
+
+  useEffect(() => {
+    if (!loading) SplashScreen.hideAsync().catch(() => undefined);
+  }, [loading]);
 
   if (loading) {
     return <LoadingScreen />;
