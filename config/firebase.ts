@@ -1,6 +1,13 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { connectAuthEmulator, getAuth } from "firebase/auth";
+import {
+  Auth,
+  connectAuthEmulator,
+  getAuth,
+  getReactNativePersistence,
+  initializeAuth,
+} from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
 import { connectStorageEmulator, getStorage } from "firebase/storage";
@@ -93,8 +100,25 @@ if (missingKeys.length > 0) {
 // Initialize Firebase
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+/**
+ * getAuth() on React Native keeps the session in memory only, so every cold start signed the
+ * user out. initializeAuth with AsyncStorage persistence stores it on the device and Firebase
+ * restores it on launch. initializeAuth may run once per app; a fast refresh reuses the instance.
+ */
+const createAuth = (): Auth => {
+  // The web SDK already persists the session in IndexedDB.
+  if (Platform.OS === "web") return getAuth(app);
+  try {
+    return initializeAuth(app, {
+      persistence: getReactNativePersistence(AsyncStorage),
+    });
+  } catch {
+    return getAuth(app);
+  }
+};
+
 // Initialize Firebase services
-const auth = getAuth(app);
+const auth = createAuth();
 const functions = getFunctions(app, "us-east1");
 const db = getFirestore(app);
 const storage = getStorage(app);

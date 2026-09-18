@@ -3,6 +3,7 @@
  * Prevents the entire app from crashing due to component errors
  */
 
+import * as SplashScreen from "expo-splash-screen";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
@@ -31,6 +32,8 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // A crash during startup would otherwise leave the launch screen covering the fallback.
+    SplashScreen.hideAsync().catch(() => undefined);
     console.error("ErrorBoundary caught an error:", error, errorInfo);
 
     // Enhanced logging for production debugging
