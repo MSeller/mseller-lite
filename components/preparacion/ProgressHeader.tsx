@@ -1,7 +1,10 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Chip, ProgressBar, Text, useTheme } from "react-native-paper";
+import { ProgressBar, Text, useTheme } from "react-native-paper";
+
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import AppCard from "../ui/AppCard";
 
 interface ProgressHeaderProps {
   totalProductos: number;
@@ -14,114 +17,134 @@ const ProgressHeader: React.FC<ProgressHeaderProps> = ({
   productosPreparados,
   noRuta,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
-  const progress =
-    totalProductos > 0 ? productosPreparados / totalProductos : 0;
+  const { status, spacing } = theme.custom;
+  const progress = totalProductos > 0 ? productosPreparados / totalProductos : 0;
+  const complete = totalProductos > 0 && productosPreparados >= totalProductos;
+  const accent = complete ? status.positive.base : theme.colors.primary;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.surface }]}>
-      {/* Route label + live session chip */}
+    <AppCard style={styles.card} contentStyle={{ padding: spacing.md }}>
       <View style={styles.topRow}>
         <Text
           variant="labelSmall"
-          style={[styles.activeRouteLabel, { color: theme.colors.primary }]}
+          style={[styles.eyebrow, { color: theme.colors.onSurfaceVariant }]}
         >
           {t("preparacion.activeRoute")}
         </Text>
-        <Chip
-          compact
-          icon="circle"
-          style={styles.liveChip}
-          textStyle={styles.liveChipText}
-        >
-          {t("preparacion.liveSession")}
-        </Chip>
+        {/* Live session: a dot and a word, not a filled chip competing with the route number. */}
+        <View style={[styles.live, { backgroundColor: status.positive.container }]}>
+          <View style={[styles.liveDot, { backgroundColor: status.positive.base }]} />
+          <Text style={[styles.liveText, { color: status.positive.onContainer }]}>
+            {t("preparacion.liveSession")}
+          </Text>
+        </View>
       </View>
 
-      {/* Route number */}
       <Text
-        variant="headlineMedium"
+        variant="headlineSmall"
         style={[styles.routeNumber, { color: theme.colors.onSurface }]}
         numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
       >
         {noRuta}
       </Text>
 
-      {/* Progress row */}
       <View style={styles.progressRow}>
-        <Text
-          variant="bodyMedium"
-          style={{ color: theme.colors.onSurfaceVariant }}
-        >
-          {t("preparacion.pickingProgress")}
+        <Text style={[styles.count, { color: theme.colors.onSurface }]}>
+          {productosPreparados}
+          <Text style={[styles.countTotal, { color: theme.colors.onSurfaceVariant }]}>
+            {` / ${totalProductos}`}
+          </Text>
         </Text>
         <Text
-          variant="labelLarge"
-          style={[styles.progressCount, { color: theme.colors.onSurface }]}
+          variant="bodySmall"
+          numberOfLines={1}
+          style={[styles.countLabel, { color: theme.colors.onSurfaceVariant }]}
         >
-          {t("preparacion.productsPickedOf", {
-            picked: productosPreparados,
-            total: totalProductos,
-          })}
+          {t("preparacion.productsPicked")}
+        </Text>
+        <Text style={[styles.percent, { color: accent }]}>
+          {`${Math.round(progress * 100)}%`}
         </Text>
       </View>
 
       <ProgressBar
         progress={progress}
-        color={theme.colors.primary}
-        style={styles.progressBar}
+        color={accent}
+        style={[styles.progressBar, { backgroundColor: theme.colors.surfaceVariant }]}
       />
-    </View>
+    </AppCard>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
-    marginBottom: 8,
-    borderRadius: 16,
+  card: {
     margin: 12,
+    marginBottom: 8,
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 4,
   },
-  activeRouteLabel: {
+  eyebrow: {
     fontWeight: "700",
     letterSpacing: 1,
   },
-  liveChip: {
-    backgroundColor: "#DCE7F3",
-    height: 28,
+  live: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
   },
-  liveChipText: {
-    color: "#14395E",
+  liveDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  liveText: {
     fontSize: 11,
+    lineHeight: 14,
     fontWeight: "700",
+    letterSpacing: 0.6,
   },
   routeNumber: {
-    fontWeight: "900",
-    marginBottom: 12,
-    letterSpacing: -0.5,
+    fontWeight: "800",
+    marginTop: 4,
+    marginBottom: 14,
   },
   progressRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "baseline",
+    gap: 8,
     marginBottom: 8,
   },
-  progressCount: {
+  count: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
+  },
+  countTotal: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  countLabel: {
+    flex: 1,
+  },
+  percent: {
+    fontSize: 13,
     fontWeight: "700",
-    letterSpacing: 0.3,
+    fontVariant: ["tabular-nums"],
   },
   progressBar: {
-    height: 8,
-    borderRadius: 4,
+    height: 6,
+    borderRadius: 3,
   },
 });
 

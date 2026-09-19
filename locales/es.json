@@ -329,7 +329,8 @@
     "declined": "Rechazado",
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
     "issuePlaceholder": "Describe la incidencia (opcional)…",
-    "dispatchRoute": "Despachar ruta"
+    "dispatchRoute": "Despachar ruta",
+    "productsPicked": "productos preparados"
   },
   "entrega": {
     "title": "Entregas",
