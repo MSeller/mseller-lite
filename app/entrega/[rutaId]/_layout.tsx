@@ -1,6 +1,7 @@
 import { Stack, useRouter } from "expo-router";
 import React from "react";
 import { IconButton, useTheme } from "react-native-paper";
+import SectionAccessGate from "@/components/navigation/SectionAccessGate";
 import { useTranslation } from "@/hooks/useTranslation";
 
 export default function RutaEntregaLayout() {
@@ -16,36 +17,40 @@ export default function RutaEntregaLayout() {
     else router.replace({ pathname: "/(tabs)/routes", params: { section: "deliveries" } });
   };
 
+  // Loading and delivering a route is the assigned driver's job (and the back office's). The
+  // Entregas section is hidden for other roles; this covers deep links into a route.
   return (
-    <Stack
-      screenOptions={{
-        headerShown: true,
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.primary,
-        headerTitleStyle: { color: theme.colors.onSurface },
-      }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          title: t("entrega.routeDetailTitle"),
-          headerLeft: () => (
-            <IconButton
-              icon="arrow-left"
-              size={24}
-              iconColor={theme.colors.primary}
-              onPress={backToList}
-              style={{ margin: 0, marginLeft: -8 }}
-              accessibilityLabel={t("common.back")}
-            />
-          ),
+    <SectionAccessGate section="deliveries" message={t("entrega.deliveryNotAllowed")}>
+      <Stack
+        screenOptions={{
+          headerShown: true,
+          headerStyle: { backgroundColor: theme.colors.surface },
+          headerTintColor: theme.colors.primary,
+          headerTitleStyle: { color: theme.colors.onSurface },
         }}
-      />
-      <Stack.Screen name="carga" options={{ title: t("entrega.loadTruck") }} />
-      <Stack.Screen
-        name="factura/[noPedidoStr]"
-        options={{ title: t("entrega.deliveryDetailTitle") }}
-      />
-    </Stack>
+      >
+        <Stack.Screen
+          name="index"
+          options={{
+            title: t("entrega.routeDetailTitle"),
+            headerLeft: () => (
+              <IconButton
+                icon="arrow-left"
+                size={24}
+                iconColor={theme.colors.primary}
+                onPress={backToList}
+                style={{ margin: 0, marginLeft: -8 }}
+                accessibilityLabel={t("common.back")}
+              />
+            ),
+          }}
+        />
+        <Stack.Screen name="carga" options={{ title: t("entrega.loadTruck") }} />
+        <Stack.Screen
+          name="factura/[noPedidoStr]"
+          options={{ title: t("entrega.deliveryDetailTitle") }}
+        />
+      </Stack>
+    </SectionAccessGate>
   );
 }

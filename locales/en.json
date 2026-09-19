@@ -305,7 +305,8 @@
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
     "issuePlaceholder": "Describe the issue (optional)…",
     "dispatchRoute": "Dispatch route",
-    "productsPicked": "products picked"
+    "productsPicked": "products picked",
+    "pickingNotAllowed": "Picking is done by the inventory team or the back office."
   },
   "entrega": {
     "title": "Deliveries",
@@ -402,7 +403,8 @@
     "declined": "Declined",
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
     "issuePlaceholder": "Describe the issue (optional)…",
-    "dispatchRoute": "Dispatch route"
+    "dispatchRoute": "Dispatch route",
+    "deliveryNotAllowed": "Loading and delivering the route is done by the assigned driver or the back office."
   },
   "documents": {
     "title": "Documents",

@@ -330,7 +330,8 @@
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
     "issuePlaceholder": "Describe la incidencia (opcional)…",
     "dispatchRoute": "Despachar ruta",
-    "productsPicked": "productos preparados"
+    "productsPicked": "productos preparados",
+    "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina."
   },
   "entrega": {
     "title": "Entregas",
@@ -427,7 +428,8 @@
     "declined": "Rechazado",
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
     "issuePlaceholder": "Describe la incidencia (opcional)…",
-    "dispatchRoute": "Despachar ruta"
+    "dispatchRoute": "Despachar ruta",
+    "deliveryNotAllowed": "La carga y entrega de la ruta la realiza el chofer asignado o la oficina."
   },
   "documents": {
     "title": "Documentos",

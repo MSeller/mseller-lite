@@ -69,6 +69,10 @@ export default function RutaIdLayout() {
   // A fixed tab bar height overrides React Navigation's inset padding, which put the
   // tabs behind Android's navigation bar (and the iOS home indicator).
   const insets = useSafeAreaInsets();
+  // A tab's default link leaves the [rutaId] segment empty, so switching tabs opened
+  // "Ruta undefined". Each tab links to its screen for this route explicitly.
+  const tabHref = (screen: "picking" | "loading" | "summary") =>
+    ({ pathname: `/preparacion/[rutaId]/${screen}`, params: { rutaId: rutaId ?? "" } }) as any;
 
   return (
     <Tabs
@@ -87,6 +91,8 @@ export default function RutaIdLayout() {
       <Tabs.Screen
         name="picking"
         options={{
+          // Picking and its summary are the inventory team's job; each screen also gates itself.
+          href: can("picking") ? tabHref("picking") : null,
           title: t("preparacion.tabPicking"),
           tabBarIcon: ({ color, size }) => (
             <Icon source="package-variant" size={size} color={color} />
@@ -96,10 +102,10 @@ export default function RutaIdLayout() {
       <Tabs.Screen
         name="loading"
         options={{
-          // Inventory pickers prepare the route; loading it is the driver's and back
-          // office's job. This only hides the tab — expo-router keeps the screen
-          // routable — so loading.tsx guards itself as well.
-          href: can("truckLoading") ? undefined : null,
+          // Inventory pickers prepare the route; loading it is the back office's job (drivers
+          // load from Entregas). This only hides the tab — expo-router keeps the screen
+          // routable — so loading.tsx is wrapped in SectionAccessGate as well.
+          href: can("truckLoading") ? tabHref("loading") : null,
           title: t("preparacion.tabLoading"),
           tabBarIcon: ({ color, size }) => (
             <Icon source="truck-outline" size={size} color={color} />
@@ -109,6 +115,7 @@ export default function RutaIdLayout() {
       <Tabs.Screen
         name="summary"
         options={{
+          href: can("picking") ? tabHref("summary") : null,
           title: t("preparacion.tabInventory"),
           tabBarIcon: ({ color, size }) => (
             <Icon source="clipboard-list-outline" size={size} color={color} />

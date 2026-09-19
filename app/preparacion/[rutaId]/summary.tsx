@@ -26,6 +26,7 @@ import {
   SummaryResponse,
   SummaryZona,
 } from "../../../types/preparacion";
+import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
 
 type SummaryTab = "zones" | "customers";
 
@@ -44,7 +45,7 @@ interface SummarySection {
   data: SummaryRow[];
 }
 
-export default function SummaryScreen() {
+function SummaryScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
@@ -498,3 +499,12 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
 });
+
+export default function SummaryScreenRoute() {
+  const { t } = useTranslation();
+  return (
+    <SectionAccessGate section="picking" message={t("preparacion.pickingNotAllowed")}>
+      <SummaryScreen />
+    </SectionAccessGate>
+  );
+}
