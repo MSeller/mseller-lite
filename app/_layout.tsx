@@ -21,6 +21,7 @@ import ProfileUnavailableScreen from "@/components/auth/ProfileUnavailableScreen
 import EnvironmentBadge from "@/components/common/EnvironmentBadge";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
+import { BUSINESS_SIGN_UP_ENABLED } from "@/constants/registration";
 import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { PrinterProvider } from "@/contexts/PrinterContext";
@@ -83,9 +84,14 @@ function RootLayoutContent() {
     return <LoadingScreen />;
   }
 
-  // A Google login with no MSeller account behind it: offer to create a business.
+  // A login with no MSeller account behind it: offer to create a business, or on iOS, where the
+  // app cannot create one, say so.
   if (!userProfile && profileMissing) {
-    return <CreateBusinessScreen />;
+    return BUSINESS_SIGN_UP_ENABLED ? (
+      <CreateBusinessScreen />
+    ) : (
+      <ProfileUnavailableScreen reason="missing" />
+    );
   }
 
   // Without a profile there is no business to talk to and no way to know whether setup is

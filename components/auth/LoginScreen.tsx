@@ -19,11 +19,13 @@ import {
 import { auth } from "../../config/firebase";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
+import { isGoogleSignInAvailable } from "../../services/googleSignIn";
 import MSellerLogo from "../common/MSellerLogo";
 import GoogleSignInButton from "./GoogleSignInButton";
 
 interface LoginScreenProps {
-  onNavigateToSignUp: () => void;
+  /** Omitted where the app cannot create a business (iOS); the register button is hidden. */
+  onNavigateToSignUp?: () => void;
   onNavigateToPasswordReset?: () => void;
 }
 
@@ -38,6 +40,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
+  // On iOS neither is offered, and a lone "or" divider would point at nothing.
+  const showAlternatives = isGoogleSignInAvailable() || !!onNavigateToSignUp;
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -166,41 +170,47 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     </Button>
                   )}
 
-                  <View style={styles.dividerContainer}>
-                    <View
-                      style={[
-                        styles.divider,
-                        { backgroundColor: theme.colors.outline },
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        styles.dividerText,
-                        { color: theme.colors.onSurfaceVariant },
-                      ]}
-                    >
-                      {t("auth.or")}
-                    </Text>
-                    <View
-                      style={[
-                        styles.divider,
-                        { backgroundColor: theme.colors.outline },
-                      ]}
-                    />
-                  </View>
+                  {showAlternatives && (
+                    <>
+                      <View style={styles.dividerContainer}>
+                        <View
+                          style={[
+                            styles.divider,
+                            { backgroundColor: theme.colors.outline },
+                          ]}
+                        />
+                        <Text
+                          style={[
+                            styles.dividerText,
+                            { color: theme.colors.onSurfaceVariant },
+                          ]}
+                        >
+                          {t("auth.or")}
+                        </Text>
+                        <View
+                          style={[
+                            styles.divider,
+                            { backgroundColor: theme.colors.outline },
+                          ]}
+                        />
+                      </View>
 
-                  <GoogleSignInButton disabled={loading} onError={setError} />
+                      <GoogleSignInButton disabled={loading} onError={setError} />
 
-                  <Button
-                    mode="outlined"
-                    onPress={onNavigateToSignUp}
-                    disabled={loading}
-                    style={styles.registerButton}
-                    contentStyle={styles.buttonContent}
-                    icon="account-plus"
-                  >
-                    {t("auth.dontHaveAccount")}
-                  </Button>
+                      {onNavigateToSignUp && (
+                        <Button
+                          mode="outlined"
+                          onPress={onNavigateToSignUp}
+                          disabled={loading}
+                          style={styles.registerButton}
+                          contentStyle={styles.buttonContent}
+                          icon="account-plus"
+                        >
+                          {t("auth.dontHaveAccount")}
+                        </Button>
+                      )}
+                    </>
+                  )}
                 </Card.Content>
               </Card>
             </View>
