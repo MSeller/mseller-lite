@@ -54,10 +54,12 @@ export default {
       ...(process.env.ANDROID_VERSION_CODE && {
         versionCode: Number(process.env.ANDROID_VERSION_CODE),
       }),
-      icon: "./assets/images/Icon-square.png",
+      icon: "./assets/icons/Icon.png",
+      // Icon-square.png is the same art at 80% on a transparent 108dp layer, so the "M" stays
+      // inside the 66dp safe zone under every launcher mask. The background matches the gradient.
       adaptiveIcon: {
         foregroundImage: "./assets/images/Icon-square.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#86AAF5",
       },
       edgeToEdgeEnabled: true,
       crashReporting: {
