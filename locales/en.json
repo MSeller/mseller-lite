@@ -284,7 +284,7 @@
     "items": "ITEMS",
     "tabPicking": "PICKING",
     "tabLoading": "LOADING",
-    "loadingNotAllowed": "Loading the truck is the driver's or the back office's job.",
+    "loadingNotAllowed": "The truck load status is for the back office.",
     "tabInventory": "INVENTORY",
     "loadingProgressLabel": "Loading Progress",
     "loadingClientsShort": "{{loaded}} of {{total}} clients",
@@ -931,5 +931,21 @@
         "esServicio": "Is a service (no stock)"
       }
     }
+  },
+  "routeLoading": {
+    "waitingInvoicing": "Waiting for invoicing",
+    "invoicesGenerated": "Invoices generated",
+    "readyToLoad": "Ready to load",
+    "phase": {
+      "esperando": "Waiting for invoicing",
+      "generadas": "Invoices generated — not yet assigned to the driver",
+      "asignadas": "Assigned to the driver — waiting for loading",
+      "cargando": "Loading {{loaded}} of {{total}}",
+      "completa": "Load complete"
+    },
+    "officeWaitingMessage": "The office hasn't generated or assigned this route's invoices yet. The driver can load the truck once they are assigned.",
+    "readOnlyHint": "Read-only: the driver confirms the load from Deliveries.",
+    "driverWaitingMessage": "The office hasn't assigned this route's invoices yet",
+    "driverWaitingHint": "You can load the truck once the office assigns the invoices."
   }
 }

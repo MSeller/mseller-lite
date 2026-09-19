@@ -21,7 +21,9 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../services/entregaService";
 import { EntregaRuta } from "../../types/entrega";
 import { RutaPreparacionStatus } from "../../types/preparacion";
+import StatusChip from "../ui/StatusChip";
 import { vehiculoLabel } from "../../utils/mapLinks";
+import { cargaHabilitada, facturacionChip } from "../../utils/routeLoading";
 
 const statusColor: Record<RutaPreparacionStatus, string> = {
   borrador: "#9E9E9E",
@@ -123,13 +125,22 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
                   </Chip>
                 )}
               </View>
-              <Chip
-                style={{ backgroundColor: color }}
-                textStyle={{ color: "#FFF", fontSize: 11 }}
-                compact
-              >
-                {t(`entrega.status.${ruta.status}`)}
-              </Chip>
+              {ruta.status === "lista_despacho" ? (
+                // Loading waits for the office to assign the invoices (MSE-255). The driver
+                // only needs "waiting" vs "ready"; generated-but-unassigned is still waiting.
+                <StatusChip
+                  label={t(facturacionChip[cargaHabilitada(ruta) ? "asignadas" : "esperando"].key)}
+                  tone={facturacionChip[cargaHabilitada(ruta) ? "asignadas" : "esperando"].tone}
+                />
+              ) : (
+                <Chip
+                  style={{ backgroundColor: color }}
+                  textStyle={{ color: "#FFF", fontSize: 11 }}
+                  compact
+                >
+                  {t(`entrega.status.${ruta.status}`)}
+                </Chip>
+              )}
             </View>
 
             {!!veh && (

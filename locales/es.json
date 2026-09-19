@@ -309,7 +309,7 @@
     "items": "ARTÍCULOS",
     "tabPicking": "PREPARACIÓN",
     "tabLoading": "CARGA",
-    "loadingNotAllowed": "La carga del camión la realiza el chofer o la oficina.",
+    "loadingNotAllowed": "El estado de la carga del camión lo consulta la oficina.",
     "tabInventory": "INVENTARIO",
     "loadingProgressLabel": "Progreso de carga",
     "loadingClientsShort": "{{loaded}} de {{total}} clientes",
@@ -956,5 +956,21 @@
         "esServicio": "Es un servicio (sin inventario)"
       }
     }
+  },
+  "routeLoading": {
+    "waitingInvoicing": "Esperando facturación",
+    "invoicesGenerated": "Facturas generadas",
+    "readyToLoad": "Lista para cargar",
+    "phase": {
+      "esperando": "Esperando facturación",
+      "generadas": "Facturas generadas — falta asignar al chofer",
+      "asignadas": "Asignadas al chofer — esperando carga",
+      "cargando": "Cargando {{loaded}} de {{total}}",
+      "completa": "Carga completa"
+    },
+    "officeWaitingMessage": "La oficina aún no genera ni asigna las facturas de esta ruta. El chofer podrá cargar el camión cuando se le asignen.",
+    "readOnlyHint": "Solo lectura: el chofer confirma la carga desde Entregas.",
+    "driverWaitingMessage": "La oficina aún no asigna las facturas de esta ruta",
+    "driverWaitingHint": "Podrás cargar el camión cuando la oficina asigne las facturas."
   }
 }
