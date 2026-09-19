@@ -17,6 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import {
@@ -31,6 +32,7 @@ import {
   openInMaps,
   vehiculoLabel,
 } from "../../../utils/mapLinks";
+import { cargaHabilitada } from "../../../utils/routeLoading";
 
 const detalleStatus: Record<RutaDetalleStatus, { color: string; bg: string; key: string; icon: string }> = {
   activo: { color: "#F57C00", bg: "#FFF3E0", key: "entrega.detalle.pending", icon: "clock-outline" },
@@ -44,7 +46,7 @@ const detalleStatus: Record<RutaDetalleStatus, { color: string; bg: string; key:
 };
 
 export default function RutaEntregaDetalleScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -88,6 +90,8 @@ export default function RutaEntregaDetalleScreen() {
   const progress = total > 0 ? (total - facturas.filter((f) => f.statusDetalle === "activo").length) / total : 0;
 
   const isLoadPhase = data?.status === "lista_despacho";
+  // The truck is loaded only once the office assigns the invoices to the driver (MSE-255).
+  const canLoad = isLoadPhase && cargaHabilitada(data);
   const isEnRuta = data?.status === "en_ruta";
 
   const handleClose = async () => {
@@ -200,7 +204,23 @@ export default function RutaEntregaDetalleScreen() {
         />
       </View>
 
-      {isLoadPhase && (
+      {isLoadPhase && !canLoad && (
+        <View style={styles.actionBar}>
+          <View style={[styles.waitingBanner, { backgroundColor: theme.custom.status.neutral.container }]}>
+            <Icon source="file-clock-outline" size={20} color={theme.custom.status.neutral.onContainer} />
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <Text variant="titleSmall" style={{ fontWeight: "700", color: theme.custom.status.neutral.onContainer }}>
+                {t("routeLoading.waitingInvoicing")}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.custom.status.neutral.onContainer, marginTop: 2 }}>
+                {t("routeLoading.driverWaitingHint")}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {canLoad && (
         <View style={styles.actionBar}>
           <Button
             mode="contained"
@@ -297,6 +317,7 @@ const styles = StyleSheet.create({
   vehRow: { flexDirection: "row", alignItems: "center" },
   progressBar: { height: 8, borderRadius: 4, marginTop: 8 },
   actionBar: { padding: 16, paddingBottom: 0 },
+  waitingBanner: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 8 },
   listContent: { padding: 16, paddingBottom: 120 },
   stopCard: { borderRadius: 12, borderLeftWidth: 4 },
   stopHeader: { flexDirection: "row", alignItems: "center", gap: 8 },

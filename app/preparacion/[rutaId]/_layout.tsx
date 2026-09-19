@@ -102,8 +102,8 @@ export default function RutaIdLayout() {
       <Tabs.Screen
         name="loading"
         options={{
-          // Inventory pickers prepare the route; loading it is the back office's job (drivers
-          // load from Entregas). This only hides the tab — expo-router keeps the screen
+          // Inventory pickers prepare the route; the back office follows the load here,
+          // read-only — only the driver loads, from Entregas. This only hides the tab — expo-router keeps the screen
           // routable — so loading.tsx is wrapped in SectionAccessGate as well.
           href: can("truckLoading") ? tabHref("loading") : null,
           title: t("preparacion.tabLoading"),
