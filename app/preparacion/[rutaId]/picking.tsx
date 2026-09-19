@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import {
   useTheme,
 } from "react-native-paper";
 import { useTranslation } from "@/hooks/useTranslation";
+import PreparacionCerradaBanner from "../../../components/preparacion/PreparacionCerradaBanner";
 import ProgressHeader from "../../../components/preparacion/ProgressHeader";
 import ZoneProductList from "../../../components/preparacion/ZoneProductList";
 import { preparacionService } from "../../../services/preparacionService";
@@ -17,15 +18,18 @@ import {
   ConsolidadoResponse,
 } from "../../../types/preparacion";
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
+import { preparacionAbierta } from "../../../utils/routeLoading";
 
 function PickingScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const { rutaId, confirmedProduct, confirmedQty } = useLocalSearchParams<{
+  const { rutaId, confirmedProduct, confirmedQty, preparacionCerrada } = useLocalSearchParams<{
     rutaId: string;
     confirmedProduct?: string;
     confirmedQty?: string;
+    /** Set (to a timestamp) by confirmar-producto when the backend answered 409 PREPARACION_CERRADA. */
+    preparacionCerrada?: string;
   }>();
   const numericRutaId = parseInt(rutaId ?? "0", 10);
   const isValidRutaId = Number.isFinite(numericRutaId) && numericRutaId > 0;
@@ -35,6 +39,8 @@ function PickingScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  // A 409 PREPARACION_CERRADA closes picking even if the consolidado predates the status field.
+  const [cerradaPorServidor, setCerradaPorServidor] = useState(false);
 
   const [pickedQtys, setPickedQtys] = useState<Record<string, number>>({});
   const [confirmedProducts, setConfirmedProducts] = useState<Set<string>>(new Set());
@@ -49,16 +55,26 @@ function PickingScreen() {
       setError("");
       const response = await preparacionService.getConsolidado(numericRutaId);
       setData(response);
-      // Initialize picked quantities to 0 for new products only — preserve existing counts
+      const productos = response.zonas.flatMap((z) => z.productos);
+      // Confirmations live on the backend (MSE-257): a product it reports as confirmed shows
+      // its prepared quantity. Confirmations made in this session stay too — an older
+      // backend does not send `confirmado` yet.
+      setConfirmedProducts((prev) => {
+        const next = new Set(prev);
+        productos.forEach((p) => {
+          if (p.confirmado) next.add(p.codigoProducto);
+        });
+        return next;
+      });
       setPickedQtys((prev) => {
         const next = { ...prev };
-        response.zonas.forEach((z) =>
-          z.productos.forEach((p) => {
-            if (!(p.codigoProducto in next)) {
-              next[p.codigoProducto] = 0;
-            }
-          })
-        );
+        productos.forEach((p) => {
+          if (p.confirmado && p.cantidadPreparada != null) {
+            next[p.codigoProducto] = p.cantidadPreparada;
+          } else if (!(p.codigoProducto in next)) {
+            next[p.codigoProducto] = 0;
+          }
+        });
         return next;
       });
     } catch (err: any) {
@@ -73,9 +89,22 @@ function PickingScreen() {
     }
   }, [numericRutaId, isValidRutaId, t]);
 
+  // Reload on every visit: picking may have advanced (or the route been closed) elsewhere.
+  useFocusEffect(
+    useCallback(() => {
+      loadConsolidado();
+    }, [loadConsolidado])
+  );
+
+  // Back from confirmar-producto after a 409 PREPARACION_CERRADA: show the list read-only.
   useEffect(() => {
-    loadConsolidado();
-  }, [loadConsolidado]);
+    if (preparacionCerrada) {
+      setCerradaPorServidor(true);
+      setSuccess(t("preparacion.alreadyPrepared"));
+    }
+  }, [preparacionCerrada, t]);
+
+  const abierta = !cerradaPorServidor && preparacionAbierta(data?.status);
 
   // Handle confirmed product returning from confirmar-producto screen
   useEffect(() => {
@@ -98,7 +127,7 @@ function PickingScreen() {
 
   const handleProductPress = useCallback(
     (producto: ConsolidadoProducto) => {
-      if (confirmedProducts.has(producto.codigoProducto)) return;
+      if (!abierta || confirmedProducts.has(producto.codigoProducto)) return;
 
       // Navigate to confirmar-producto screen for qty entry and confirmation
       router.push({
@@ -112,7 +141,7 @@ function PickingScreen() {
         },
       });
     },
-    [confirmedProducts, rutaId, router]
+    [abierta, confirmedProducts, rutaId, router]
   );
 
 
@@ -149,16 +178,20 @@ function PickingScreen() {
         pickedQtys={pickedQtys}
         confirmedProducts={confirmedProducts}
         confirmingZone={null}
-        onProductPress={handleProductPress}
+        onProductPress={abierta ? handleProductPress : undefined}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         ListHeaderComponent={
-          <ProgressHeader
-            totalProductos={totalProductos}
-            productosPreparados={productosPreparados}
-            noRuta={data?.noRuta ?? `Ruta ${rutaId}`}
-          />
+          <>
+            {!abierta && <PreparacionCerradaBanner status={data?.status} />}
+            <ProgressHeader
+              totalProductos={totalProductos}
+              productosPreparados={productosPreparados}
+              noRuta={data?.noRuta ?? `Ruta ${rutaId}`}
+              live={abierta}
+            />
+          </>
         }
       />
 

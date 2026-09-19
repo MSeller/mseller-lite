@@ -1,39 +1,51 @@
-import { useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useState } from "react";
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
-  Button,
   Card,
-  Checkbox,
-  Chip,
-  Dialog,
   Divider,
   Icon,
-  Portal,
   ProgressBar,
   Snackbar,
   Text,
-  TextInput,
   useTheme,
 } from "react-native-paper";
 
-import type { CustomTheme } from "@/constants/Theme";
+import type { CustomTheme, StatusTokens } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
-import { preparacionService } from "../../../services/preparacionService";
-import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import EmptyState from "../../../components/ui/EmptyState";
+import StatusChip from "../../../components/ui/StatusChip";
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
+import { preparacionService } from "../../../services/preparacionService";
+import type { TipoVehiculo } from "../../../types/entrega";
+import { CargaCliente, CargaResponse } from "../../../types/preparacion";
+import {
+  FacturacionFlags,
+  estadoFacturacion,
+  isEsperandoFacturacion,
+  resumenCarga,
+  type FaseCarga,
+} from "../../../utils/routeLoading";
+import { vehiculoLabel } from "../../../utils/mapLinks";
 
-const vehiculoTipoLabel = (tipo?: string | null) => {
-  switch (tipo) {
-    case "camion": return "Camión";
-    case "furgoneta": return "Furgoneta";
-    case "motocicleta": return "Motocicleta";
-    default: return tipo ? "Vehículo" : "";
-  }
+const faseTone: Record<FaseCarga, keyof StatusTokens> = {
+  esperando: "neutral",
+  generadas: "warning",
+  asignadas: "neutral",
+  cargando: "warning",
+  completa: "positive",
 };
 
+/**
+ * Preparación › Carga — the office's READ-ONLY view of a route's truck load (MSE-255).
+ *
+ * Only the driver loads the truck (Rutas › Entregas › Cargar camión) and only once the
+ * office has generated and assigned the invoices. Here office/manager/admin follow that
+ * progress: invoicing state first, then per-invoice loaded / with issue / pending.
+ * Invoices the driver declined leave the route (status excluido) and are not listed.
+ */
 function LoadingScreen() {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
@@ -41,176 +53,80 @@ function LoadingScreen() {
   const numericRutaId = parseInt(rutaId ?? "0", 10);
 
   const [data, setData] = useState<CargaResponse | null>(null);
+  // Set while the backend answers 409 ESPERANDO_FACTURACION: the carga is not released yet.
+  const [waiting, setWaiting] = useState<FacturacionFlags | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Record<number, Set<string>>>({});
-  const [declineTarget, setDeclineTarget] = useState<CargaCliente | null>(null);
-  const [declineNote, setDeclineNote] = useState("");
-  const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
-  const [issueNote, setIssueNote] = useState("");
-  const [declined, setDeclined] = useState<Record<number, string>>({});
-  const [dispatching, setDispatching] = useState(false);
+
+  /** The 409 carries no flags; the route list tells generated-but-unassigned apart. */
+  const loadWaitingFlags = useCallback(async (): Promise<FacturacionFlags> => {
+    try {
+      const rutas = await preparacionService.getRutasPreparacion();
+      const ruta = rutas.find((r) => r.rutaId === numericRutaId);
+      return {
+        facturasGeneradas: ruta?.facturasGeneradas ?? false,
+        facturasAsignadas: false,
+      };
+    } catch {
+      return { facturasGeneradas: false, facturasAsignadas: false };
+    }
+  }, [numericRutaId]);
 
   const loadCarga = useCallback(async () => {
     try {
       setError("");
       const response = await preparacionService.getCarga(numericRutaId);
       setData(response);
-      const checks: Record<number, Set<string>> = {};
-      for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = new Set();
-      setCheckedItems(checks);
+      setWaiting(null);
     } catch (err: unknown) {
+      if (isEsperandoFacturacion(err)) {
+        setData(null);
+        setWaiting(await loadWaitingFlags());
+        return;
+      }
       const e = err as { response?: { data?: { message?: string } }; message?: string };
       setError(e.response?.data?.message || e.message || t("preparacion.errorLoadingCarga"));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [numericRutaId, t]);
+  }, [numericRutaId, t, loadWaitingFlags]);
 
-  useEffect(() => {
-    loadCarga();
-  }, [loadCarga]);
+  // Read-only and changed by someone else (the driver): refresh whenever the tab is shown.
+  useFocusEffect(
+    useCallback(() => {
+      loadCarga();
+    }, [loadCarga])
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadCarga();
   }, [loadCarga]);
 
-  const toggleItem = (id: number, code: string) =>
-    setCheckedItems((prev) => {
-      const cur = new Set(prev[id] ?? []);
-      if (cur.has(code)) cur.delete(code);
-      else cur.add(code);
-      return { ...prev, [id]: cur };
-    });
-
-  const checkedCount = (item: CargaCliente) => checkedItems[item.rutaDetalleId]?.size ?? 0;
-  const allChecked = (item: CargaCliente) =>
-    (item.productos ?? []).length > 0 &&
-    (item.productos ?? []).every((p) => checkedItems[item.rutaDetalleId]?.has(p.codigoProducto));
-
-  const markConfirmed = (id: number, conIncidencia: boolean, observacion?: string) =>
-    setData((prev) =>
-      prev
-        ? { ...prev, clientes: prev.clientes.map((c) => (c.rutaDetalleId === id ? { ...c, confirmado: true, conIncidencia, cargaObservacion: observacion ?? c.cargaObservacion } : c)) }
-        : prev
-    );
-
-  const handleConfirm = async (item: CargaCliente, faltantes?: ItemCargaFaltante[], observacion?: string) => {
-    try {
-      setBusy(item.rutaDetalleId);
-      setError("");
-      const hasIssue = !!(faltantes && faltantes.length);
-      const body = hasIssue || observacion ? { itemsFaltantes: faltantes, observacion } : undefined;
-      const response = await preparacionService.confirmarCarga(numericRutaId, item.rutaDetalleId, body);
-      markConfirmed(item.rutaDetalleId, hasIssue, observacion);
-      setExpandedId(null);
-      if (response.rutaDespachada) {
-        setSuccess(t("preparacion.routeDispatched"));
-      } else {
-        setSuccess(hasIssue ? t("preparacion.loadedWithIssue") : t("preparacion.clientLoaded"));
-      }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorConfirmingLoad"));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const submitIssue = () => {
-    const item = issueTarget;
-    if (!item) return;
-    const checked = checkedItems[item.rutaDetalleId] ?? new Set<string>();
-    const faltantes: ItemCargaFaltante[] = (item.productos ?? [])
-      .filter((p) => !checked.has(p.codigoProducto))
-      .map((p) => ({ codigoProducto: p.codigoProducto, cantidadFaltante: p.cantidad }));
-    setIssueTarget(null);
-    handleConfirm(item, faltantes, issueNote || undefined);
-  };
-
-  const handleDecline = async () => {
-    const item = declineTarget;
-    if (!item) return;
-    try {
-      setBusy(item.rutaDetalleId);
-      setError("");
-      const note = declineNote;
-      setDeclineTarget(null);
-      await preparacionService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
-      setDeclined((prev) => ({ ...prev, [item.rutaDetalleId]: note }));
-      setExpandedId(null);
-      setDeclineNote("");
-      setSuccess(t("preparacion.invoiceDeclined"));
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorDeclining"));
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const sorted = [...(data?.clientes ?? [])].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
-  const activeCards = sorted.filter((c) => !declined[c.rutaDetalleId]);
-  const totalC = activeCards.length;
-  const loadedC = activeCards.filter((c) => c.confirmado).length;
-  const allLoaded = totalC > 0 && loadedC === totalC;
-
-  const handleDispatch = async () => {
-    const firstLoaded = activeCards.find((c) => c.confirmado);
-    if (!firstLoaded) return;
-    try {
-      setDispatching(true);
-      setError("");
-      const response = await preparacionService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
-      if (response.rutaDespachada) {
-        setSuccess(t("preparacion.routeDispatched"));
-      } else {
-        setError(t("preparacion.errorConfirmingLoad"));
-      }
-    } catch (err: unknown) {
-      const e = err as { response?: { data?: { message?: string } } };
-      setError(e.response?.data?.message || t("preparacion.errorConfirmingLoad"));
-    } finally {
-      setDispatching(false);
-    }
-  };
-  const veh = data ? [vehiculoTipoLabel(data.vehiculoTipo), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
-
   const renderCard = ({ item }: { item: CargaCliente }) => {
-    const isBusy = busy === item.rutaDetalleId;
     const isExpanded = expandedId === item.rutaDetalleId;
     const productos = item.productos ?? [];
-    const checked = checkedCount(item);
-    const complete = allChecked(item);
-    const missing = productos.length - checked;
-
-    const isDeclined = !!declined[item.rutaDetalleId];
-    const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
-    const locked = item.confirmado || isDeclined;
-
-    const accent = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.onContainer : "#2E7D32") : theme.custom.status.warning.onContainer;
-    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.container : "#E7F5E9") : theme.custom.status.warning.container;
-    const pillFg = accent;
-    const pillText = isDeclined
-      ? t("preparacion.declined")
-      : item.confirmado
-        ? item.conIncidencia ? t("preparacion.loadedWithIssueShort") : t("preparacion.loaded")
-        : t("preparacion.pending");
-    const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
+    const tone: keyof StatusTokens = item.confirmado ? (item.conIncidencia ? "warning" : "positive") : "neutral";
+    const colors = theme.custom.status[tone];
+    const label = item.confirmado
+      ? item.conIncidencia ? t("preparacion.loadedWithIssueShort") : t("preparacion.loaded")
+      : t("preparacion.pending");
+    const reason = item.conIncidencia ? item.cargaObservacion : undefined;
 
     return (
-      <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: accent, opacity: locked ? 0.8 : 1 }]}>
-        <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
+      <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: colors.base }]}>
+        <Pressable onPress={() => setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
-              <View style={[styles.seqBadge, { backgroundColor: accent }]}>
-                {isDeclined ? <Icon source="close" size={18} color="#FFFFFF" /> : item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
+              <View style={[styles.seqBadge, { backgroundColor: colors.base }]}>
+                {item.confirmado ? (
+                  <Icon source="check" size={18} color={theme.colors.onPrimary} />
+                ) : (
+                  <Text style={[styles.seqText, { color: theme.colors.onPrimary }]}>{item.secuenciaEntrega}</Text>
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>{item.nombreCliente}</Text>
@@ -222,70 +138,41 @@ function LoadingScreen() {
                   </View>
                 )}
               </View>
-              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
-                {pillText}
-              </Chip>
+              <StatusChip label={label} tone={tone} />
             </View>
             <View style={styles.metaRow}>
               <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
               <Text style={[styles.invoiceText, { color: theme.colors.primary }]} numberOfLines={1}>{item.noFactura}</Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("preparacion.items")}</Text>
-              {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
+              <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />
             </View>
             {!!reason && (
-              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : theme.custom.status.warning.container }]}>
-                <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
-                <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
+              <View style={[styles.reasonBox, { backgroundColor: colors.container }]}>
+                <Icon source="alert-circle-outline" size={14} color={colors.onContainer} />
+                <Text variant="bodySmall" style={{ color: colors.onContainer, marginLeft: 4, flex: 1 }}>{reason}</Text>
               </View>
             )}
           </Card.Content>
         </Pressable>
 
-        {isExpanded && !locked && (
+        {isExpanded && (
           <Card.Content style={styles.cardContentExpanded}>
             <Divider style={styles.cardDivider} />
-            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>
-              {t("preparacion.invoiceDetailsLabel")} · {checked}/{productos.length}
-            </Text>
-            {productos.map((prod, idx) => {
-              const isChecked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
-              return (
-                <Pressable
-                  key={`${prod.codigoProducto}-${idx}`}
-                  onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)}
-                  style={[styles.itemCard, { backgroundColor: isChecked ? "#EAF4EC" : theme.colors.surfaceVariant, borderColor: isChecked ? "#ABD9B3" : "transparent" }]}
-                >
-                  <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
-                  <View style={styles.itemInfo}>
-                    <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: "700", lineHeight: 20 }} numberOfLines={2}>
-                      {prod.descripcion || prod.codigoProducto}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{prod.codigoProducto}</Text>
-                  </View>
-                  <View style={styles.qtyBox}>
-                    <Text style={[styles.qtyNum, { color: theme.colors.onSurface }]}>{prod.cantidad}</Text>
-                    {!!prod.unidad && <Text style={[styles.qtyUnit, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>{prod.unidad}</Text>}
-                  </View>
-                </Pressable>
-              );
-            })}
-
-            <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
-              {t("preparacion.confirmLoad")}
-            </Button>
-            {!complete && (
-              <>
-                <Text variant="bodySmall" style={{ color: theme.custom.status.warning.base, marginTop: 8, marginBottom: 2, textAlign: "center" }}>
-                  {t("preparacion.itemsMissing", { count: missing })}
-                </Text>
-                <Button mode="outlined" textColor={theme.custom.status.warning.base} onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
-                  {t("preparacion.confirmWithIssue")}
-                </Button>
-                <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
-                  {t("preparacion.declineInvoice")}
-                </Button>
-              </>
-            )}
+            <Text style={[styles.sectionLabel, { color: theme.colors.primary }]}>{t("preparacion.invoiceDetailsLabel")}</Text>
+            {productos.map((prod, idx) => (
+              <View key={`${prod.codigoProducto}-${idx}`} style={[styles.itemRow, { backgroundColor: theme.colors.surfaceVariant }]}>
+                <View style={styles.itemInfo}>
+                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: "700" }} numberOfLines={2}>
+                    {prod.descripcion || prod.codigoProducto}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{prod.codigoProducto}</Text>
+                </View>
+                <View style={styles.qtyBox}>
+                  <Text style={[styles.qtyNum, { color: theme.colors.onSurface }]}>{prod.cantidad}</Text>
+                  {!!prod.unidad && <Text style={[styles.qtyUnit, { color: theme.colors.onSurfaceVariant }]} numberOfLines={1}>{prod.unidad}</Text>}
+                </View>
+              </View>
+            ))}
           </Card.Content>
         )}
       </Card>
@@ -301,25 +188,60 @@ function LoadingScreen() {
     );
   }
 
+  if (waiting) {
+    const estado = estadoFacturacion(waiting);
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
+        <ScrollView
+          contentContainerStyle={styles.waitingContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        >
+          <EmptyState
+            icon={estado === "generadas" ? "file-document-check-outline" : "file-clock-outline"}
+            title={t(`routeLoading.phase.${estado}`)}
+            message={t("routeLoading.officeWaitingMessage")}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  const sorted = [...(data?.clientes ?? [])].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
+  const resumen = data ? resumenCarga(data) : { fase: "asignadas" as FaseCarga, cargados: 0, total: 0 };
+  const faseColors = theme.custom.status[faseTone[resumen.fase]];
+  const showProgress = resumen.fase === "asignadas" || resumen.fase === "cargando" || resumen.fase === "completa";
+  const veh = data ? [vehiculoLabel(data.vehiculoTipo as TipoVehiculo | null), data.vehiculoPlaca].filter(Boolean).join(" · ") : "";
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      {!!veh && (
-        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+      <View style={[styles.statusCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.outlineVariant }]}>
+        <View style={styles.statusHeaderRow}>
+          <Text style={[styles.statusTitle, { color: faseColors.base }]} numberOfLines={2}>
+            {t(`routeLoading.phase.${resumen.fase}`, { loaded: resumen.cargados, total: resumen.total })}
+          </Text>
+          {showProgress && (
+            <Text style={[styles.progressMetric, { color: theme.colors.onSurfaceVariant }]}>
+              {t("preparacion.loadingClientsShort", { loaded: resumen.cargados, total: resumen.total })}
+            </Text>
+          )}
+        </View>
+        {showProgress && (
+          <ProgressBar
+            progress={resumen.total > 0 ? resumen.cargados / resumen.total : 0}
+            color={resumen.fase === "completa" ? theme.custom.status.positive.base : theme.colors.primary}
+            style={styles.progressBar}
+          />
+        )}
+        {!!veh && (
           <View style={styles.infoRow}>
             <Icon source="truck" size={16} color={theme.colors.primary} />
             <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
           </View>
+        )}
+        <View style={styles.infoRow}>
+          <Icon source="eye-outline" size={16} color={theme.colors.onSurfaceVariant} />
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 6, flex: 1 }}>{t("routeLoading.readOnlyHint")}</Text>
         </View>
-      )}
-
-      <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
-        <View style={styles.progressHeaderRow}>
-          <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("preparacion.loadingProgressLabel")}</Text>
-          <Text style={[styles.progressMetric, { color: allLoaded ? "#2E7D32" : theme.colors.primary }]}>
-            {t("preparacion.loadingClientsShort", { loaded: loadedC, total: totalC })}
-          </Text>
-        </View>
-        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? "#2E7D32" : theme.colors.primary} style={styles.progressBar} />
       </View>
 
       <FlatList
@@ -331,42 +253,7 @@ function LoadingScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
 
-      {allLoaded && (
-        <View style={[styles.dispatchBar, { backgroundColor: theme.colors.surface }]}>
-          <Button mode="contained" buttonColor="#2E7D32" icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={{ fontSize: 15, fontWeight: "700" }}>
-            {t("preparacion.dispatchRoute")}
-          </Button>
-        </View>
-      )}
-
-      <Portal>
-        <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
-          <Dialog.Title>{t("preparacion.confirmWithIssue")}</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{t("preparacion.issueHint")}</Text>
-            <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("preparacion.issuePlaceholder")} multiline numberOfLines={2} />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor={theme.custom.status.warning.base} onPress={submitIssue}>{t("preparacion.confirmWithIssue")}</Button>
-          </Dialog.Actions>
-        </Dialog>
-
-        <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
-          <Dialog.Title>{t("preparacion.declineInvoice")}</Dialog.Title>
-          <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{t("preparacion.declineHint")}</Text>
-            <TextInput mode="outlined" value={declineNote} onChangeText={setDeclineNote} placeholder={t("preparacion.reasonPlaceholder")} multiline numberOfLines={2} />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor="#C62828" onPress={handleDecline}>{t("preparacion.declineInvoice")}</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
-
       <Snackbar visible={!!error} onDismiss={() => setError("")} duration={4000} action={{ label: t("common.retry"), onPress: () => { setError(""); loadCarga(); } }}>{error}</Snackbar>
-      <Snackbar visible={!!success} onDismiss={() => setSuccess("")} duration={2000}>{success}</Snackbar>
     </SafeAreaView>
   );
 }
@@ -374,13 +261,13 @@ function LoadingScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 6, borderWidth: 1, gap: 4 },
-  infoRow: { flexDirection: "row", alignItems: "center" },
-  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1 },
-  progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
-  progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
+  waitingContent: { flexGrow: 1, justifyContent: "center", padding: 32 },
+  statusCard: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1, gap: 10 },
+  statusHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
+  statusTitle: { flex: 1, fontSize: 15, fontWeight: "800" },
+  progressMetric: { fontSize: 12, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase" },
   progressBar: { height: 8, borderRadius: 4 },
+  infoRow: { flexDirection: "row", alignItems: "center" },
   listContent: { padding: 16, paddingBottom: 120 },
   separator: { height: 10 },
   card: { borderRadius: 6, borderLeftWidth: 5 },
@@ -388,24 +275,18 @@ const styles = StyleSheet.create({
   cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
   header: { flexDirection: "row", alignItems: "center", gap: 12 },
   seqBadge: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center" },
-  seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
+  seqText: { fontWeight: "800", fontSize: 15 },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
   addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
   invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
   reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
-  dispatchBar: { padding: 16, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
   cardDivider: { marginTop: 12, marginBottom: 10 },
   sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
-  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
-  itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
+  itemRow: { flexDirection: "row", alignItems: "center", borderRadius: 6, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 8, minHeight: 56 },
+  itemInfo: { flex: 1, marginRight: 8 },
   qtyBox: { minWidth: 48, alignItems: "center", justifyContent: "center", paddingLeft: 8 },
-  qtyNum: { fontSize: 24, fontWeight: "800", lineHeight: 26 },
+  qtyNum: { fontSize: 22, fontWeight: "800", lineHeight: 24 },
   qtyUnit: { fontSize: 11, fontWeight: "600", textTransform: "uppercase", marginTop: 1 },
-  actionBtn: { marginTop: 8, borderRadius: 6 },
-  actionBtnContent: { minHeight: 50 },
-  actionBtnLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
-  issueBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E6C08A" },
-  declineBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E7B4B4" },
 });
 
 export default function LoadingScreenRoute() {

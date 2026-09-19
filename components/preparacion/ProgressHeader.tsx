@@ -10,12 +10,15 @@ interface ProgressHeaderProps {
   totalProductos: number;
   productosPreparados: number;
   noRuta: string;
+  /** False once the route is past preparation: drops the "live" badge. Defaults to true. */
+  live?: boolean;
 }
 
 const ProgressHeader: React.FC<ProgressHeaderProps> = ({
   totalProductos,
   productosPreparados,
   noRuta,
+  live = true,
 }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
@@ -34,12 +37,14 @@ const ProgressHeader: React.FC<ProgressHeaderProps> = ({
           {t("preparacion.activeRoute")}
         </Text>
         {/* Live session: a dot and a word, not a filled chip competing with the route number. */}
-        <View style={[styles.live, { backgroundColor: status.positive.container }]}>
-          <View style={[styles.liveDot, { backgroundColor: status.positive.base }]} />
-          <Text style={[styles.liveText, { color: status.positive.onContainer }]}>
-            {t("preparacion.liveSession")}
-          </Text>
-        </View>
+        {live && (
+          <View style={[styles.live, { backgroundColor: status.positive.container }]}>
+            <View style={[styles.liveDot, { backgroundColor: status.positive.base }]} />
+            <Text style={[styles.liveText, { color: status.positive.onContainer }]}>
+              {t("preparacion.liveSession")}
+            </Text>
+          </View>
+        )}
       </View>
 
       <Text
