@@ -1,22 +1,23 @@
+import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { ActivityIndicator, useTheme } from "react-native-paper";
-import { CustomTheme } from "../../constants/Theme";
+import { ActivityIndicator } from "react-native-paper";
+import { getTheme } from "../../constants/Theme";
 import MSellerLogo from "../common/MSellerLogo";
 
-/** Follows the launch screen — same logo — while the saved session and profile load. */
-const LoadingScreen: React.FC = () => {
-  const theme = useTheme() as CustomTheme;
+// The launch screen is dark in every system theme (app.config.js), so this screen is too.
+const { colors } = getTheme(true);
 
+/** Follows the launch screen — same logo, same background — while the saved session and profile load. */
+const LoadingScreen: React.FC = () => {
   return (
-    <View
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-    >
-      <MSellerLogo style={styles.logo} />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar style="light" />
+      <MSellerLogo onDark style={styles.logo} />
       <ActivityIndicator
         style={styles.spinner}
         size="small"
-        color={theme.colors.primary}
+        color={colors.primary}
       />
     </View>
   );

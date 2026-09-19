@@ -66,7 +66,9 @@
         "track": "internal",
         "releaseStatus": "draft"
       },
-      "ios": {}
+      "ios": {
+        "ascAppId": "6812112185"
+      }
     }
   }
 }

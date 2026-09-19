@@ -55,11 +55,12 @@ export default {
         versionCode: Number(process.env.ANDROID_VERSION_CODE),
       }),
       icon: "./assets/icons/Icon.png",
-      // Icon-square.png is the same art at 80% on a transparent 108dp layer, so the "M" stays
-      // inside the 66dp safe zone under every launcher mask. The background matches the gradient.
+      // Icon-square.png is the full-bleed icon art scaled to the 72dp a launcher shows of the
+      // 108dp layer, on transparency, so Android shows the whole icon like iOS does. The
+      // background matches the art's corners for launchers that reveal the edges.
       adaptiveIcon: {
         foregroundImage: "./assets/images/Icon-square.png",
-        backgroundColor: "#86AAF5",
+        backgroundColor: "#0E2D70",
       },
       edgeToEdgeEnabled: true,
       crashReporting: {
@@ -88,15 +89,12 @@ export default {
       [
         "expo-splash-screen",
         {
-          // Full MSeller wordmark; the white-text version on a dark system theme.
-          image: "./assets/images/mseller-logo-dark.png",
+          // Full MSeller wordmark in white on the dark theme background, whatever the system
+          // theme, so launch always looks the same. LoadingScreen continues it.
+          image: "./assets/images/mseller-logo-light.png",
           imageWidth: 240,
           resizeMode: "contain",
-          backgroundColor: "#ffffff",
-          dark: {
-            image: "./assets/images/mseller-logo-light.png",
-            backgroundColor: "#0E1216",
-          },
+          backgroundColor: "#0E1216",
           // Android 12+ masks the splash icon to a circle; narrower keeps the wordmark whole.
           android: { imageWidth: 180 },
         },
