@@ -21,7 +21,7 @@ pnpm submit:ios           # latest iOS build → App Store Connect / TestFlight
 ```
 
 Si el cupo de builds de EAS está agotado, compila el iOS en un Mac: ver
-[TestFlight sin créditos de EAS Build](#testflight-sin-créditos-de-eas-build).
+[Publicar en la App Store sin créditos de EAS Build](#publicar-en-la-app-store-sin-créditos-de-eas-build).
 
 `version` in `app.config.js` is the user-facing version; bump it for every store release.
 Build numbers are handled by EAS and never need editing.
@@ -128,13 +128,17 @@ firebase apps:android:sha:create <firebase-android-app-id> <sha1> --project <pro
 
 The OAuth client IDs live in `app.variants.js` (`googleWebClientId`, `googleIosClientId`).
 
-### TestFlight sin créditos de EAS Build
+### Publicar en la App Store sin créditos de EAS Build
 
 El plan gratuito de Expo trae un cupo mensual de builds en la nube. Cuando se agota,
 `pnpm build:ios:prod` falla con *"This account has used its iOS builds from the Free plan
-this month"* y no hay nada que subir: **TestFlight necesita un build de distribución
-`store`**, y los IPA ad hoc de `pnpm distribute:ios:*` (perfiles `preview-*`) no sirven —
-Apple los rechaza en la subida.
+this month"* y la versión se queda sin poder salir: **la App Store necesita un build de
+distribución `store`**, y los IPA ad hoc de `pnpm distribute:ios:*` (perfiles `preview-*`)
+no sirven — Apple los rechaza en la subida.
+
+Es un solo binario para las dos cosas: el build `store` sube a App Store Connect, y desde
+ahí se manda a TestFlight, a App Review, o a ambos. No hay un "build de TestFlight"
+distinto del que se publica.
 
 Lo agotado es el cupo de **EAS Build** (compilar en los servidores de Expo). Compilar en un
 Mac propio no lo consume, y **EAS Submit** no compila nada, así que el camino completo
@@ -163,9 +167,16 @@ En Xcode: *Signing & Capabilities* → tu equipo; *Product → Scheme → Edit S
 build configuration **Release**; *Product → Archive* → **Distribute App** → **App Store
 Connect**. Si prefieres exportar el `.ipa` y subirlo aparte, usa la app **Transporter**.
 
-En ambos casos el build aparece en App Store Connect tras 10–15 minutos de procesamiento,
-y desde ahí se asigna a TestFlight. Recuerda que `version` en `app.config.js` es la versión
-visible: súbela cuando el cambio lo amerite.
+En ambos casos el build aparece en App Store Connect tras 10–15 minutos de procesamiento.
+Ni `eas submit` ni Transporter publican: solo suben el binario. Lo que sigue se hace en App
+Store Connect:
+
+1. **TestFlight** → la pestaña TestFlight, para repartirlo a probadores.
+2. **App Store** → la pestaña App Store: crear la versión (o editar la que está en
+   preparación), seleccionar este build, completar novedades y *Submit for Review*.
+
+Sube `version` en `app.config.js` para cada versión que salga a la tienda; el build number
+lo maneja EAS y no se toca.
 
 Documentación: [local builds](https://docs.expo.dev/build-reference/local-builds/) ·
 [subida manual en iOS](https://docs.expo.dev/submit/ios-manual/).
