@@ -306,7 +306,12 @@
     "issuePlaceholder": "Describe the issue (optional)…",
     "dispatchRoute": "Dispatch route",
     "productsPicked": "products picked",
-    "pickingNotAllowed": "Picking is done by the inventory team or the back office."
+    "pickingNotAllowed": "Picking is done by the inventory team or the back office.",
+    "preparationClosedTitle": "Preparation completed",
+    "preparationUnavailableTitle": "Preparation unavailable",
+    "preparationClosedHint": "This route no longer accepts preparation changes. Products are shown for reference only.",
+    "alreadyPrepared": "This route has already been prepared",
+    "errorConfirmingProduct": "Error confirming product"
   },
   "entrega": {
     "title": "Deliveries",

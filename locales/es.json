@@ -331,7 +331,12 @@
     "issuePlaceholder": "Describe la incidencia (opcional)…",
     "dispatchRoute": "Despachar ruta",
     "productsPicked": "productos preparados",
-    "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina."
+    "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina.",
+    "preparationClosedTitle": "Preparación completada",
+    "preparationUnavailableTitle": "Preparación no disponible",
+    "preparationClosedHint": "Esta ruta ya no admite cambios en la preparación. Los productos se muestran solo como consulta.",
+    "alreadyPrepared": "La ruta ya fue preparada",
+    "errorConfirmingProduct": "Error al confirmar producto"
   },
   "entrega": {
     "title": "Entregas",

@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   RefreshControl,
   SectionList,
@@ -21,12 +21,15 @@ import {
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
 import {
+  RutaPreparacionStatus,
   SummaryCliente,
   SummaryClienteProducto,
   SummaryResponse,
   SummaryZona,
 } from "../../../types/preparacion";
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
+import PreparacionCerradaBanner from "../../../components/preparacion/PreparacionCerradaBanner";
+import { esPreparacionCerrada, preparacionAbierta } from "../../../utils/routeLoading";
 
 type SummaryTab = "zones" | "customers";
 
@@ -59,12 +62,22 @@ function SummaryScreen() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState<SummaryTab>("zones");
+  // The resumen carries no route status; the consolidado does (MSE-257).
+  const [routeStatus, setRouteStatus] = useState<RutaPreparacionStatus | undefined>();
+  // A 409 PREPARACION_CERRADA on completar closes it even when the status is unknown.
+  const [cerradaPorServidor, setCerradaPorServidor] = useState(false);
+  const abierta = !cerradaPorServidor && preparacionAbierta(routeStatus);
 
   const loadSummary = useCallback(async () => {
     try {
       setError("");
-      const response = await preparacionService.getSummary(numericRutaId);
+      const [response, consolidado] = await Promise.all([
+        preparacionService.getSummary(numericRutaId),
+        // Only for the status: if it fails, keep the summary and today's behaviour.
+        preparacionService.getConsolidado(numericRutaId).catch(() => null),
+      ]);
       setData(response);
+      setRouteStatus(consolidado?.status);
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
       setError(
@@ -78,9 +91,12 @@ function SummaryScreen() {
     }
   }, [numericRutaId, t]);
 
-  useEffect(() => {
-    loadSummary();
-  }, [loadSummary]);
+  // Reload on every visit: products confirmed on the Picking tab change these totals.
+  useFocusEffect(
+    useCallback(() => {
+      loadSummary();
+    }, [loadSummary])
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -96,6 +112,13 @@ function SummaryScreen() {
         router.dismissAll();
       }, 1500);
     } catch (err: unknown) {
+      if (esPreparacionCerrada(err)) {
+        // Already prepared (MSE-257): not an error — the screen turns read-only.
+        setCerradaPorServidor(true);
+        setSuccess(t("preparacion.alreadyPrepared"));
+        loadSummary();
+        return;
+      }
       const axiosErr = err as { response?: { data?: { message?: string } }; message?: string };
       setError(
         axiosErr.response?.data?.message || t("preparacion.errorCompleting")
@@ -338,6 +361,9 @@ function SummaryScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          abierta ? null : <PreparacionCerradaBanner status={routeStatus} />
+        }
         ItemSeparatorComponent={() => <Divider />}
         ListEmptyComponent={
           <Card elevation={0} style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
@@ -362,27 +388,29 @@ function SummaryScreen() {
         }
       />
 
-      {/* Bottom action bar */}
-      <View
-        style={[
-          styles.bottomBar,
-          { backgroundColor: theme.colors.surface, borderTopColor: "#E0E0E0" },
-        ]}
-      >
-        <Button
-          mode="contained"
-          onPress={handleCompletePreparation}
-          disabled={completing}
-          loading={completing}
-          icon="check-all"
-          style={styles.completeButton}
-          contentStyle={styles.completeButtonContent}
+      {/* Bottom action bar — completing is only possible while the route is open for picking */}
+      {abierta && (
+        <View
+          style={[
+            styles.bottomBar,
+            { backgroundColor: theme.colors.surface, borderTopColor: "#E0E0E0" },
+          ]}
         >
-          {completing
-            ? t("preparacion.completingPreparation")
-            : t("preparacion.completePreparation")}
-        </Button>
-      </View>
+          <Button
+            mode="contained"
+            onPress={handleCompletePreparation}
+            disabled={completing}
+            loading={completing}
+            icon="check-all"
+            style={styles.completeButton}
+            contentStyle={styles.completeButtonContent}
+          >
+            {completing
+              ? t("preparacion.completingPreparation")
+              : t("preparacion.completePreparation")}
+          </Button>
+        </View>
+      )}
 
       <Snackbar
         visible={!!error}

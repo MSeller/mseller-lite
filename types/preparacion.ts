@@ -47,6 +47,13 @@ export interface ConsolidadoProducto {
   cantidadTotal: number;
   unidad?: string;
   distribucion: ConsolidadoDistribucion[];
+  /** Quantity already prepared, summed across orders (MSE-257). Absent on older backends. */
+  cantidadPreparada?: number;
+  /**
+   * Every order line with this product has a picking confirmation (MSE-257). Absent on
+   * older backends — treated as not confirmed.
+   */
+  confirmado?: boolean;
 }
 
 export interface ConsolidadoZona {
@@ -58,6 +65,11 @@ export interface ConsolidadoZona {
 export interface ConsolidadoResponse {
   rutaId: number;
   noRuta: string;
+  /**
+   * Route status (MSE-257). Picking is only open while confirmada / en_preparacion; see
+   * `preparacionAbierta` in utils/routeLoading. Absent on older backends.
+   */
+  status?: RutaPreparacionStatus;
   zonas: ConsolidadoZona[];
 }
 

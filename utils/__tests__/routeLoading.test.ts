@@ -3,8 +3,11 @@ import { describe, expect, it } from "@jest/globals";
 import type { CargaCliente } from "../../types/preparacion";
 import {
   cargaHabilitada,
+  esPreparacionCerrada,
   estadoFacturacion,
   isEsperandoFacturacion,
+  preparacionAbierta,
+  preparacionCompletada,
   resumenCarga,
 } from "../routeLoading";
 
@@ -105,5 +108,53 @@ describe("resumenCarga", () => {
       cargados: 0,
       total: 0,
     });
+  });
+});
+
+describe("preparacionAbierta", () => {
+  it("allows picking while the route is confirmada or en_preparacion", () => {
+    expect(preparacionAbierta("confirmada")).toBe(true);
+    expect(preparacionAbierta("en_preparacion")).toBe(true);
+  });
+
+  it("locks picking once the route moved past preparation", () => {
+    expect(preparacionAbierta("lista_despacho")).toBe(false);
+    expect(preparacionAbierta("en_ruta")).toBe(false);
+    expect(preparacionAbierta("completada")).toBe(false);
+    expect(preparacionAbierta("cancelada")).toBe(false);
+    expect(preparacionAbierta("borrador")).toBe(false);
+  });
+
+  it("keeps the editable behaviour when an older backend sends no status", () => {
+    expect(preparacionAbierta(undefined)).toBe(true);
+    expect(preparacionAbierta(null)).toBe(true);
+  });
+});
+
+describe("preparacionCompletada", () => {
+  it("is true only for routes that went through preparation", () => {
+    expect(preparacionCompletada("lista_despacho")).toBe(true);
+    expect(preparacionCompletada("en_ruta")).toBe(true);
+    expect(preparacionCompletada("completada")).toBe(true);
+    expect(preparacionCompletada("cancelada")).toBe(false);
+    expect(preparacionCompletada("en_preparacion")).toBe(false);
+    expect(preparacionCompletada(undefined)).toBe(false);
+  });
+});
+
+describe("esPreparacionCerrada", () => {
+  it("matches the 409 PREPARACION_CERRADA response", () => {
+    expect(
+      esPreparacionCerrada({
+        response: { status: 409, data: { message: "La ruta ya fue preparada", code: "PREPARACION_CERRADA" } },
+      })
+    ).toBe(true);
+  });
+
+  it("ignores other conflicts and errors", () => {
+    expect(esPreparacionCerrada({ response: { status: 409, data: { code: "ESPERANDO_FACTURACION" } } })).toBe(false);
+    expect(esPreparacionCerrada({ response: { status: 400, data: { code: "PREPARACION_CERRADA" } } })).toBe(false);
+    expect(esPreparacionCerrada(new Error("Network Error"))).toBe(false);
+    expect(esPreparacionCerrada(null)).toBe(false);
   });
 });

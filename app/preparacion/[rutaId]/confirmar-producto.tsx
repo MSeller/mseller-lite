@@ -8,11 +8,13 @@ import SectionAccessGate from "../../../components/navigation/SectionAccessGate"
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
+import { esPreparacionCerrada } from "../../../utils/routeLoading";
 
 function ConfirmarProductoScreen() {
   const theme = useTheme() as CustomTheme;
   const { status } = theme.custom;
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     rutaId: string;
     codigoProducto: string;
@@ -65,8 +67,17 @@ function ConfirmarProductoScreen() {
         },
       });
     } catch (err: any) {
+      if (esPreparacionCerrada(err)) {
+        // The route was prepared meanwhile (MSE-257): not an error. Back to the picking list,
+        // which now renders read-only and tells the user why.
+        router.navigate({
+          pathname: "/preparacion/[rutaId]/picking" as any,
+          params: { rutaId: params.rutaId ?? "0", preparacionCerrada: Date.now().toString() },
+        });
+        return;
+      }
       console.error("Error confirming product:", err);
-      setError(err.response?.data?.message || "Error al confirmar producto");
+      setError(err.response?.data?.message || t("preparacion.errorConfirmingProduct"));
     } finally {
       setLoading(false);
     }

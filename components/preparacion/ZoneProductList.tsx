@@ -22,7 +22,8 @@ interface ZoneProductListProps {
   confirmedProducts: Set<string>;
   confirmingZone: string | null;
   onQtyChange?: (codigoProducto: string, qty: number) => void;
-  onProductPress: (producto: ConsolidadoProducto) => void;
+  /** Omit for a read-only list (route past preparation): cards render without Confirm. */
+  onProductPress?: (producto: ConsolidadoProducto) => void;
   onConfirmZone?: (zonaNombre: string) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   ListHeaderComponent?: React.ReactElement;
@@ -159,7 +160,7 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
       producto={item}
       pickedQty={pickedQtys[item.codigoProducto] ?? 0}
       isConfirmed={confirmedProducts.has(item.codigoProducto)}
-      onConfirm={() => onProductPress(item)}
+      onConfirm={onProductPress ? () => onProductPress(item) : undefined}
     />
   );
 
