@@ -43,6 +43,13 @@ export interface EntregaRuta {
   vehiculoTipo?: TipoVehiculo | null;
   vehiculoPlaca?: string | null;
   observacion?: string | null;
+  /** Office generated the invoices for this route (MSE-255). Absent on older backends. */
+  facturasGeneradas?: boolean;
+  /**
+   * Office released the invoices to the driver — the truck may be loaded (MSE-255).
+   * Absent on older backends; see `cargaHabilitada` in utils/routeLoading.
+   */
+  facturasAsignadas?: boolean;
 }
 
 /** One invoice/stop in the ordered delivery list. */
@@ -72,6 +79,13 @@ export interface EntregaRutaDetalle {
   esActiva: boolean;
   vehiculoTipo?: TipoVehiculo | null;
   vehiculoPlaca?: string | null;
+  /** Office generated the invoices for this route (MSE-255). Absent on older backends. */
+  facturasGeneradas?: boolean;
+  /**
+   * Office released the invoices to the driver — the truck may be loaded (MSE-255).
+   * Absent on older backends; see `cargaHabilitada` in utils/routeLoading.
+   */
+  facturasAsignadas?: boolean;
   facturas: EntregaFacturaResumen[];
 }
 

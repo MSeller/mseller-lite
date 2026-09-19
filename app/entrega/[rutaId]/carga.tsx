@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
+import { FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -23,7 +23,9 @@ import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import EmptyState from "../../../components/ui/EmptyState";
 import { vehiculoLabel } from "../../../utils/mapLinks";
+import { isEsperandoFacturacion } from "../../../utils/routeLoading";
 
 export default function CargaScreen() {
   const theme = useTheme() as CustomTheme;
@@ -46,16 +48,23 @@ export default function CargaScreen() {
   const [issueNote, setIssueNote] = useState("");
   const [declined, setDeclined] = useState<Record<number, string>>({});
   const [dispatching, setDispatching] = useState(false);
+  // The backend answers 409 ESPERANDO_FACTURACION until the office assigns the invoices.
+  const [waitingInvoicing, setWaitingInvoicing] = useState(false);
 
   const loadCarga = useCallback(async () => {
     try {
       setError("");
       const response = await entregaService.getCarga(numericRutaId);
       setData(response);
+      setWaitingInvoicing(false);
       const checks: Record<number, Set<string>> = {};
       for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = new Set();
       setCheckedItems(checks);
     } catch (err: any) {
+      if (isEsperandoFacturacion(err)) {
+        setWaitingInvoicing(true);
+        return;
+      }
       setError(err.response?.data?.message || err.message || t("entrega.errorLoadingCarga"));
     } finally {
       setLoading(false);
@@ -110,6 +119,10 @@ export default function CargaScreen() {
         setSuccess(hasIssue ? t("entrega.loadedWithIssue") : t("entrega.clientLoaded"));
       }
     } catch (err: any) {
+      if (isEsperandoFacturacion(err)) {
+        setWaitingInvoicing(true);
+        return;
+      }
       setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
     } finally {
       setBusy(null);
@@ -142,6 +155,10 @@ export default function CargaScreen() {
       setDeclineNote("");
       setSuccess(t("entrega.invoiceDeclined"));
     } catch (err: any) {
+      if (isEsperandoFacturacion(err)) {
+        setWaitingInvoicing(true);
+        return;
+      }
       setError(err.response?.data?.message || t("entrega.errorDeclining"));
     } finally {
       setBusy(null);
@@ -172,6 +189,10 @@ export default function CargaScreen() {
         setError(t("entrega.errorConfirmingLoad"));
       }
     } catch (err: any) {
+      if (isEsperandoFacturacion(err)) {
+        setWaitingInvoicing(true);
+        return;
+      }
       setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
     } finally {
       setDispatching(false);
@@ -309,6 +330,26 @@ export default function CargaScreen() {
     );
   }
 
+  if (waitingInvoicing) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
+        <ScrollView
+          contentContainerStyle={styles.waitingContent}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        >
+          <EmptyState
+            icon="file-clock-outline"
+            title={t("routeLoading.waitingInvoicing")}
+            message={t("routeLoading.driverWaitingMessage")}
+          />
+          <Button mode="outlined" icon="arrow-left" onPress={() => router.back()} style={styles.waitingBack}>
+            {t("common.back")}
+          </Button>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
       {!!veh && (
@@ -384,6 +425,8 @@ export default function CargaScreen() {
 }
 
 const styles = StyleSheet.create({
+  waitingContent: { flexGrow: 1, justifyContent: "center", padding: 32 },
+  waitingBack: { alignSelf: "center", marginTop: 24 },
   container: { flex: 1 },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 6, borderWidth: 1, gap: 4 },

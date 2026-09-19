@@ -6,7 +6,11 @@ import type { UserTypes } from "../types/user";
 export type NavSection =
   | "documents"
   | "picking"
-  /** Loading a prepared route onto the truck from Preparación. Not for inventory pickers. */
+  /**
+   * Preparación › Carga: the read-only truck-load status of a prepared route (invoicing,
+   * then the driver's per-invoice load). Only the driver loads, from Entregas. Not for
+   * inventory pickers.
+   */
   | "truckLoading"
   | "deliveries"
   | "stockCount"

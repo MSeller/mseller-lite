@@ -23,6 +23,13 @@ export interface RutaPreparacion {
   totalPedidos: number;
   totalProductos: number;
   productosPreparados: number;
+  /** Office generated the invoices for this route (MSE-255). Absent on older backends. */
+  facturasGeneradas?: boolean;
+  /**
+   * Office released the invoices to the driver — the truck may be loaded (MSE-255).
+   * Absent on older backends; see `cargaHabilitada` in utils/routeLoading.
+   */
+  facturasAsignadas?: boolean;
 }
 
 // ---- M1: Consolidated Picking ----
@@ -119,7 +126,10 @@ export interface CargaCliente {
   nombreCliente: string;
   direccion?: string | null;
   referenciaDireccion?: string | null;
-  /** The final invoice number the driver is loading. */
+  /**
+   * Invoice number. Real once the office has generated and assigned the invoices
+   * (MSE-255); before that the carga endpoints answer 409 ESPERANDO_FACTURACION.
+   */
   noFactura: string;
   noPedidoStr: string;
   secuenciaEntrega: number;
@@ -140,6 +150,13 @@ export interface CargaResponse {
   vehiculoDescripcion?: string | null;
   codigoDistribuidor?: string | null;
   nombreDistribuidor?: string | null;
+  /** Office generated the invoices for this route (MSE-255). Absent on older backends. */
+  facturasGeneradas?: boolean;
+  /**
+   * Office released the invoices to the driver — the truck may be loaded (MSE-255).
+   * Absent on older backends; see `cargaHabilitada` in utils/routeLoading.
+   */
+  facturasAsignadas?: boolean;
   clientes: CargaCliente[];
 }
 
