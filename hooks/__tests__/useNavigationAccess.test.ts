@@ -59,6 +59,10 @@ describe("SECTIONS_BY_USER_TYPE", () => {
     expect(SECTIONS_BY_USER_TYPE[type]).not.toContain("truckLoading");
   });
 
+  it("does not offer inventory Entregas, where routes are loaded and delivered", () => {
+    expect(SECTIONS_BY_USER_TYPE.inventory).not.toContain("deliveries");
+  });
+
   it("offers the driver deliveries but not picking", () => {
     expect(SECTIONS_BY_USER_TYPE.driver).toContain("deliveries");
     expect(SECTIONS_BY_USER_TYPE.driver).not.toContain("picking");

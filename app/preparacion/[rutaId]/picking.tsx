@@ -16,8 +16,9 @@ import {
   ConsolidadoProducto,
   ConsolidadoResponse,
 } from "../../../types/preparacion";
+import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
 
-export default function PickingScreen() {
+function PickingScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
@@ -197,3 +198,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 });
+
+export default function PickingScreenRoute() {
+  const { t } = useTranslation();
+  return (
+    <SectionAccessGate section="picking" message={t("preparacion.pickingNotAllowed")}>
+      <PickingScreen />
+    </SectionAccessGate>
+  );
+}

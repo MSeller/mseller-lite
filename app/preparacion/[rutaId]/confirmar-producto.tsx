@@ -4,10 +4,12 @@ import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "re
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Icon, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
 import AppCard from "../../../components/ui/AppCard";
+import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
 import type { CustomTheme } from "../../../constants/Theme";
+import { useTranslation } from "../../../hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
 
-export default function ConfirmarProductoScreen() {
+function ConfirmarProductoScreen() {
   const theme = useTheme() as CustomTheme;
   const { status } = theme.custom;
   const router = useRouter();
@@ -221,3 +223,12 @@ const styles = StyleSheet.create({
   },
   bottomButton: { flex: 1, minHeight: 48 },
 });
+
+export default function ConfirmarProductoRoute() {
+  const { t } = useTranslation();
+  return (
+    <SectionAccessGate section="picking" message={t("preparacion.pickingNotAllowed")}>
+      <ConfirmarProductoScreen />
+    </SectionAccessGate>
+  );
+}
