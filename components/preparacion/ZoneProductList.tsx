@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Button, Chip, Icon, Text, useTheme } from "react-native-paper";
+import { Button, Icon, Text, useTheme } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   ConsolidadoProducto,
   ConsolidadoZona,
 } from "../../types/preparacion";
+import StatusChip from "../ui/StatusChip";
 import ProductCard from "./ProductCard";
 
 interface ZoneProductListProps {
@@ -43,7 +45,8 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
   refreshControl,
   ListHeaderComponent,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const { status } = theme.custom;
   const { t } = useTranslation();
   const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
 
@@ -80,13 +83,17 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
           <View
             style={[
               styles.zoneIconWrap,
-              { backgroundColor: isComplete ? "#D6EDE3" : "#DCE7F3" },
+              {
+                backgroundColor: isComplete
+                  ? status.positive.container
+                  : theme.colors.primaryContainer,
+              },
             ]}
           >
             <Icon
               source={isComplete ? "check-all" : "package-variant"}
               size={18}
-              color={isComplete ? "#1F6B54" : "#14395E"}
+              color={isComplete ? status.positive.base : theme.colors.primary}
             />
           </View>
           <Text
@@ -100,19 +107,10 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
 
         {/* Right: items chip + chevron */}
         <View style={styles.sectionRight}>
-          <Chip
-            compact
-            style={[
-              styles.itemsChip,
-              { backgroundColor: isComplete ? "#D6EDE3" : theme.colors.surfaceVariant },
-            ]}
-            textStyle={[
-              styles.itemsChipText,
-              { color: isComplete ? "#1F6B54" : theme.colors.onSurfaceVariant },
-            ]}
-          >
-            {`${confirmedCount}/${section.allProducts.length} ${t("preparacion.items")}`}
-          </Chip>
+          <StatusChip
+            tone={isComplete ? "positive" : "neutral"}
+            label={`${confirmedCount}/${section.allProducts.length} ${t("preparacion.items")}`}
+          />
           <Icon
             source={isCollapsed ? "chevron-right" : "chevron-down"}
             size={20}
@@ -144,7 +142,7 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
           loading={isConfirming}
           disabled={isConfirming}
           icon={isConfirming ? undefined : "check-circle"}
-          style={[styles.confirmZoneButton, { backgroundColor: "#14395E" }]}
+          style={styles.confirmZoneButton}
           contentStyle={styles.confirmZoneButtonContent}
           labelStyle={styles.confirmZoneLabel}
         >
@@ -225,14 +223,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  itemsChip: {
-    height: 26,
-  },
-  itemsChipText: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
   },
   zoneFooter: {
     paddingHorizontal: 12,

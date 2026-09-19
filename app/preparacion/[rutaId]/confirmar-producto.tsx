@@ -3,10 +3,13 @@ import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Icon, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
+import AppCard from "../../../components/ui/AppCard";
+import type { CustomTheme } from "../../../constants/Theme";
 import { preparacionService } from "../../../services/preparacionService";
 
 export default function ConfirmarProductoScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const { status } = theme.custom;
   const router = useRouter();
   const params = useLocalSearchParams<{
     rutaId: string;
@@ -16,6 +19,9 @@ export default function ConfirmarProductoScreen() {
     unidad: string;
   }>();
 
+  // Products without a description on the backend arrive with an empty name; show the code.
+  const nombre = params.descripcion?.trim();
+  const unidad = params.unidad?.trim() ?? "";
   const rutaId = parseInt(params.rutaId ?? "0", 10);
   const cantidadTotal = parseFloat(params.cantidadTotal ?? "0");
 
@@ -75,20 +81,20 @@ export default function ConfirmarProductoScreen() {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Product info */}
-          <View style={[styles.productHeader, { backgroundColor: theme.colors.surfaceVariant }]}>
-            <Text variant="titleLarge" style={{ fontWeight: "bold" }}>
-              {params.descripcion ?? ""}
+          <AppCard style={styles.productHeader} contentStyle={styles.productHeaderContent}>
+            <Text variant="titleLarge" style={{ color: theme.colors.onSurface }}>
+              {nombre || params.codigoProducto || ""}
             </Text>
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-              {params.codigoProducto ?? ""} · {params.unidad ?? ""}
+              {[nombre ? params.codigoProducto : null, unidad].filter(Boolean).join("  ·  ")}
             </Text>
-          </View>
+          </AppCard>
 
           {/* Quantity */}
           <View style={styles.section}>
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
               Cantidad solicitada:{" "}
-              <Text style={{ fontWeight: "bold" }}>{cantidadTotal} {params.unidad ?? ""}</Text>
+              <Text style={{ fontWeight: "bold" }}>{cantidadTotal} {unidad}</Text>
             </Text>
 
             <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, marginTop: 16 }}>
@@ -129,16 +135,16 @@ export default function ConfirmarProductoScreen() {
 
             {hayDiferencia && !excedido && (
               <View style={styles.warningRow}>
-                <Icon source="alert" size={18} color="#F57C00" />
-                <Text style={styles.warningText}>
+                <Icon source="alert" size={18} color={status.warning.base} />
+                <Text style={[styles.warningText, { color: status.warning.base }]}>
                   Diferencia: {diferencia} unidades
                 </Text>
               </View>
             )}
             {excedido && (
               <View style={styles.warningRow}>
-                <Icon source="alert-circle" size={18} color="#D32F2F" />
-                <Text style={[styles.warningText, { color: "#D32F2F" }]}>
+                <Icon source="alert-circle" size={18} color={status.negative.base} />
+                <Text style={[styles.warningText, { color: status.negative.base }]}>
                   No puede exceder la cantidad solicitada
                 </Text>
               </View>
@@ -163,7 +169,7 @@ export default function ConfirmarProductoScreen() {
         </ScrollView>
 
         {/* Bottom action bar */}
-        <View style={[styles.bottomBar, { backgroundColor: theme.colors.surface, borderTopColor: "#E0E0E0" }]}>
+        <View style={[styles.bottomBar, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outlineVariant }]}>
           <Button mode="outlined" onPress={() => router.back()} style={styles.bottomButton} disabled={loading}>
             Cancelar
           </Button>
@@ -190,11 +196,8 @@ export default function ConfirmarProductoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingBottom: 100 },
-  productHeader: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
+  productHeader: { marginHorizontal: 12, marginTop: 12 },
+  productHeaderContent: { padding: 16 },
   section: { padding: 16 },
   stepperRow: {
     flexDirection: "row",
@@ -208,7 +211,7 @@ const styles = StyleSheet.create({
   quantityInput: { flex: 1, maxWidth: 140, textAlign: "center" },
   quantityInputContent: { fontSize: 32, fontWeight: "900", textAlign: "center" },
   warningRow: { flexDirection: "row", alignItems: "center", marginTop: 8, gap: 6 },
-  warningText: { color: "#F57C00", fontWeight: "600" },
+  warningText: { fontWeight: "600" },
   bottomBar: {
     flexDirection: "row",
     padding: 16,

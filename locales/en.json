@@ -304,7 +304,8 @@
     "declined": "Declined",
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
     "issuePlaceholder": "Describe the issue (optional)…",
-    "dispatchRoute": "Dispatch route"
+    "dispatchRoute": "Dispatch route",
+    "productsPicked": "products picked"
   },
   "entrega": {
     "title": "Deliveries",

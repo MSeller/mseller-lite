@@ -1,14 +1,12 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import {
-  Button,
-  Chip,
-  Icon,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { Button, Icon, Text, useTheme } from "react-native-paper";
+
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { ConsolidadoProducto } from "../../types/preparacion";
+import AppCard from "../ui/AppCard";
+import StatusChip from "../ui/StatusChip";
 
 interface ProductCardProps {
   producto: ConsolidadoProducto;
@@ -17,187 +15,197 @@ interface ProductCardProps {
   onConfirm?: () => void;
 }
 
+/** Whole numbers without decimals, fractions as sent (a 1.5 KG line stays 1.5). */
+const formatQty = (qty: number) =>
+  Number.isInteger(qty) ? String(qty) : qty.toLocaleString(undefined, { maximumFractionDigits: 3 });
+
+/**
+ * One product to pick. State is carried by the leading tile (package while pending, check once
+ * confirmed) and the confirmed badge, not by a coloured edge, so the card stays calm in a long
+ * list and the quantity on the right is what the eye lands on.
+ */
 const ProductCard: React.FC<ProductCardProps> = ({
   producto,
   pickedQty = 0,
   isConfirmed,
   onConfirm,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
-  const hasQty = pickedQty > 0;
+  const { status, spacing, radius } = theme.custom;
+
+  const nombre = producto.nombreProducto?.trim();
+  const unidad = producto.unidad?.trim();
+  const ubicacion = producto.ubicacion?.trim();
+  // Some products have no description on the backend; the code is then the title.
+  const codigo = nombre ? producto.codigoProducto : null;
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: theme.colors.surface,
-          opacity: isConfirmed ? 0.6 : 1,
-          borderLeftColor: isConfirmed
-            ? "#1F6B54"
-            : hasQty
-              ? theme.colors.primary
-              : "#E0E0E0",
-        },
-      ]}
-    >
-      <View style={styles.mainRow}>
-        {/* Status indicator */}
-        {isConfirmed && (
-          <View style={[styles.statusIcon, { backgroundColor: "#1F6B54" }]}>
-            <Icon source="check" size={20} color="#fff" />
-          </View>
-        )}
+    <AppCard style={styles.card} contentStyle={{ padding: spacing.md }}>
+      <View style={styles.row}>
+        <View
+          style={[
+            styles.tile,
+            {
+              borderRadius: radius.sm,
+              backgroundColor: isConfirmed
+                ? status.positive.container
+                : theme.colors.surfaceVariant,
+            },
+          ]}
+        >
+          <Icon
+            source={isConfirmed ? "check" : "package-variant-closed"}
+            size={22}
+            color={isConfirmed ? status.positive.base : theme.colors.onSurfaceVariant}
+          />
+        </View>
 
-        {/* Content */}
-        <View style={styles.content}>
-          {/* Top row: location + confirmed badge */}
-          <View style={styles.topRow}>
-            {producto.ubicacion ? (
-              <Chip compact style={styles.locationChip} textStyle={styles.locationChipText}>
-                {producto.ubicacion}
-              </Chip>
-            ) : (
-              <View />
-            )}
-            {isConfirmed && (
-              <Chip compact style={styles.confirmedChip} textStyle={styles.confirmedChipText}>
-                {`${t("preparacion.confirmed")} · ${pickedQty}`}
-              </Chip>
-            )}
-          </View>
-
-          {/* Product code — prominent */}
+        <View style={styles.info}>
           <Text
             variant="titleMedium"
-            style={[styles.productCode, { color: theme.colors.primary }]}
-            numberOfLines={1}
-          >
-            {producto.codigoProducto}
-          </Text>
-
-          {/* Product name — large */}
-          <Text
-            variant="bodyLarge"
-            style={[styles.productName, { color: theme.colors.onSurface }]}
             numberOfLines={2}
+            style={{ color: theme.colors.onSurface }}
           >
-            {producto.nombreProducto}
+            {nombre || producto.codigoProducto}
           </Text>
-
-          {/* Demand row */}
-          <View style={styles.demandRow}>
-            <View style={styles.demandItem}>
-              <Text variant="labelSmall" style={[styles.demandLabel, { color: theme.colors.onSurfaceVariant }]}>
-                {t("preparacion.totalDemand")}
-              </Text>
-              <Text style={[styles.demandValue, { color: theme.colors.onSurface }]}>
-                {String(producto.cantidadTotal).padStart(2, "0")}
-                <Text style={styles.demandUnit}> {producto.unidad ?? ""}</Text>
-              </Text>
+          {(!!codigo || !!ubicacion) && (
+            <View style={styles.metaRow}>
+              {!!codigo && (
+                <Text
+                  variant="bodySmall"
+                  numberOfLines={1}
+                  style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}
+                >
+                  {codigo}
+                </Text>
+              )}
+              {!!ubicacion && (
+                <View style={styles.location}>
+                  <Icon
+                    source="map-marker-outline"
+                    size={14}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                  <Text
+                    variant="bodySmall"
+                    numberOfLines={1}
+                    style={[styles.meta, { color: theme.colors.onSurfaceVariant }]}
+                  >
+                    {ubicacion}
+                  </Text>
+                </View>
+              )}
             </View>
-          </View>
-
-          {/* Confirm button — navigates to confirmation screen */}
-          {!isConfirmed && onConfirm && (
-            <Button
-              mode="contained"
-              onPress={onConfirm}
-              icon="clipboard-check-outline"
-              style={[styles.confirmBtn, { backgroundColor: theme.colors.primary }]}
-              labelStyle={styles.confirmBtnLabel}
-            >
-              {t("preparacion.confirmProduct")}
-            </Button>
           )}
         </View>
+
+        <View style={styles.qty}>
+          <Text
+            variant="labelSmall"
+            style={[styles.qtyLabel, { color: theme.colors.onSurfaceVariant }]}
+          >
+            {t("preparacion.totalDemand")}
+          </Text>
+          <Text style={[styles.qtyValue, { color: theme.colors.onSurface }]}>
+            {formatQty(producto.cantidadTotal)}
+            {!!unidad && (
+              <Text style={[styles.qtyUnit, { color: theme.colors.onSurfaceVariant }]}>
+                {` ${unidad}`}
+              </Text>
+            )}
+          </Text>
+        </View>
       </View>
-    </View>
+
+      {isConfirmed ? (
+        <View style={[styles.footer, { marginTop: spacing.md }]}>
+          <StatusChip
+            tone="positive"
+            label={`${t("preparacion.confirmed")} · ${formatQty(pickedQty)}${unidad ? ` ${unidad}` : ""}`}
+          />
+        </View>
+      ) : (
+        onConfirm && (
+          <Button
+            mode="contained"
+            onPress={onConfirm}
+            icon="clipboard-check-outline"
+            style={[styles.confirmBtn, { marginTop: spacing.md, borderRadius: radius.sm }]}
+            contentStyle={styles.confirmBtnContent}
+            labelStyle={styles.confirmBtnLabel}
+          >
+            {t("preparacion.confirmProduct")}
+          </Button>
+        )
+      )}
+    </AppCard>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     marginHorizontal: 12,
     marginBottom: 10,
-    borderRadius: 16,
-    borderLeftWidth: 4,
-    overflow: "hidden",
   },
-  mainRow: {
+  row: {
     flexDirection: "row",
-    padding: 14,
-    gap: 10,
+    alignItems: "center",
+    gap: 12,
   },
-  statusIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  tile: {
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 2,
   },
-  content: {
+  info: {
     flex: 1,
+    minWidth: 0,
   },
-  topRow: {
+  metaRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
-  },
-  locationChip: {
-    backgroundColor: "#DCE7F3",
-    height: 24,
-  },
-  locationChipText: {
-    color: "#14395E",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  confirmedChip: {
-    backgroundColor: "#D6EDE3",
-    height: 24,
-  },
-  confirmedChipText: {
-    color: "#1F6B54",
-    fontWeight: "700",
-    fontSize: 11,
-  },
-  productCode: {
-    fontWeight: "800",
-    letterSpacing: 0.3,
-  },
-  productName: {
-    fontWeight: "600",
-    lineHeight: 22,
+    gap: 12,
     marginTop: 2,
   },
-  demandRow: {
+  location: {
     flexDirection: "row",
-    marginTop: 10,
-    gap: 16,
+    alignItems: "center",
+    gap: 2,
+    flexShrink: 1,
   },
-  demandItem: {},
-  demandLabel: {
-    fontWeight: "700",
-    letterSpacing: 0.5,
+  meta: {
+    flexShrink: 1,
+    letterSpacing: 0.2,
+  },
+  qty: {
+    alignItems: "flex-end",
+  },
+  qtyLabel: {
     fontSize: 10,
-    textTransform: "uppercase",
+    fontWeight: "700",
+    letterSpacing: 0.6,
   },
-  demandValue: {
+  qtyValue: {
     fontSize: 24,
-    fontWeight: "900",
-    lineHeight: 28,
+    lineHeight: 30,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"],
   },
-  demandUnit: {
-    fontSize: 14,
-    fontWeight: "500",
+  qtyUnit: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  footer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
   confirmBtn: {
-    marginTop: 10,
-    borderRadius: 20,
+    alignSelf: "stretch",
+  },
+  confirmBtnContent: {
+    minHeight: 44,
   },
   confirmBtnLabel: {
     fontSize: 14,
