@@ -36,6 +36,10 @@ yarn-error.*
 # local env files
 .env*.local
 
+# service-account key that google-github-actions/auth writes into the workspace in CI.
+# Untracked files there would also make the distribute scripts refuse a "dirty" tree.
+gha-creds-*.json
+
 # environment setup scripts (contain sensitive data)
 scripts/setup-env-vars.sh
 scripts/setup-all-env-vars.sh

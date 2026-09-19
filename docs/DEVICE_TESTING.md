@@ -104,8 +104,12 @@ Pass `-- --allow-dirty` to override.
 
 | Trigger | Build |
 |---|---|
-| Merge to `main` (code changes, not docs) | Dev and Prod, Android and iOS, in parallel → `testers` in each project |
+| Merge to `main` (code changes, not docs) | Dev and Prod, **Android only**, in parallel → `testers` in each project |
 | Actions → App Distribution → *Run workflow* | Pick the environment, the platform (`both`, `android`, `ios`) and the groups |
+
+iOS is left out of the merge-to-`main` run on purpose: every iOS build spends one of the
+Expo account's monthly EAS build credits, and two per merge (Dev + Prod) empties the plan
+in a few days. Send an iOS build with *Run workflow* → platform `ios` when testers need one.
 
 Each environment and platform runs as its own job, so one failed upload doesn't block the others.
 

@@ -66,9 +66,14 @@ const build = spawnSync(
 );
 if (build.error) fail(`eas: ${build.error.message}`);
 if (build.status !== 0) {
+  // The two failures that are not about the app: a spent monthly build allowance
+  // (the message names the reset date) and credentials EAS wants confirmed by hand.
   fail(
-    "EAS build failed. If it asked for credentials, run once interactively: " +
-      `\`eas build --platform ios --profile ${profile}\` (see docs/DEVICE_TESTING.md).`,
+    "EAS build failed. Read the eas output above:\n" +
+      '  • "used its iOS builds from the Free plan" — the account is out of EAS build\n' +
+      "    credits until the reset date; wait for it or upgrade at https://expo.dev/accounts\n" +
+      "  • asked for credentials — run once interactively: " +
+      `\`eas build --platform ios --profile ${profile}\` (see docs/DEVICE_TESTING.md)`,
   );
 }
 
