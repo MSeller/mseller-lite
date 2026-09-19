@@ -3,6 +3,9 @@
 # dependencies
 node_modules/
 
+# Claude Code worktrees
+.claude/worktrees/
+
 # Expo
 .expo/
 dist/

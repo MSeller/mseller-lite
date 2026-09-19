@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lite-web-mse239",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/agent-aeefc93490834d3a0 && EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true EXPO_PUBLIC_TARGET=http://localhost:7183 CI=1 pnpm exec expo start --web --port 8083"
+      ],
+      "port": 8083
+    },
+    {
+      "name": "lite-web-local-emulators",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "EXPO_PUBLIC_EMULATOR_ENABLED=true EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true EXPO_PUBLIC_FIREBASE_EMULATOR_HOST=localhost EXPO_PUBLIC_TARGET=http://localhost:7175 CI=1 pnpm exec expo start --web --port 8084"
+      ],
+      "port": 8084
+    }
+  ]
+}
