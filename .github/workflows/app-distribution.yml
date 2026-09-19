@@ -1,7 +1,10 @@
 # Sends Android and iOS test builds to Firebase App Distribution.
 #
-#   merge to main      → Dev (mseller-dev-40a08) and Prod (mobile-seller-v3), Android and iOS, in parallel → "testers"
+#   merge to main      → Android only, Dev (mseller-dev-40a08) and Prod (mobile-seller-v3), in parallel → "testers"
 #   Run workflow       → pick environment (or both), platform (or both) and groups
+#
+# iOS runs only from "Run workflow": each iOS build spends one of the Expo account's
+# monthly EAS build credits, and two per merge to main exhausts the plan in a few days.
 #
 # Runs the same `pnpm distribute:*` scripts as a local upload, so both produce the same build.
 # Android builds on this runner; iOS builds on EAS (ad hoc) and this runner uploads the IPA.
@@ -80,6 +83,10 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is "tools platform-tools"; Google removed the legacy
+          # "tools" package from the SDK repository, so sdkmanager exits 1 on it.
+          packages: platform-tools
 
       - name: Setup Gradle (with cache)
         uses: gradle/actions/setup-gradle@v4
@@ -122,7 +129,8 @@ jobs:
 
   ios:
     name: ios (${{ matrix.app_env }})
-    if: ${{ inputs.platform != 'android' }}
+    # Manual only: see the note at the top about EAS build credits.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.platform != 'android' }}
     # EAS does the macOS build; this runner only starts it, waits and uploads the IPA.
     runs-on: ubuntu-latest
     timeout-minutes: 90
