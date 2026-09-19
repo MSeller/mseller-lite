@@ -837,7 +837,9 @@
   },
   "profileUnavailable": {
     "title": "No pudimos cargar tu cuenta",
-    "body": "Revisa tu conexión e inténtalo de nuevo. Si el problema continúa, cierra sesión y vuelve a entrar."
+    "body": "Revisa tu conexión e inténtalo de nuevo. Si el problema continúa, cierra sesión y vuelve a entrar.",
+    "missingTitle": "No encontramos tu cuenta de MSeller",
+    "missingBody": "{{email}} no pertenece a ninguna empresa en MSeller. Pide al administrador de tu empresa que te dé acceso e inténtalo de nuevo."
   },
   "createBusiness": {
     "title": "Crea tu cuenta de empresa",

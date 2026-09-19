@@ -44,6 +44,13 @@ Server side: `mseller-firebase/functions/src/business/business.ts` and the Porta
   `?enableAdvanced=true`. Both are values the backend already supports.
 - Google sign-in asks before creating a business for a login with no account, and is Android
   only until Sign in with Apple is added (App Store guideline 4.8).
+- **iOS is sign in only.** App Review rejected the build under guideline 3.1.1: registering a
+  business leads to a subscription billed through Stripe, outside In-App Purchase. On iOS,
+  `BUSINESS_SIGN_UP_ENABLED` (`constants/registration.ts`) hides the register button and
+  `SignUpScreen`, and a login with no business gets `ProfileUnavailableScreen reason="missing"`
+  instead of `CreateBusinessScreen`. The setup wizard for an existing business and account
+  deletion stay on iOS. Portal sign-up changes are still mirrored for Android. Nothing on iOS may
+  send people to register or pay on the web (no links, no "regístrate en cloud.mseller.app").
 - Web-only portal pieces are not ported: Vercel BotID, referral codes from the URL, Meta /
   analytics registration events.
 
