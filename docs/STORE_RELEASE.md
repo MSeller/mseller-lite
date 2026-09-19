@@ -20,6 +20,9 @@ pnpm submit:android       # latest Android build → Play internal track, as a d
 pnpm submit:ios           # latest iOS build → App Store Connect / TestFlight
 ```
 
+Si el cupo de builds de EAS está agotado, compila el iOS en un Mac: ver
+[TestFlight sin créditos de EAS Build](#testflight-sin-créditos-de-eas-build).
+
 `version` in `app.config.js` is the user-facing version; bump it for every store release.
 Build numbers are handled by EAS and never need editing.
 
@@ -124,6 +127,48 @@ firebase apps:android:sha:create <firebase-android-app-id> <sha1> --project <pro
 ```
 
 The OAuth client IDs live in `app.variants.js` (`googleWebClientId`, `googleIosClientId`).
+
+### TestFlight sin créditos de EAS Build
+
+El plan gratuito de Expo trae un cupo mensual de builds en la nube. Cuando se agota,
+`pnpm build:ios:prod` falla con *"This account has used its iOS builds from the Free plan
+this month"* y no hay nada que subir: **TestFlight necesita un build de distribución
+`store`**, y los IPA ad hoc de `pnpm distribute:ios:*` (perfiles `preview-*`) no sirven —
+Apple los rechaza en la subida.
+
+Lo agotado es el cupo de **EAS Build** (compilar en los servidores de Expo). Compilar en un
+Mac propio no lo consume, y **EAS Submit** no compila nada, así que el camino completo
+sigue disponible. Requiere macOS con Xcode, y para la opción A también fastlane y CocoaPods.
+
+**Opción A — EAS local (el mismo build que hace la nube, en tu Mac):**
+
+```bash
+eas login                    # o EXPO_TOKEN en el entorno
+pnpm build:ios:store:local   # eas build -p ios --profile production --local
+pnpm submit:ios:path ./build-*.ipa
+```
+
+El IPA queda en el directorio actual (cámbialo con `EAS_LOCAL_BUILD_ARTIFACTS_DIR`). El
+build baja de EAS el certificado de distribución y el perfil de App Store, y respeta
+`appVersionSource: remote`, así que el build number se incrementa igual que en la nube.
+
+**Opción B — Xcode, sin pasar por EAS:**
+
+```bash
+npx expo prebuild --platform ios --clean
+xed ios
+```
+
+En Xcode: *Signing & Capabilities* → tu equipo; *Product → Scheme → Edit Scheme* →
+build configuration **Release**; *Product → Archive* → **Distribute App** → **App Store
+Connect**. Si prefieres exportar el `.ipa` y subirlo aparte, usa la app **Transporter**.
+
+En ambos casos el build aparece en App Store Connect tras 10–15 minutos de procesamiento,
+y desde ahí se asigna a TestFlight. Recuerda que `version` en `app.config.js` es la versión
+visible: súbela cuando el cambio lo amerite.
+
+Documentación: [local builds](https://docs.expo.dev/build-reference/local-builds/) ·
+[subida manual en iOS](https://docs.expo.dev/submit/ios-manual/).
 
 ### App Store
 
