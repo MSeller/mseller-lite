@@ -296,8 +296,8 @@ const createStyles = (theme: CustomTheme) =>
     },
     removeButton: {
       margin: 0,
-      width: 40,
-      height: 40,
+      width: 44,
+      height: 44,
       borderRadius: 12,
     },
     warningRow: {

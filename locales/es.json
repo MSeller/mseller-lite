@@ -1050,6 +1050,8 @@
     "orderNumber": "Pedido {{value}}",
     "noRequestsTitle": "Aún no has enviado solicitudes",
     "noRequestsBody": "Cuando envíes una solicitud a un suplidor la verás aquí.",
+    "noFilteredRequestsTitle": "Sin solicitudes en este estado",
+    "noFilteredRequestsBody": "Ninguna de tus solicitudes está en «{{estado}}». Prueba con otro filtro.",
     "requestCreatedTitle": "Solicitud enviada",
     "requestCreatedBody": "{{tienda}} la revisará y te confirmará las cantidades.",
     "supplierOrder": "Pedido del suplidor",

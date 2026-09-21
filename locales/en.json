@@ -1025,6 +1025,8 @@
     "orderNumber": "Order {{value}}",
     "noRequestsTitle": "You haven't sent any requests",
     "noRequestsBody": "Requests you send to a supplier will show up here.",
+    "noFilteredRequestsTitle": "No requests in this state",
+    "noFilteredRequestsBody": "None of your requests are in \u201c{{estado}}\u201d. Try another filter.",
     "requestCreatedTitle": "Request sent",
     "requestCreatedBody": "{{tienda}} will review it and confirm the quantities.",
     "supplierOrder": "Supplier order",

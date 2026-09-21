@@ -219,12 +219,15 @@ const RequestDetailScreen: React.FC<Props> = ({ noSolicitud, justCreated = false
                       <Icon
                         source="swap-horizontal"
                         size={16}
-                        color={theme.custom.status.warning.base}
+                        color={theme.custom.status.warning.onContainer}
                       />
                       <Text variant="bodySmall" style={styles.requested}>
                         {t("marketplace.requestedQuantity", {
                           value: formatQuantity(line.cantidadSolicitada),
                         })}
+                      </Text>
+                      <Text variant="bodySmall" style={styles.adjustedArrow}>
+                        →
                       </Text>
                       <Text variant="bodySmall" style={styles.confirmed}>
                         {t("marketplace.confirmedQuantity", {
@@ -366,18 +369,27 @@ const createStyles = (theme: CustomTheme) =>
       color: theme.colors.onSurface,
       fontWeight: "700",
     },
+    // Un cambio del suplidor no puede parecer texto de apoyo: va sobre su propio
+    // contenedor tintado, con las DOS cifras (pedida tachada → confirmada) visibles.
     adjusted: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: 6,
       flexWrap: "wrap",
+      paddingVertical: 8,
+      paddingHorizontal: 10,
+      borderRadius: theme.custom.radius.sm,
+      backgroundColor: theme.custom.status.warning.container,
     },
     requested: {
-      color: theme.colors.onSurfaceVariant,
+      color: theme.custom.status.warning.onContainer,
       textDecorationLine: "line-through",
     },
+    adjustedArrow: {
+      color: theme.custom.status.warning.onContainer,
+    },
     confirmed: {
-      color: theme.custom.status.warning.base,
+      color: theme.custom.status.warning.onContainer,
       fontWeight: "700",
     },
     totalsCard: {

@@ -1,7 +1,16 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { FlatList, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Banner, Button, Chip, Text, useTheme } from "react-native-paper";
+import {
+  ActivityIndicator,
+  Appbar,
+  Banner,
+  Button,
+  Chip,
+  Icon,
+  Text,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -53,45 +62,55 @@ const RequestsListScreen: React.FC = () => {
   const failure = error ? describeB2BError(error) : null;
 
   const renderItem = useCallback(
-    ({ item }: { item: SolicitudB2B }) => (
-      <AppCard
-        onPress={() =>
-          router.push({
-            pathname: "/marketplace/solicitudes/[noSolicitud]",
-            params: { noSolicitud: item.noSolicitud },
-          })
-        }
-      >
-        <View style={styles.rowContent}>
-          <View style={styles.rowHeader}>
-            <View style={styles.rowTitle}>
-              <Text variant="titleSmall" style={styles.number}>
+    ({ item }: { item: SolicitudB2B }) => {
+      // The order number only exists once the supplier accepted, so it is painted in the
+      // same tone as the state chip: the two read as one outcome rather than as two
+      // unrelated scraps of text.
+      const tone = theme.custom.status[solicitudTone(item.estado)];
+
+      return (
+        <AppCard
+          onPress={() =>
+            router.push({
+              pathname: "/marketplace/solicitudes/[noSolicitud]",
+              params: { noSolicitud: item.noSolicitud },
+            })
+          }
+        >
+          <View style={styles.rowContent}>
+            {/* The two anchors: which request, and how much it is worth. */}
+            <View style={styles.rowHeader}>
+              <Text variant="titleMedium" style={styles.number} numberOfLines={1}>
                 {item.noSolicitud}
               </Text>
-              <Text variant="bodySmall" style={styles.meta} numberOfLines={1}>
-                {item.tiendaNombre} · {formatDateTime(item.creadoEn)}
+              <Text variant="titleMedium" style={styles.total} numberOfLines={1}>
+                {formatMoney(item.total)}
               </Text>
             </View>
-            <Text variant="titleMedium" style={styles.total}>
-              {formatMoney(item.total)}
-            </Text>
-          </View>
 
-          <View style={styles.rowFooter}>
-            <StatusChip
-              label={t(`marketplace.requestState.${item.estado}`)}
-              tone={solicitudTone(item.estado)}
-            />
-            {!!item.noPedidoStr && (
-              <Text variant="bodySmall" style={styles.meta}>
-                {t("marketplace.orderNumber", { value: item.noPedidoStr })}
-              </Text>
-            )}
+            <Text variant="bodySmall" style={styles.meta} numberOfLines={1}>
+              {item.tiendaNombre} · {formatDateTime(item.creadoEn)}
+            </Text>
+
+            <View style={styles.rowFooter}>
+              <StatusChip
+                label={t(`marketplace.requestState.${item.estado}`)}
+                tone={solicitudTone(item.estado)}
+              />
+              {!!item.noPedidoStr && (
+                <View style={styles.orderRef}>
+                  <Icon source="receipt-text-check-outline" size={15} color={tone.base} />
+                  <Text variant="bodySmall" style={[styles.orderText, { color: tone.base }]}>
+                    {t("marketplace.orderNumber", { value: item.noPedidoStr })}
+                  </Text>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
-      </AppCard>
-    ),
-    [router, styles, t]
+        </AppCard>
+      );
+    },
+    [router, styles, t, theme]
   );
 
   const errorMessage = failure
@@ -111,12 +130,21 @@ const RequestsListScreen: React.FC = () => {
         <Appbar.Content title={t("marketplace.myRequests")} />
       </Appbar.Header>
 
+      {/* Sin `flexGrow: 0` el ScrollView horizontal se reparte el alto disponible dentro
+          de la columna flex, y con `alignItems` por defecto (`stretch`) cada chip se
+          estira a ese alto: la fila salía como cajas verticales gigantes. El alto lo
+          fija el contenido, no el padre. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        style={styles.filtersRow}
         contentContainerStyle={styles.filters}
       >
-        <Chip selected={estado === null} onPress={() => setEstado(null)} style={styles.filterChip}>
+        <Chip
+          selected={estado === null}
+          onPress={() => setEstado(null)}
+          style={styles.filterChip}
+        >
           {t("marketplace.allRequests")}
         </Chip>
         {STATES.map((value) => (
@@ -149,7 +177,18 @@ const RequestsListScreen: React.FC = () => {
           contentContainerStyle={styles.listContent}
           ItemSeparatorComponent={Separator}
           ListEmptyComponent={
-            failure ? null : (
+            failure ? null : estado ? (
+              // A filter that matched nothing is not the same as never having sent a
+              // request: say which filter is hiding everything.
+              <EmptyState
+                icon="filter-remove-outline"
+                title={t("marketplace.noFilteredRequestsTitle")}
+                message={t("marketplace.noFilteredRequestsBody", {
+                  estado: t(`marketplace.requestState.${estado}`),
+                })}
+                style={styles.empty}
+              />
+            ) : (
               <EmptyState
                 icon="clipboard-text-outline"
                 title={t("marketplace.noRequestsTitle")}
@@ -191,13 +230,22 @@ const createStyles = (theme: CustomTheme) =>
     appbar: {
       backgroundColor: theme.colors.background,
     },
+    filtersRow: {
+      flexGrow: 0,
+      flexShrink: 0,
+    },
     filters: {
       paddingHorizontal: 16,
       paddingBottom: 12,
+      paddingTop: 4,
       gap: 8,
+      alignItems: "center",
     },
     filterChip: {
       backgroundColor: theme.colors.surface,
+      // One-handed use: a 32dp Material chip is below the 44px minimum target.
+      height: 44,
+      justifyContent: "center",
     },
     center: {
       flex: 1,
@@ -210,22 +258,24 @@ const createStyles = (theme: CustomTheme) =>
       flexGrow: 1,
     },
     rowContent: {
-      paddingVertical: 12,
+      paddingVertical: 14,
       paddingHorizontal: 14,
-      gap: 10,
+      gap: 6,
+      // The whole card is the tap target; keep it comfortably above 44px.
+      minHeight: 96,
+      justifyContent: "center",
     },
     rowHeader: {
       flexDirection: "row",
-      alignItems: "flex-start",
+      alignItems: "baseline",
+      justifyContent: "space-between",
       gap: 12,
     },
-    rowTitle: {
-      flex: 1,
-      gap: 2,
-    },
     number: {
+      flex: 1,
       color: theme.colors.onSurface,
       fontWeight: "700",
+      letterSpacing: 0.3,
     },
     meta: {
       color: theme.colors.onSurfaceVariant,
@@ -237,9 +287,17 @@ const createStyles = (theme: CustomTheme) =>
     rowFooter: {
       flexDirection: "row",
       alignItems: "center",
-      justifyContent: "space-between",
-      gap: 8,
+      gap: 10,
       flexWrap: "wrap",
+      marginTop: 4,
+    },
+    orderRef: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+    },
+    orderText: {
+      fontWeight: "700",
     },
     empty: {
       flex: 1,

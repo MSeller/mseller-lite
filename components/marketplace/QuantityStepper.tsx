@@ -107,8 +107,9 @@ const createStyles = (theme: CustomTheme, compact: boolean) =>
     },
     button: {
       margin: 0,
-      width: compact ? 40 : 48,
-      height: compact ? 40 : 48,
+      // 44px es el mínimo táctil; el modo compacto no baja de ahí.
+      width: compact ? 44 : 48,
+      height: compact ? 44 : 48,
       borderRadius: 12,
     },
     input: {
