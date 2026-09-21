@@ -11,10 +11,20 @@ import type { VinculoB2B } from "../../types/b2b";
 import {
   INVITATION_CODE_LENGTH,
   describeB2BError,
+  extractInvitationCode,
   isCompleteInvitationCode,
   normalizeInvitationCode,
 } from "../../utils/b2b";
+import { hasNativeModules } from "../../utils/nativeModules";
+import BarcodeScanSheet from "../scan/BarcodeScanSheet";
 import AppCard from "../ui/AppCard";
+
+/**
+ * Whether this binary can open the camera at all. Checked here as well as inside the sheet
+ * so the button is hidden rather than offered and then answered with "unavailable": typing
+ * the code is a complete path on its own, so there is nothing to apologise for.
+ */
+const CAMARA_DISPONIBLE = hasNativeModules("ExpoCamera");
 
 interface Props {
   /** Prefilled when the buyer came from a particular store's row. */
@@ -25,11 +35,16 @@ interface Props {
  * Redeeming the invitation code a supplier's rep handed over — the short way into a
  * store, with no approval to wait for.
  *
- * One big field and nothing else on the screen: this is usually typed off a slip of
+ * One big field and little else on the screen: this is usually typed off a slip of
  * paper or from a WhatsApp message, often one-handed behind a counter. The field
  * normalises as the buyer types (uppercase, spaces and hyphens dropped, characters
  * outside the alphabet ignored) so a code written as `ab 34-cd7k` is accepted instead of
  * being rejected for punctuation the buyer did not know mattered.
+ *
+ * When the binary has a camera, the buyer can instead scan the QR the rep is holding up on
+ * their own phone — the fastest path, and the one that cannot be mistyped. It fills the
+ * field rather than submitting on its own: a scan that read the wrong thing stays visible
+ * and correctable instead of turning into a server error the buyer cannot place.
  */
 const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
   const theme = useTheme() as CustomTheme;
@@ -41,8 +56,26 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [link, setLink] = useState<VinculoB2B | null>(null);
+  const [scanning, setScanning] = useState(false);
 
   const complete = isCompleteInvitationCode(code);
+
+  /**
+   * The QR carries the invitation URL, so the code is pulled out of it before it reaches
+   * the field. Anything that yields nothing code-shaped — a QR from some other app, a
+   * damaged one — is reported here rather than sent to the server, which would answer with
+   * a generic "invalid code" the buyer could only read as "the rep gave me a bad code".
+   */
+  const onScan = (leido: string) => {
+    const escaneado = extractInvitationCode(leido);
+    if (!isCompleteInvitationCode(escaneado)) {
+      setError(t("marketplace.errors.unreadableQr"));
+      return;
+    }
+    setCode(escaneado);
+    setError("");
+    setScanning(false);
+  };
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -132,9 +165,31 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
         >
           <Text variant="bodyMedium" style={styles.help}>
             {tiendaNombre
-              ? t("marketplace.redeemHintStore", { tienda: tiendaNombre })
-              : t("marketplace.redeemHint")}
+              ? t(
+                  CAMARA_DISPONIBLE
+                    ? "marketplace.redeemScanHintStore"
+                    : "marketplace.redeemHintStore",
+                  { tienda: tiendaNombre }
+                )
+              : t(
+                  CAMARA_DISPONIBLE
+                    ? "marketplace.redeemScanHint"
+                    : "marketplace.redeemHint"
+                )}
           </Text>
+
+          {CAMARA_DISPONIBLE && (
+            <Button
+              mode="contained-tonal"
+              icon="qrcode-scan"
+              onPress={() => setScanning(true)}
+              disabled={submitting}
+              style={styles.scan}
+              contentStyle={styles.submitContent}
+            >
+              {t("marketplace.scanAction")}
+            </Button>
+          )}
 
           <TextInput
             mode="outlined"
@@ -191,6 +246,13 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
           </Button>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <BarcodeScanSheet
+        visible={scanning}
+        onDismiss={() => setScanning(false)}
+        onScan={onScan}
+        title={t("marketplace.scanTitle")}
+      />
     </SafeAreaView>
   );
 };
@@ -234,6 +296,9 @@ const createStyles = (theme: CustomTheme) =>
     error: {
       color: theme.colors.error,
       textAlign: "center",
+    },
+    scan: {
+      marginTop: 12,
     },
     submit: {
       marginTop: 8,

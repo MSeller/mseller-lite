@@ -13,6 +13,10 @@ const CATALOG: NavSection[] = ["catalogCustomers", "catalogProducts"];
 /** Roles that may load a prepared route onto the truck from Preparación. */
 const LOADERS: UserType[] = ["office", "manager", "administrator", "superuser"];
 
+/** Buying from a supplier is a purchasing decision: the roles that run the business. */
+const PURCHASING: NavSection[] = ["marketplace"];
+const BUYERS: UserType[] = ["office", "manager", "administrator", "superuser"];
+
 /**
  * What every role was offered before the Catálogo tab existed — except inventory, which
  * has since lost Documentos: pickers only work Rutas (preparación) and Inventario.
@@ -47,6 +51,7 @@ describe("SECTIONS_BY_USER_TYPE", () => {
       ...PREVIOUS[type],
       ...(type === "administrator" || type === "superuser" ? CATALOG : []),
       ...(LOADERS.includes(type) ? (["truckLoading"] as NavSection[]) : []),
+      ...(BUYERS.includes(type) ? PURCHASING : []),
     ];
     expect([...SECTIONS_BY_USER_TYPE[type]].sort()).toEqual([...expected].sort());
   });
@@ -58,6 +63,14 @@ describe("SECTIONS_BY_USER_TYPE", () => {
   it.each<UserType>(["inventory", "driver", "seller", "accounting"])("does not let %s load the truck from Preparación", (type) => {
     expect(SECTIONS_BY_USER_TYPE[type]).not.toContain("truckLoading");
   });
+
+  // The rep sells the supplier's catalogue; they do not buy from it on the shop's behalf.
+  it.each<UserType>(["seller", "driver", "inventory", "accounting"])(
+    "does not offer the marketplace to %s",
+    (type) => {
+      expect(SECTIONS_BY_USER_TYPE[type]).not.toContain("marketplace");
+    }
+  );
 
   it("does not offer inventory Entregas, where routes are loaded and delivered", () => {
     expect(SECTIONS_BY_USER_TYPE.inventory).not.toContain("deliveries");

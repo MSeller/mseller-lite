@@ -37,6 +37,52 @@ export const normalizeInvitationCode = (raw: string): string =>
 export const isCompleteInvitationCode = (code: string): boolean =>
   code.length === INVITATION_CODE_LENGTH;
 
+/**
+ * The code carried by whatever the camera just read.
+ *
+ * The QR on the rep's phone encodes the invitation URL, never the bare code — a QR of the
+ * eight characters would only show the shop the same thing it can already read off the
+ * screen, so `mobile-seller` hides the QR entirely rather than draw that. The URL form is
+ * also what a shop with nothing installed yet scans with the native camera, which needs a
+ * page to land on.
+ *
+ * So the scanner has to accept both shapes: the URL, and a bare code in case one is ever
+ * put on a printed slip. The last path segment is the code
+ * (`https://mseller.app/i/HCGP5VTW`, and `/es/i/HCGP5VTW` once the site has redirected to
+ * a language).
+ *
+ * Extracting BEFORE normalising is the whole point: `normalizeInvitationCode` keeps only
+ * alphabet characters, so handing it a URL would silently distil the host and path into
+ * eight plausible-looking letters and submit a code the buyer never had.
+ *
+ * Returns "" when nothing code-shaped comes out, which the caller reports as an
+ * unreadable QR instead of sending it to the server.
+ */
+export const extractInvitationCode = (raw: string): string => {
+  const texto = raw.trim();
+  if (!texto) return "";
+
+  // A URL only when it says so. Matching on "/" alone would treat a bare code typed with a
+  // stray slash as a path and keep the wrong half.
+  const esUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(texto);
+  if (!esUrl) return normalizeInvitationCode(texto);
+
+  const sinFragmento = texto.split("#")[0].split("?")[0];
+  const segmentos = sinFragmento.split("/").filter(Boolean);
+  const ultimo = segmentos[segmentos.length - 1] ?? "";
+
+  // decodeURIComponent because the server builds the URL with Uri.EscapeDataString; it
+  // throws on a malformed escape, which a damaged QR can produce.
+  let candidato = ultimo;
+  try {
+    candidato = decodeURIComponent(ultimo);
+  } catch {
+    // Keep the raw segment: the alphabet filter drops whatever the escape left behind.
+  }
+
+  return normalizeInvitationCode(candidato);
+};
+
 // ── Idempotency ─────────────────────────────────────────────────────────────
 
 /**

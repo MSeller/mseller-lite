@@ -981,7 +981,11 @@
     },
     "redeemTitle": "Canjear código",
     "redeemHint": "Escribe el código de 8 caracteres que te dio el vendedor del suplidor.",
+    "scanAction": "Escanear QR",
+    "scanTitle": "Escanea el QR del vendedor",
+    "redeemScanHint": "Escanea el QR que te muestra el vendedor, o escribe el código de 8 caracteres.",
     "redeemHintStore": "Escribe el código de 8 caracteres que te dio el vendedor de {{tienda}}.",
+    "redeemScanHintStore": "Escanea el QR que te muestra el vendedor de {{tienda}}, o escribe el código de 8 caracteres.",
     "redeemAction": "Canjear",
     "codeLabel": "Código de invitación",
     "codeCounter": "{{typed}} de {{total}} caracteres",
@@ -1079,7 +1083,8 @@
       "submitFailed": "No pudimos enviar la solicitud. Revisa tu conexión e inténtalo de nuevo.",
       "requestsFailed": "No pudimos cargar tus solicitudes. Revisa tu conexión e inténtalo de nuevo.",
       "requestFailedLoad": "No pudimos cargar la solicitud. Revisa tu conexión e inténtalo de nuevo.",
-      "requestNotFound": "No encontramos esta solicitud."
+      "requestNotFound": "No encontramos esta solicitud.",
+      "unreadableQr": "Ese QR no es una invitación de MSeller. Escribe el código a mano."
     },
     "removeLine": "Quitar del carrito",
     "accessNotAllowed": "No tienes acceso al marketplace."
