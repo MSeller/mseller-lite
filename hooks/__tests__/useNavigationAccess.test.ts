@@ -13,9 +13,9 @@ const CATALOG: NavSection[] = ["catalogCustomers", "catalogProducts"];
 /** Roles that may load a prepared route onto the truck from Preparación. */
 const LOADERS: UserType[] = ["office", "manager", "administrator", "superuser"];
 
-/** Buying from a supplier is a purchasing decision: the roles that run the business. */
+/** Buying from a supplier commits the shop's money: office, administrator, superuser. */
 const PURCHASING: NavSection[] = ["marketplace"];
-const BUYERS: UserType[] = ["office", "manager", "administrator", "superuser"];
+const BUYERS: UserType[] = ["office", "administrator", "superuser"];
 
 /**
  * What every role was offered before the Catálogo tab existed — except inventory, which
@@ -65,10 +65,19 @@ describe("SECTIONS_BY_USER_TYPE", () => {
   });
 
   // The rep sells the supplier's catalogue; they do not buy from it on the shop's behalf.
-  it.each<UserType>(["seller", "driver", "inventory", "accounting"])(
+  // Manager is in this list on purpose: they run every operational module, so it is the
+  // one role whose exclusion a later refactor could undo without anything else failing.
+  it.each<UserType>(["seller", "driver", "inventory", "accounting", "manager"])(
     "does not offer the marketplace to %s",
     (type) => {
       expect(SECTIONS_BY_USER_TYPE[type]).not.toContain("marketplace");
+    }
+  );
+
+  it.each<UserType>(["office", "administrator", "superuser"])(
+    "offers the marketplace to %s",
+    (type) => {
+      expect(SECTIONS_BY_USER_TYPE[type]).toContain("marketplace");
     }
   );
 
