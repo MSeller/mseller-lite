@@ -8,26 +8,10 @@ import { IConfig } from "../types/user";
 export interface EnvironmentConfig {
   isLocalDevelopment: boolean;
   apiBaseURL?: string;
-
-  /**
-   * Portal API base URL in local development.
-   *
-   * The app talks to the Consumo API for everything except onboarding, which is the one
-   * Portal endpoint it calls. In production both live behind the business config's own
-   * hosts, but locally they are two processes on two ports — Consumo on 7173, Portal on
-   * 5186 — so collapsing them into a single base URL makes
-   * `POST /portal/onboarding/configure` land on Consumo, which has no such controller, and
-   * signup fails with a 404 that looks like a backend outage.
-   */
-  portalBaseURL?: string;
-
   mode: "local" | "production";
 }
 
 const DEFAULT_LOCAL_API_URL = "http://192.168.1.187:7173";
-
-/** Default local port of Portal.Api (see Portal.Api/Properties/launchSettings.json). */
-const DEFAULT_LOCAL_PORTAL_PORT = "5186";
 
 const isEmulatorEnabled = (): boolean =>
   process.env.NODE_ENV === "development" &&
@@ -96,28 +80,6 @@ const checkLocalDevelopment = (): boolean => {
   );
 };
 
-/**
- * Local Portal API URL: the Consumo host with the Portal port swapped in. Override the port
- * with EXPO_PUBLIC_LOCAL_PORTAL_PORT when Portal.Api runs somewhere else.
- */
-const getLocalPortalBaseUrl = (): string => {
-  const port =
-    process.env.EXPO_PUBLIC_LOCAL_PORTAL_PORT ||
-    process.env.LOCAL_PORTAL_PORT ||
-    DEFAULT_LOCAL_PORTAL_PORT;
-
-  const base = getLocalApiBaseUrl();
-
-  try {
-    const parsed = new URL(base);
-    parsed.port = port;
-
-    return parsed.toString().replace(/\/$/, "");
-  } catch {
-    return `http://localhost:${port}`;
-  }
-};
-
 // Get environment configuration
 export const getEnvironmentConfig = (): EnvironmentConfig => {
   const isLocalDevelopment = checkLocalDevelopment();
@@ -125,7 +87,6 @@ export const getEnvironmentConfig = (): EnvironmentConfig => {
   return {
     isLocalDevelopment,
     apiBaseURL: isLocalDevelopment ? getLocalApiBaseUrl() : undefined,
-    portalBaseURL: isLocalDevelopment ? getLocalPortalBaseUrl() : undefined,
     mode: isLocalDevelopment ? "local" : "production",
   };
 };
@@ -140,7 +101,6 @@ export const getEnvironmentConfigWithUser = (
     return {
       isLocalDevelopment: true,
       apiBaseURL: getLocalApiBaseUrl(),
-      portalBaseURL: getLocalPortalBaseUrl(),
       mode: "local",
     };
   }
