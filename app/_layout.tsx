@@ -23,6 +23,7 @@ import ErrorBoundary from "@/components/common/ErrorBoundary";
 import OnboardingScreen from "@/components/onboarding/OnboardingScreen";
 import { getTheme } from "@/constants/Theme";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { MarketplaceCartProvider } from "@/contexts/MarketplaceCartContext";
 import { PrinterProvider } from "@/contexts/PrinterContext";
 import { UserProvider, useUser } from "@/contexts/UserContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
@@ -108,6 +109,7 @@ function RootLayoutContent() {
         />
         <Stack.Screen name="entrega" options={{ headerShown: false }} />
         <Stack.Screen name="documentos" options={{ headerShown: false }} />
+        <Stack.Screen name="marketplace" options={{ headerShown: false }} />
         <Stack.Screen name="impresoras" options={{ headerShown: false }} />
         <Stack.Screen name="api-test" options={{ title: t("navigation.apiTest") }} />
         <Stack.Screen name="+not-found" />
@@ -183,8 +185,10 @@ export default function RootLayout() {
         <AuthProvider>
           <UserProvider>
             <PrinterProvider>
-              <RootLayoutContent />
-              <EnvironmentBadge />
+              <MarketplaceCartProvider>
+                <RootLayoutContent />
+                <EnvironmentBadge />
+              </MarketplaceCartProvider>
             </PrinterProvider>
           </UserProvider>
         </AuthProvider>

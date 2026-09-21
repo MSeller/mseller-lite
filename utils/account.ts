@@ -223,7 +223,7 @@ export const isOnboardingStepValid = (step: OnboardingStep, form: OnboardingForm
   }
 };
 
-/** Body of POST /portal/onboarding/configure (Portal API OnboardingConfigRequest). */
+/** Body of POST /consumo/onboarding/configure (OnboardingConfigRequest). */
 export const buildConfigurePayload = (form: OnboardingForm, preferredLanguage?: string) => {
   const isDominican = form.country === "DO";
   return {
