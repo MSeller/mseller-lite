@@ -129,6 +129,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="marketplace"
+        options={{
+          title: t("navigation.marketplace"),
+          tabBarAccessibilityLabel: t("navigation.marketplace"),
+          href: hideUnless(can("marketplace")),
+          tabBarIcon: icon("storefront.fill"),
+        }}
+      />
+      <Tabs.Screen
         name="more"
         options={{
           title: t("navigation.more"),

@@ -14,18 +14,26 @@ export type NavSection =
   /** Catálogo › Clientes: browse and edit the customer master. Administrators only. */
   | "catalogCustomers"
   /** Catálogo › Productos: browse and edit the product master. Administrators only. */
-  | "catalogProducts";
+  | "catalogProducts"
+  /**
+   * Marketplace B2B: browse supplier stores and send them purchase requests. Offered to
+   * the roles that buy for the business — a driver or a picker never places the order.
+   */
+  | "marketplace";
 
 type UserType = UserTypes["type"];
 
 /** Every operational module — what a manager sees. */
 const OPERATIONS: NavSection[] = ["documents", "picking", "truckLoading", "deliveries", "stockCount", "products"];
 
+/** Buying from a supplier is a purchasing decision: the roles that run the business. */
+const PURCHASING: NavSection[] = ["marketplace"];
+
 /**
  * Editing master data (customers, products) is an administrator job: the Consumo API
  * answers 403 to everyone else, so no other role is offered the Catálogo tab.
  */
-const ADMINISTRATION: NavSection[] = [...OPERATIONS, "catalogCustomers", "catalogProducts"];
+const ADMINISTRATION: NavSection[] = [...OPERATIONS, ...PURCHASING, "catalogCustomers", "catalogProducts"];
 
 /**
  * Which modules each user type is offered. This only shapes the menu — the Consumo
@@ -37,9 +45,9 @@ export const SECTIONS_BY_USER_TYPE: Readonly<Record<UserType, readonly NavSectio
   driver: ["deliveries", "products"],
   // Pickers work Rutas (preparación only — the driver loads the truck) and Inventario.
   inventory: ["picking", "stockCount", "products"],
-  office: ["documents", "picking", "truckLoading", "deliveries", "products"],
+  office: ["documents", "picking", "truckLoading", "deliveries", "products", "marketplace"],
   accounting: ["documents", "products"],
-  manager: OPERATIONS,
+  manager: [...OPERATIONS, ...PURCHASING],
   administrator: ADMINISTRATION,
   superuser: ADMINISTRATION,
 };

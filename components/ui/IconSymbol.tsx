@@ -20,6 +20,7 @@ const MAPPING = {
   "archivebox.fill": "inventory-2",
   "line.3.horizontal": "menu",
   "books.vertical.fill": "library-books",
+  "storefront.fill": "storefront",
 } as const;
 
 type IconSymbolName = keyof typeof MAPPING;
