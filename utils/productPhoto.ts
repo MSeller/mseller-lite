@@ -1,4 +1,4 @@
-import { replaceLocalhostWithEmulatorHost } from "../config/environment";
+import { remoteImageUrl } from "./remoteImage";
 import { toImageDataUri, uploadImages } from "../services/mediaService";
 import type { ProductPhoto } from "../types/documents";
 import { capturePhoto, type PhotoSource } from "./photoCapture";
@@ -28,9 +28,9 @@ export const productThumbnailUrl = (imagenes?: ImageRowLike[] | null): string | 
 
   const url = (orden.find((i) => i.tipoImagen === "thumbnail") ?? orden[0]).rutaPublica;
 
-  // Against the local Storage emulator the URL says 127.0.0.1, which on a device is the
-  // device itself. No effect on production URLs.
-  return url ? replaceLocalhostWithEmulatorHost(url) : null;
+  // Contra el emulador local de Storage la URL dice 127.0.0.1, que en un dispositivo es el
+  // propio dispositivo. Sin efecto sobre URLs de producción.
+  return remoteImageUrl(url);
 };
 
 export interface UploadedProductPhoto {

@@ -7,6 +7,7 @@ import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import type { ProductoCatalogo } from "../../types/b2b";
 import { formatMoney, formatQuantity, formatUnitWithFactor } from "../../utils/documentFormat";
+import { remoteImageUrl } from "../../utils/remoteImage";
 import AppCard from "../ui/AppCard";
 
 interface Props {
@@ -30,14 +31,15 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
   const { t } = useTranslation();
 
   const unitLabel = formatUnitWithFactor(producto.unidad, producto.factor);
+  const imagenUri = remoteImageUrl(producto.imagenUrl);
 
   return (
     <AppCard style={styles.card} onPress={onPress} contentStyle={styles.pressable}>
       <View>
         <View style={[styles.imageWrap, !producto.disponible && styles.imageWrapDimmed]}>
-          {producto.imagenUrl ? (
+          {imagenUri ? (
             <Image
-              source={{ uri: producto.imagenUrl }}
+              source={{ uri: imagenUri }}
               style={styles.image}
               contentFit="cover"
               transition={150}

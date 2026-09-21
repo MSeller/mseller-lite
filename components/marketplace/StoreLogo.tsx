@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { Text, useTheme } from "react-native-paper";
 
+import { remoteImageUrl } from "../../utils/remoteImage";
 import type { CustomTheme } from "../../constants/Theme";
 
 interface Props {
@@ -18,15 +19,16 @@ interface Props {
  * repeated down a list reads as a failure rather than as "no logo yet".
  */
 const StoreLogo: React.FC<Props> = ({ nombre, logoUrl, size = 52 }) => {
+  const uri = remoteImageUrl(logoUrl);
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const shape = { width: size, height: size, borderRadius: theme.custom.radius.sm };
 
-  if (logoUrl) {
+  if (uri) {
     return (
       <Image
-        source={{ uri: logoUrl }}
+        source={{ uri }}
         style={[styles.image, shape]}
         contentFit="cover"
         transition={150}

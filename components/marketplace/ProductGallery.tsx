@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Icon, useTheme } from "react-native-paper";
 
+import { remoteImageUrl } from "../../utils/remoteImage";
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 
@@ -30,7 +31,13 @@ interface Props {
  * Built on `FlatList` + `pagingEnabled` rather than a carousel package — no new native
  * dependency for what amounts to a paged horizontal list.
  */
-const ProductGallery: React.FC<Props> = ({ imagenes, horizontalPadding = 32 }) => {
+const ProductGallery: React.FC<Props> = ({ imagenes: imagenesCrudas, horizontalPadding = 32 }) => {
+  // Se normaliza UNA vez, arriba, para que las tres ramas (sin imagen, una, varias) usen la
+  // misma URL ya alcanzable desde el dispositivo.
+  const imagenes = useMemo(
+    () => imagenesCrudas.map(remoteImageUrl).filter((uri): uri is string => !!uri),
+    [imagenesCrudas]
+  );
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
