@@ -956,7 +956,11 @@
     },
     "redeemTitle": "Redeem code",
     "redeemHint": "Enter the 8-character code the supplier's rep gave you.",
+    "scanAction": "Scan QR",
+    "scanTitle": "Scan the rep's QR",
+    "redeemScanHint": "Scan the QR the rep shows you, or type the 8-character code.",
     "redeemHintStore": "Enter the 8-character code {{tienda}}'s rep gave you.",
+    "redeemScanHintStore": "Scan the QR {{tienda}}'s rep shows you, or type the 8-character code.",
     "redeemAction": "Redeem",
     "codeLabel": "Invitation code",
     "codeCounter": "{{typed}} of {{total}} characters",
@@ -1054,7 +1058,8 @@
       "submitFailed": "We couldn't send the request. Check your connection and try again.",
       "requestsFailed": "We couldn't load your requests. Check your connection and try again.",
       "requestFailedLoad": "We couldn't load the request. Check your connection and try again.",
-      "requestNotFound": "We couldn't find this request."
+      "requestNotFound": "We couldn't find this request.",
+      "unreadableQr": "That QR isn't an MSeller invitation. Type the code instead."
     },
     "removeLine": "Remove from cart",
     "accessNotAllowed": "You don't have access to the marketplace."

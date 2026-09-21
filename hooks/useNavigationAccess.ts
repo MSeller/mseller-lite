@@ -26,7 +26,11 @@ type UserType = UserTypes["type"];
 /** Every operational module — what a manager sees. */
 const OPERATIONS: NavSection[] = ["documents", "picking", "truckLoading", "deliveries", "stockCount", "products"];
 
-/** Buying from a supplier is a purchasing decision: the roles that run the business. */
+/**
+ * Buying from a supplier commits the shop's money, so it is offered only to office,
+ * administrator and superuser — not to manager, who runs operations but does not hold
+ * the purchasing decision.
+ */
 const PURCHASING: NavSection[] = ["marketplace"];
 
 /**
@@ -47,7 +51,8 @@ export const SECTIONS_BY_USER_TYPE: Readonly<Record<UserType, readonly NavSectio
   inventory: ["picking", "stockCount", "products"],
   office: ["documents", "picking", "truckLoading", "deliveries", "products", "marketplace"],
   accounting: ["documents", "products"],
-  manager: [...OPERATIONS, ...PURCHASING],
+  // Every operational module, but NOT the marketplace: purchasing is not theirs.
+  manager: OPERATIONS,
   administrator: ADMINISTRATION,
   superuser: ADMINISTRATION,
 };
