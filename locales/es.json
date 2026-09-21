@@ -1078,6 +1078,7 @@
       "requestsFailed": "No pudimos cargar tus solicitudes. Revisa tu conexión e inténtalo de nuevo.",
       "requestFailedLoad": "No pudimos cargar la solicitud. Revisa tu conexión e inténtalo de nuevo.",
       "requestNotFound": "No encontramos esta solicitud."
-    }
+    },
+    "removeLine": "Quitar del carrito"
   }
 }

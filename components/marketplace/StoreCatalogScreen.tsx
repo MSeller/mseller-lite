@@ -166,9 +166,13 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
       </View>
 
       {areas.length > 0 && (
+        // Sin `flexGrow: 0` el ScrollView horizontal se reparte el alto disponible dentro
+        // de la columna flex y acaba comprimido: los chips salían cortados por la mitad.
+        // El alto lo fija el contenido, no el padre.
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.areasRow}
           contentContainerStyle={styles.areas}
         >
           <Chip selected={area === null} onPress={() => setArea(null)} style={styles.areaChip}>
@@ -317,10 +321,16 @@ const createStyles = (theme: CustomTheme) =>
     searchInput: {
       minHeight: 48,
     },
+    areasRow: {
+      flexGrow: 0,
+      flexShrink: 0,
+    },
     areas: {
       paddingHorizontal: 16,
       paddingBottom: 12,
+      paddingTop: 4,
       gap: 8,
+      alignItems: "center",
     },
     areaChip: {
       backgroundColor: theme.colors.surface,

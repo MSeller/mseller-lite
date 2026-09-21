@@ -9,7 +9,7 @@ import { formatQuantity, parseNumericInput } from "../../utils/documentFormat";
 interface Props {
   value: number;
   onChange: (cantidad: number) => void;
-  /** Stepping below this removes the line instead; the cart passes 0, the detail 1. */
+  /** Stepping below this clamps instead of going lower. The cart passes 1. */
   min?: number;
   compact?: boolean;
 }
@@ -21,7 +21,7 @@ interface Props {
  * half-typed number is not rewritten under them; it re-syncs whenever the committed
  * value moves on its own (stepping, or the same product added again from the grid).
  */
-const QuantityStepper: React.FC<Props> = ({ value, onChange, min = 0, compact = false }) => {
+const QuantityStepper: React.FC<Props> = ({ value, onChange, min = 1, compact = false }) => {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme, compact), [theme, compact]);
   const { t } = useTranslation();
@@ -55,10 +55,17 @@ const QuantityStepper: React.FC<Props> = ({ value, onChange, min = 0, compact = 
 
   return (
     <View style={styles.row}>
+      {/*
+        El menos SIEMPRE resta. Antes se convertía en papelera al llegar a 1, y esa doble
+        identidad es justo lo que hacía imposible adivinar cómo quitar una línea con
+        cantidad 12: había que tocar doce veces hasta que el botón cambiara de significado.
+        Eliminar es ahora su propia acción, visible en la línea del carrito.
+      */}
       <IconButton
-        icon={value <= 1 && min === 0 ? "trash-can-outline" : "minus"}
+        icon="minus"
         mode="contained-tonal"
         size={compact ? 18 : 22}
+        disabled={value <= min}
         onPress={() => step(-1)}
         style={styles.button}
         accessibilityLabel={t("marketplace.decreaseQuantity")}

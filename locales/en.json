@@ -1053,6 +1053,7 @@
       "requestsFailed": "We couldn't load your requests. Check your connection and try again.",
       "requestFailedLoad": "We couldn't load the request. Check your connection and try again.",
       "requestNotFound": "We couldn't find this request."
-    }
+    },
+    "removeLine": "Remove from cart"
   }
 }

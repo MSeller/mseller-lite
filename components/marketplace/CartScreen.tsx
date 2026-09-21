@@ -1,7 +1,16 @@
 import { useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Divider, Icon, Text, TextInput, useTheme } from "react-native-paper";
+import {
+  Appbar,
+  Button,
+  Divider,
+  Icon,
+  IconButton,
+  Text,
+  TextInput,
+  useTheme,
+} from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -157,11 +166,30 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
                   </View>
                 )}
 
-                <QuantityStepper
-                  value={line.cantidad}
-                  onChange={(cantidad) => cart.setQuantity(line.codigoProducto, cantidad)}
-                  compact
-                />
+                {/*
+                  Cantidad y eliminar son acciones DISTINTAS y ambas visibles. Antes el
+                  menos se convertía en papelera al llegar a 1, así que quitar una línea con
+                  cantidad 12 exigía doce toques y adivinar que el botón terminaría
+                  cambiando de significado. Con la papelera siempre a la vista, quitar es
+                  un solo toque desde cualquier cantidad.
+                */}
+                <View style={styles.actionsRow}>
+                  <QuantityStepper
+                    value={line.cantidad}
+                    onChange={(cantidad) => cart.setQuantity(line.codigoProducto, cantidad)}
+                    compact
+                  />
+                  <IconButton
+                    icon="trash-can-outline"
+                    mode="contained-tonal"
+                    size={18}
+                    containerColor={theme.custom.status.negative.container}
+                    iconColor={theme.custom.status.negative.onContainer}
+                    style={styles.removeButton}
+                    onPress={() => cart.remove(line.codigoProducto)}
+                    accessibilityLabel={t("marketplace.removeLine")}
+                  />
+                </View>
               </View>
             </AppCard>
           ))}
@@ -259,6 +287,18 @@ const createStyles = (theme: CustomTheme) =>
     lineTotal: {
       color: theme.colors.onSurface,
       fontWeight: "700",
+    },
+    actionsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    removeButton: {
+      margin: 0,
+      width: 40,
+      height: 40,
+      borderRadius: 12,
     },
     warningRow: {
       flexDirection: "row",

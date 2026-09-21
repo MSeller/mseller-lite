@@ -34,7 +34,7 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
   return (
     <AppCard style={styles.card} onPress={onPress} contentStyle={styles.pressable}>
       <View>
-        <View style={styles.imageWrap}>
+        <View style={[styles.imageWrap, !producto.disponible && styles.imageWrapDimmed]}>
           {producto.imagenUrl ? (
             <Image
               source={{ uri: producto.imagenUrl }}
@@ -57,7 +57,7 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
           )}
 
           {!producto.disponible && (
-            <View style={styles.unavailableOverlay}>
+            <View style={[styles.badge, styles.unavailableBadge]}>
               <Text variant="labelSmall" style={styles.unavailableText}>
                 {t("marketplace.outOfStock")}
               </Text>
@@ -80,9 +80,11 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
             </Text>
             <View style={styles.addWrap}>
               {enCarrito > 0 && (
-                <Text variant="labelSmall" style={styles.inCart}>
-                  {formatQuantity(enCarrito)}
-                </Text>
+                <View style={styles.inCartPill}>
+                  <Text variant="labelMedium" style={styles.inCartText}>
+                    {formatQuantity(enCarrito)}
+                  </Text>
+                </View>
               )}
               <IconButton
                 icon="plus"
@@ -115,6 +117,9 @@ const createStyles = (theme: CustomTheme) =>
       borderTopRightRadius: theme.custom.radius.md,
       overflow: "hidden",
     },
+    imageWrapDimmed: {
+      opacity: 0.55,
+    },
     image: {
       width: "100%",
       height: "100%",
@@ -139,13 +144,12 @@ const createStyles = (theme: CustomTheme) =>
       color: theme.custom.status.warning.onContainer,
       fontWeight: "700",
     },
-    unavailableOverlay: {
-      position: "absolute",
-      left: 0,
-      right: 0,
-      bottom: 0,
-      paddingVertical: 4,
-      alignItems: "center",
+    unavailableBadge: {
+      // Arriba a la DERECHA, como una insignia más de la imagen. Antes era una franja a
+      // todo el ancho pegada al borde inferior, que se leía como un separador entre la
+      // foto y el nombre en vez de como un estado del producto.
+      left: undefined,
+      right: 8,
       backgroundColor: theme.custom.status.negative.container,
     },
     unavailableText: {
@@ -180,9 +184,20 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "center",
       gap: 2,
     },
-    inCart: {
-      color: theme.colors.primary,
-      fontWeight: "700",
+    inCartPill: {
+      // Relleno y con contraste: el número suelto junto al precio se leía como parte del
+      // precio, no como "ya llevas 2 de esto".
+      minWidth: 24,
+      height: 24,
+      paddingHorizontal: 6,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: theme.colors.primaryContainer,
+    },
+    inCartText: {
+      color: theme.colors.onPrimaryContainer,
+      fontWeight: "800",
     },
     addButton: {
       margin: 0,
