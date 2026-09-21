@@ -1026,7 +1026,7 @@
     "noRequestsTitle": "You haven't sent any requests",
     "noRequestsBody": "Requests you send to a supplier will show up here.",
     "noFilteredRequestsTitle": "No requests in this state",
-    "noFilteredRequestsBody": "None of your requests are in \u201c{{estado}}\u201d. Try another filter.",
+    "noFilteredRequestsBody": "None of your requests are in “{{estado}}”. Try another filter.",
     "requestCreatedTitle": "Request sent",
     "requestCreatedBody": "{{tienda}} will review it and confirm the quantities.",
     "supplierOrder": "Supplier order",
@@ -1056,6 +1056,7 @@
       "requestFailedLoad": "We couldn't load the request. Check your connection and try again.",
       "requestNotFound": "We couldn't find this request."
     },
-    "removeLine": "Remove from cart"
+    "removeLine": "Remove from cart",
+    "accessNotAllowed": "You don't have access to the marketplace."
   }
 }

@@ -52,7 +52,18 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
   const [comentario, setComentario] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const idempotencyKey = useRef(newIdempotencyKey());
+  // La clave de idempotencia va atada al CONTENIDO que se envía, no al montaje de la
+  // pantalla.
+  //
+  // Antes se generaba una vez y solo rotaba al acertar, así que tras un fallo el comprador
+  // podía cambiar cantidades, quitar líneas o editar el comentario y reintentar con la clave
+  // vieja: el servidor deduplica por clave y devolvía la solicitud ANTERIOR, descartando en
+  // silencio lo que acababa de editar. Reintentar lo mismo sigue siendo idempotente —misma
+  // huella, misma clave—; reintentar algo distinto es una solicitud distinta.
+  const idempotency = useRef<{ key: string; fingerprint: string }>({
+    key: newIdempotencyKey(),
+    fingerprint: "",
+  });
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
@@ -67,19 +78,35 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
     if (submitting || cart.isEmpty) return;
     setSubmitting(true);
     setError("");
+
+    const lineas = cart.lines.map((line) => ({
+      codigoProducto: line.codigoProducto,
+      cantidad: line.cantidad,
+    }));
+    const comentarioFinal = comentario.trim() || undefined;
+
+    // Huella estable del envío: se ordena por código para que reordenar el carrito sin
+    // cambiar nada no cuente como contenido distinto.
+    const fingerprint = JSON.stringify({
+      tiendaId,
+      comentario: comentarioFinal ?? "",
+      lineas: [...lineas].sort((a, b) => a.codigoProducto.localeCompare(b.codigoProducto)),
+    });
+
+    if (idempotency.current.fingerprint !== fingerprint) {
+      idempotency.current = { key: newIdempotencyKey(), fingerprint };
+    }
+
     try {
       const solicitud = await createPurchaseRequest({
         tiendaId,
-        lineas: cart.lines.map((line) => ({
-          codigoProducto: line.codigoProducto,
-          cantidad: line.cantidad,
-        })),
-        comentario: comentario.trim() || undefined,
-        idempotencyKey: idempotencyKey.current,
+        lineas,
+        comentario: comentarioFinal,
+        idempotencyKey: idempotency.current.key,
       });
 
       cart.clear();
-      idempotencyKey.current = newIdempotencyKey();
+      idempotency.current = { key: newIdempotencyKey(), fingerprint: "" };
       router.replace({
         pathname: "/marketplace/solicitudes/[noSolicitud]",
         params: { noSolicitud: solicitud.noSolicitud, creada: "1" },

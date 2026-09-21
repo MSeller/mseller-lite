@@ -68,8 +68,14 @@ const RequestDetailScreen: React.FC<Props> = ({ noSolicitud, justCreated = false
     else router.replace("/marketplace/solicitudes");
   };
 
+  // La comparación "pediste X → confirmado Y" solo tiene sentido una vez que el proveedor
+  // RESOLVIÓ la solicitud. Mientras sigue `enviada` nadie la ha tocado, así que una línea que
+  // llegue con cantidad confirmada 0 se mostraría como un recorte recién hecho —"Confirmado
+  // 0"— justo después de enviarla, cuando en realidad no se ha decidido nada todavía.
+  const resuelta = solicitud != null && solicitud.estado !== "enviada";
+
   const adjusted = (line: SolicitudLinea) =>
-    line.cantidadConfirmada !== line.cantidadSolicitada;
+    resuelta && line.cantidadConfirmada !== line.cantidadSolicitada;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>

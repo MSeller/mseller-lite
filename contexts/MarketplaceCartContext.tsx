@@ -1,6 +1,7 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import type { CarritoLinea, ProductoCatalogo } from "../types/b2b";
+import { useAuth } from "./AuthContext";
 import { round2 } from "../utils/documentFormat";
 
 interface MarketplaceCartValue {
@@ -45,10 +46,36 @@ const MarketplaceCartContext = createContext<MarketplaceCartValue | undefined>(u
  * The totals are a preview: the server prices the request and its answer is what the
  * supplier sees.
  */
+interface CartState {
+  tiendaId: string | null;
+  tiendaNombre: string;
+  lines: CarritoLinea[];
+}
+
+const EMPTY_CART: CartState = { tiendaId: null, tiendaNombre: "", lines: [] };
+
 export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tiendaId, setTiendaId] = useState<string | null>(null);
-  const [tiendaNombre, setTiendaNombre] = useState("");
-  const [lines, setLines] = useState<CarritoLinea[]>([]);
+  const { user } = useAuth();
+
+  // UN solo objeto de estado, no tres piezas sueltas.
+  //
+  // Con `tiendaId`, `tiendaNombre` y `lines` por separado podían desincronizarse de dos
+  // formas reales: `add` leía `tiendaId` del render, así que dos adiciones seguidas para una
+  // tienda nueva usaban ambas el valor viejo y la segunda descartaba la línea de la primera;
+  // y vaciar el carrito con `remove`/`setQuantity(0)` dejaba el id de la tienda anterior, de
+  // modo que añadir desde otra tienda abría el diálogo de cambio sobre un carrito vacío.
+  // Derivar todo del estado actual dentro del updater elimina las dos.
+  const [cart, setCart] = useState<CartState>(EMPTY_CART);
+
+  // Un carrito es de la SESIÓN, no de la app. El provider sigue montado al cerrar sesión
+  // —RootLayoutContent solo cambia a AuthScreen— así que sin esto las líneas sobrevivían y
+  // la siguiente cuenta que pudiera abrir la misma tienda las vería, y podría enviarlas.
+  useEffect(() => {
+    setCart(EMPTY_CART);
+  }, [user?.uid]);
+
+  // La tienda EFECTIVA: un carrito vacío no pertenece a ninguna.
+  const tiendaId = cart.lines.length > 0 ? cart.tiendaId : null;
 
   const belongsTo = useCallback(
     (candidate: string) => tiendaId === null || tiendaId === candidate,
@@ -64,77 +91,84 @@ export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = 
     ) => {
       if (cantidad <= 0) return;
 
-      setTiendaId(storeId);
-      setTiendaNombre(storeName);
-      setLines((current) => {
-        // A cart from another store cannot be sent with this one; adding here means
-        // "shop at this store now", so the previous basket goes.
-        const base = tiendaId === storeId ? current : [];
-        const existing = base.find((line) => line.codigoProducto === producto.codigo);
-        if (existing) {
-          return base.map((line) =>
-            line.codigoProducto === producto.codigo
-              ? { ...line, cantidad: round2(line.cantidad + cantidad) }
-              : line
-          );
-        }
+      setCart((current) => {
+        // Se compara contra el estado ACTUAL del updater, no contra el del render: es lo que
+        // hace correcta una segunda adición encolada antes de que React repinte.
+        const mismaTienda = current.lines.length > 0 && current.tiendaId === storeId;
 
-        return [
-          ...base,
-          {
-            codigoProducto: producto.codigo,
-            descripcion: producto.nombre || producto.codigo,
-            cantidad,
-            precio: producto.precio,
-            unidad: producto.unidad,
-            imagenUrl: producto.imagenUrl,
-            disponible: producto.disponible,
-          },
-        ];
+        // Un carrito de otra tienda no puede enviarse con este; añadir aquí significa
+        // "ahora compro en esta tienda", así que la cesta anterior se va.
+        const base = mismaTienda ? current.lines : [];
+        const existing = base.find((line) => line.codigoProducto === producto.codigo);
+
+        const lines = existing
+          ? base.map((line) =>
+              line.codigoProducto === producto.codigo
+                ? { ...line, cantidad: round2(line.cantidad + cantidad) }
+                : line
+            )
+          : [
+              ...base,
+              {
+                codigoProducto: producto.codigo,
+                descripcion: producto.nombre || producto.codigo,
+                cantidad,
+                precio: producto.precio,
+                unidad: producto.unidad,
+                imagenUrl: producto.imagenUrl,
+                disponible: producto.disponible,
+              },
+            ];
+
+        return { tiendaId: storeId, tiendaNombre: storeName, lines };
       });
     },
-    [tiendaId]
+    []
   );
 
   const setQuantity = useCallback((codigoProducto: string, cantidad: number) => {
-    setLines((current) => {
-      // Down to zero removes the line: it is what stepping "−" to nothing means, and a
-      // zero-quantity line is rejected server-side anyway.
-      const next =
+    setCart((current) => {
+      // Bajar a cero elimina la línea: es lo que significa pulsar "−" hasta nada, y una
+      // línea con cantidad cero la rechaza el servidor de todas formas.
+      const lines =
         cantidad <= 0
-          ? current.filter((line) => line.codigoProducto !== codigoProducto)
-          : current.map((line) =>
+          ? current.lines.filter((line) => line.codigoProducto !== codigoProducto)
+          : current.lines.map((line) =>
               line.codigoProducto === codigoProducto
                 ? { ...line, cantidad: round2(cantidad) }
                 : line
             );
-      return next;
+
+      return lines.length === 0 ? EMPTY_CART : { ...current, lines };
     });
   }, []);
 
   const remove = useCallback((codigoProducto: string) => {
-    setLines((current) => current.filter((line) => line.codigoProducto !== codigoProducto));
+    setCart((current) => {
+      const lines = current.lines.filter((line) => line.codigoProducto !== codigoProducto);
+
+      // Vaciar el carrito lo devuelve a "sin tienda": dejar el id puesto hacía que la
+      // siguiente adición desde otra tienda preguntara si se descarta un carrito inexistente.
+      return lines.length === 0 ? EMPTY_CART : { ...current, lines };
+    });
   }, []);
 
-  const clear = useCallback(() => {
-    setLines([]);
-    setTiendaId(null);
-    setTiendaNombre("");
-  }, []);
+  const clear = useCallback(() => setCart(EMPTY_CART), []);
 
   const quantityOf = useCallback(
     (codigoProducto: string) =>
-      lines.find((line) => line.codigoProducto === codigoProducto)?.cantidad ?? 0,
-    [lines]
+      cart.lines.find((line) => line.codigoProducto === codigoProducto)?.cantidad ?? 0,
+    [cart.lines]
   );
 
   const value = useMemo<MarketplaceCartValue>(() => {
+    const { lines } = cart;
     const itemCount = lines.reduce((sum, line) => round2(sum + line.cantidad), 0);
     const total = lines.reduce((sum, line) => round2(sum + round2(line.cantidad * line.precio)), 0);
 
     return {
-      tiendaId: lines.length > 0 ? tiendaId : null,
-      tiendaNombre,
+      tiendaId,
+      tiendaNombre: cart.tiendaNombre,
       lines,
       itemCount,
       total,
@@ -146,7 +180,7 @@ export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = 
       quantityOf,
       clear,
     };
-  }, [lines, tiendaId, tiendaNombre, belongsTo, add, setQuantity, remove, quantityOf, clear]);
+  }, [cart, tiendaId, belongsTo, add, setQuantity, remove, quantityOf, clear]);
 
   return (
     <MarketplaceCartContext.Provider value={value}>{children}</MarketplaceCartContext.Provider>

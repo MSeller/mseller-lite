@@ -1081,6 +1081,7 @@
       "requestFailedLoad": "No pudimos cargar la solicitud. Revisa tu conexión e inténtalo de nuevo.",
       "requestNotFound": "No encontramos esta solicitud."
     },
-    "removeLine": "Quitar del carrito"
+    "removeLine": "Quitar del carrito",
+    "accessNotAllowed": "No tienes acceso al marketplace."
   }
 }
