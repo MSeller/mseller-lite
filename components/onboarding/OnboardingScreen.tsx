@@ -148,13 +148,7 @@ const OnboardingScreen: React.FC = () => {
     setError("");
     try {
       if (!setupDone) {
-        await completeBusinessSetup(
-          user,
-          userProfile.business.config,
-          userProfile.testMode,
-          form,
-          currentLanguage,
-        );
+        await completeBusinessSetup(user, form, currentLanguage);
         setSetupDone(true);
       }
       // The reloaded profile says setup is done, which is what takes the user into the app.

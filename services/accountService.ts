@@ -7,9 +7,7 @@ import {
 } from "firebase/auth";
 import { httpsCallable } from "firebase/functions";
 
-import { getEnvironmentConfigWithUser } from "../config/environment";
 import { auth, functions } from "../config/firebase";
-import type { IConfig } from "../types/user";
 import {
   buildCompleteOnboardingPayload,
   buildConfigurePayload,
@@ -24,7 +22,7 @@ import { getGoogleCredential, signOutOfGoogle } from "./googleSignIn";
 
 /**
  * Self-service account lifecycle, on the same backend calls the portal (cloud.mseller.app)
- * uses: `addPortalBusiness` to sign up, POST /portal/onboarding/configure plus
+ * uses: `addPortalBusiness` to sign up, POST /consumo/onboarding/configure plus
  * `completeOnboarding` to set the business up, and `deleteBusinessById` to close it.
  */
 
@@ -72,19 +70,6 @@ export const signOutCompletely = async (): Promise<void> => {
   await Promise.all([signOut(auth), signOutOfGoogle()]);
 };
 
-/**
- * The Portal API host for this business. The app's REST client points at the Consumo API,
- * so onboarding (a Portal API endpoint) is addressed by absolute URL; the client's
- * interceptors still attach and refresh the Firebase token.
- */
-const getPortalBaseUrl = (config: IConfig, testMode?: boolean): string => {
-  const env = getEnvironmentConfigWithUser(config);
-  if (env.isLocalDevelopment && env.apiBaseURL) return env.apiBaseURL;
-  return config.testMode || testMode
-    ? `${config.portalSandboxUrl}:${config.portalSandboxPort}`
-    : `${config.portalServerUrl}:${config.portalServerPort}`;
-};
-
 interface ConfigureResponse {
   success: boolean;
   message?: string;
@@ -97,13 +82,19 @@ interface ConfigureResponse {
  */
 export const completeBusinessSetup = async (
   user: User,
-  config: IConfig,
-  testMode: boolean | undefined,
   form: OnboardingForm,
   preferredLanguage: string,
 ): Promise<void> => {
+  // Ruta RELATIVA contra la API de Consumo, que es la única con la que habla la app.
+  // Antes se construía una URL absoluta al host del Portal —era la única llamada al Portal
+  // de toda la app— y eso hacía que el alta dependiera de que la configuración del negocio
+  // trajera bien esa dirección. En local son dos procesos en dos puertos y el del Portal
+  // solo escucha en loopback, así que desde un teléfono era inalcanzable y el registro
+  // moría con un 404 que parece una caída del backend. El endpoint existe ahora también en
+  // Consumo, delegando en el MISMO servicio de onboarding, así que no hay dos caminos que
+  // puedan divergir.
   const { data } = await restClient.post<ConfigureResponse>(
-    `${getPortalBaseUrl(config, testMode)}/portal/onboarding/configure`,
+    "/consumo/onboarding/configure",
     buildConfigurePayload(form, preferredLanguage),
     // Seeding runs in one SQL transaction and can take a while on a cold tenant.
     { timeout: 120000 },
