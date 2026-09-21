@@ -1,7 +1,5 @@
 import {
   CargaResponse,
-  ConfirmarCargaBody,
-  ConfirmarCargaResponse,
   ConfirmarProductoRequest,
   ConsolidadoResponse,
   RutaPreparacion,
@@ -50,7 +48,10 @@ class PreparacionService {
     return response.data;
   }
 
-  /** M5 — Get truck loading view (LIFO order) */
+  /**
+   * M5 — Truck load status (LIFO order), read-only for the office. Answers 409
+   * ESPERANDO_FACTURACION until the invoices are assigned to the driver.
+   */
   async getCarga(rutaId: number): Promise<CargaResponse> {
     const response = await restClient.get<CargaResponse>(
       `${this.baseEndpoint}/${rutaId}/carga`
@@ -58,31 +59,7 @@ class PreparacionService {
     return response.data;
   }
 
-  /** M5 — Confirm one invoice is loaded. Pass itemsFaltantes to confirm-with-issue (report a shortage). */
-  async confirmarCarga(
-    rutaId: number,
-    rutaDetalleId: number,
-    body?: ConfirmarCargaBody
-  ): Promise<ConfirmarCargaResponse> {
-    const { data } = await restClient.post<ConfirmarCargaResponse>(
-      `${this.baseEndpoint}/${rutaId}/confirmar-carga/${rutaDetalleId}`,
-      body ?? undefined
-    );
-    return data;
-  }
-
-  /** Decline (hold back) one invoice at load time — excluded from this route. */
-  async rechazarCarga(
-    rutaId: number,
-    rutaDetalleId: number,
-    observacion?: string
-  ): Promise<ConfirmarCargaResponse> {
-    const { data } = await restClient.post<ConfirmarCargaResponse>(
-      `${this.baseEndpoint}/${rutaId}/rechazar-carga/${rutaDetalleId}`,
-      observacion ? { observacion } : undefined
-    );
-    return data;
-  }
+  // Confirming / declining a load is the driver's job (MSE-255): see entregaService.
 }
 
 export const preparacionService = new PreparacionService();

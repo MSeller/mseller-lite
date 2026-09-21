@@ -19,11 +19,13 @@ import {
 } from "react-native-paper";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
+import StatusChip from "../ui/StatusChip";
 import { preparacionService } from "../../services/preparacionService";
 import {
   RutaPreparacion,
   RutaPreparacionStatus,
 } from "../../types/preparacion";
+import { estadoFacturacion, facturacionChip } from "../../utils/routeLoading";
 
 const statusConfig: Record<
   RutaPreparacionStatus,
@@ -80,8 +82,8 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   }, [loadRutas]);
 
   const handleRutaPress = (ruta: RutaPreparacion) => {
-    // A prepared route opens on the truck load for those who load it; a picker, who does
-    // not, stays on the picking list. While the profile is still loading nothing is
+    // A prepared route opens on the (read-only) truck-load status for the office, who follow
+    // invoicing and the driver's load there (MSE-255); a picker stays on the picking list. While the profile is still loading nothing is
     // allowed yet, so the card waits rather than sending a loader to the wrong screen.
     if (accessLoading) return;
     if (ruta.status === "lista_despacho" && can("truckLoading")) {
@@ -118,13 +120,22 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
               >
                 {ruta.noRuta}
               </Text>
-              <Chip
-                style={{ backgroundColor: status.color }}
-                textStyle={{ color: "#FFF", fontSize: 11 }}
-                compact
-              >
-                {status.label}
-              </Chip>
+              {ruta.status === "lista_despacho" ? (
+                // Picked routes wait on the office: generate invoices, then assign them to the
+                // driver, who loads the truck (MSE-255).
+                <StatusChip
+                  label={t(facturacionChip[estadoFacturacion(ruta)].key)}
+                  tone={facturacionChip[estadoFacturacion(ruta)].tone}
+                />
+              ) : (
+                <Chip
+                  style={{ backgroundColor: status.color }}
+                  textStyle={{ color: "#FFF", fontSize: 11 }}
+                  compact
+                >
+                  {status.label}
+                </Chip>
+              )}
             </View>
 
             <View style={styles.cardMeta}>
