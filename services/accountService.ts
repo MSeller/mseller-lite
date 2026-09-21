@@ -76,10 +76,15 @@ export const signOutCompletely = async (): Promise<void> => {
  * The Portal API host for this business. The app's REST client points at the Consumo API,
  * so onboarding (a Portal API endpoint) is addressed by absolute URL; the client's
  * interceptors still attach and refresh the Firebase token.
+ *
+ * In LOCAL development the two APIs are two processes on two ports (Consumo 7173, Portal
+ * 5186), so this must not fall back to the Consumo base URL: that sends
+ * `POST /portal/onboarding/configure` to an API with no such controller and signup dies
+ * with a 404 that reads like a backend outage. `portalBaseURL` carries the Portal port.
  */
 const getPortalBaseUrl = (config: IConfig, testMode?: boolean): string => {
   const env = getEnvironmentConfigWithUser(config);
-  if (env.isLocalDevelopment && env.apiBaseURL) return env.apiBaseURL;
+  if (env.isLocalDevelopment && env.portalBaseURL) return env.portalBaseURL;
   return config.testMode || testMode
     ? `${config.portalSandboxUrl}:${config.portalSandboxPort}`
     : `${config.portalServerUrl}:${config.portalServerPort}`;
