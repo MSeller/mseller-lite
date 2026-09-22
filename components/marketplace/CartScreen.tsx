@@ -172,12 +172,15 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
                     </Text>
                     <Text variant="bodySmall" style={styles.meta} numberOfLines={1}>
                       {line.codigoProducto}
-                      {line.unidad ? ` · ${line.unidad}` : ""} · {formatMoney(line.precio)}
+                      {line.unidad ? ` · ${line.unidad}` : ""}
+                      {cart.hidePrices ? "" : ` · ${formatMoney(line.precio)}`}
                     </Text>
                   </View>
-                  <Text variant="titleMedium" style={styles.lineTotal}>
-                    {formatMoney(line.cantidad * line.precio)}
-                  </Text>
+                  {!cart.hidePrices && (
+                    <Text variant="titleMedium" style={styles.lineTotal}>
+                      {formatMoney(line.cantidad * line.precio)}
+                    </Text>
+                  )}
                 </View>
 
                 {!line.disponible && (
@@ -243,13 +246,19 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             <Text variant="bodyMedium" style={styles.meta}>
               {t("marketplace.itemsCount", { value: formatQuantity(cart.itemCount) })}
             </Text>
-            <Text variant="titleLarge" style={styles.total}>
-              {formatMoney(cart.total)}
-            </Text>
+            {cart.hidePrices ? (
+              <Text variant="bodyMedium" style={styles.total}>
+                {t("marketplace.priceHiddenLabel")}
+              </Text>
+            ) : (
+              <Text variant="titleLarge" style={styles.total}>
+                {formatMoney(cart.total)}
+              </Text>
+            )}
           </View>
           <Divider style={styles.divider} />
           <Text variant="bodySmall" style={styles.disclaimer}>
-            {t("marketplace.totalsDisclaimer")}
+            {cart.hidePrices ? t("marketplace.priceHiddenNote") : t("marketplace.totalsDisclaimer")}
           </Text>
           <Button
             mode="contained"

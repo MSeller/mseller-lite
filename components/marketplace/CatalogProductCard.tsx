@@ -77,9 +77,15 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
           </Text>
 
           <View style={styles.priceRow}>
-            <Text variant="titleMedium" style={styles.price}>
-              {formatMoney(producto.precio)}
-            </Text>
+            {producto.precioOculto ? (
+              <Text variant="bodySmall" style={styles.priceHidden} numberOfLines={2}>
+                {t("marketplace.priceHiddenLabel")}
+              </Text>
+            ) : (
+              <Text variant="titleMedium" style={styles.price}>
+                {formatMoney(producto.precio ?? 0)}
+              </Text>
+            )}
             <View style={styles.addWrap}>
               {enCarrito > 0 && (
                 <View style={styles.inCartPill}>
@@ -88,13 +94,22 @@ const CatalogProductCard: React.FC<Props> = ({ producto, enCarrito, onPress, onA
                   </Text>
                 </View>
               )}
+              {/*
+                Tapping this when the buyer has no active link still calls `onAdd` — the
+                screen decides what that means (prompt to redeem a code / request access)
+                instead of silently queueing an order it cannot send.
+              */}
               <IconButton
-                icon="plus"
+                icon={producto.tieneVinculoActivo ? "plus" : "lock-outline"}
                 mode="contained"
                 size={18}
                 onPress={onAdd}
                 style={styles.addButton}
-                accessibilityLabel={t("marketplace.addToCart")}
+                accessibilityLabel={
+                  producto.tieneVinculoActivo
+                    ? t("marketplace.addToCart")
+                    : t("marketplace.linkRequiredTitle")
+                }
               />
             </View>
           </View>
@@ -179,6 +194,11 @@ const createStyles = (theme: CustomTheme) =>
     price: {
       color: theme.colors.onSurface,
       fontWeight: "700",
+      flexShrink: 1,
+    },
+    priceHidden: {
+      color: theme.colors.onSurfaceVariant,
+      fontStyle: "italic",
       flexShrink: 1,
     },
     addWrap: {

@@ -47,6 +47,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
   const [error, setError] = useState("");
   const [cantidad, setCantidad] = useState(1);
   const [switchStoreVisible, setSwitchStoreVisible] = useState(false);
+  const [accessPromptVisible, setAccessPromptVisible] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,6 +72,10 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
 
   const addToCart = () => {
     if (!producto) return;
+    if (!producto.tieneVinculoActivo) {
+      setAccessPromptVisible(true);
+      return;
+    }
     if (!cart.belongsTo(tiendaId)) {
       setSwitchStoreVisible(true);
       return;
@@ -143,10 +148,21 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
                   <Text variant="bodyMedium" style={styles.meta}>
                     {t("marketplace.price")}
                   </Text>
-                  <Text variant="headlineSmall" style={styles.price}>
-                    {formatMoney(producto.precio)}
-                  </Text>
+                  {producto.precioOculto ? (
+                    <Text variant="bodyMedium" style={styles.priceHiddenValue}>
+                      {t("marketplace.priceHiddenLabel")}
+                    </Text>
+                  ) : (
+                    <Text variant="headlineSmall" style={styles.price}>
+                      {formatMoney(producto.precio ?? 0)}
+                    </Text>
+                  )}
                 </View>
+                {producto.precioOculto && (
+                  <Text variant="bodySmall" style={styles.meta}>
+                    {t("marketplace.priceHiddenNote")}
+                  </Text>
+                )}
                 {producto.impuesto > 0 && (
                   <>
                     <Divider />
@@ -193,14 +209,18 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
             <QuantityStepper value={cantidad} onChange={setCantidad} min={1} />
             <Button
               mode="contained"
-              icon="cart-plus"
+              icon={producto.tieneVinculoActivo ? "cart-plus" : "lock-outline"}
               onPress={addToCart}
               style={styles.addButton}
               contentStyle={styles.addButtonContent}
             >
-              {t("marketplace.addWithTotal", {
-                total: formatMoney(cantidad * producto.precio),
-              })}
+              {producto.tieneVinculoActivo
+                ? producto.precioOculto
+                  ? t("marketplace.addToCart")
+                  : t("marketplace.addWithTotal", {
+                      total: formatMoney(cantidad * (producto.precio ?? 0)),
+                    })
+                : t("marketplace.linkRequiredTitle")}
             </Button>
           </View>
         </>
@@ -225,6 +245,33 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
               }}
             >
               {t("marketplace.switchStoreConfirm")}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog visible={accessPromptVisible} onDismiss={() => setAccessPromptVisible(false)}>
+          <Dialog.Title>{t("marketplace.linkRequiredTitle")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{t("marketplace.linkRequiredBody")}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setAccessPromptVisible(false)}>{t("common.cancel")}</Button>
+            <Button
+              onPress={() => {
+                setAccessPromptVisible(false);
+                router.push({ pathname: "/marketplace/solicitar", params: { tiendaId, nombre: tiendaNombre } });
+              }}
+            >
+              {t("marketplace.requestAccess")}
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setAccessPromptVisible(false);
+                router.push({ pathname: "/marketplace/canjear", params: { tiendaId, nombre: tiendaNombre } });
+              }}
+            >
+              {t("marketplace.redeemCode")}
             </Button>
           </Dialog.Actions>
         </Dialog>
@@ -281,6 +328,10 @@ const createStyles = (theme: CustomTheme) =>
     price: {
       color: theme.colors.onSurface,
       fontWeight: "700",
+    },
+    priceHiddenValue: {
+      color: theme.colors.onSurfaceVariant,
+      fontStyle: "italic",
     },
     value: {
       color: theme.colors.onSurface,

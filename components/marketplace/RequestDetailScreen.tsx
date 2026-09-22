@@ -209,12 +209,15 @@ const RequestDetailScreen: React.FC<Props> = ({ noSolicitud, justCreated = false
                       </Text>
                       <Text variant="bodySmall" style={styles.meta} numberOfLines={1}>
                         {line.codigoProducto}
-                        {line.unidad ? ` · ${line.unidad}` : ""} · {formatMoney(line.precio)}
+                        {line.unidad ? ` · ${line.unidad}` : ""}
+                        {solicitud.precioOculto ? "" : ` · ${formatMoney(line.precio ?? 0)}`}
                       </Text>
                     </View>
-                    <Text variant="titleMedium" style={styles.lineTotal}>
-                      {formatMoney(line.importe)}
-                    </Text>
+                    {!solicitud.precioOculto && (
+                      <Text variant="titleMedium" style={styles.lineTotal}>
+                        {formatMoney(line.importe ?? 0)}
+                      </Text>
+                    )}
                   </View>
 
                   {adjusted(line) ? (
@@ -258,10 +261,21 @@ const RequestDetailScreen: React.FC<Props> = ({ noSolicitud, justCreated = false
               <Text variant="bodyMedium" style={styles.meta}>
                 {t("marketplace.total")}
               </Text>
-              <Text variant="titleLarge" style={styles.total}>
-                {formatMoney(solicitud.total)}
-              </Text>
+              {solicitud.precioOculto ? (
+                <Text variant="bodyMedium" style={styles.total}>
+                  {t("marketplace.priceHiddenLabel")}
+                </Text>
+              ) : (
+                <Text variant="titleLarge" style={styles.total}>
+                  {formatMoney(solicitud.total ?? 0)}
+                </Text>
+              )}
             </View>
+            {solicitud.precioOculto && (
+              <Text variant="bodySmall" style={[styles.meta, styles.priceHiddenNote]}>
+                {t("marketplace.priceHiddenNote")}
+              </Text>
+            )}
           </AppCard>
         </ScrollView>
       )}
@@ -407,6 +421,10 @@ const createStyles = (theme: CustomTheme) =>
     total: {
       color: theme.colors.onSurface,
       fontWeight: "700",
+    },
+    priceHiddenNote: {
+      paddingHorizontal: 16,
+      paddingBottom: 12,
     },
   });
 

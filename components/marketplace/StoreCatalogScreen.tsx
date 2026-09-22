@@ -56,6 +56,11 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
   const [sellerVisible, setSellerVisible] = useState(false);
   /** The product waiting on "your cart belongs to another store" being answered. */
   const [pendingProduct, setPendingProduct] = useState<ProductoCatalogo | null>(null);
+  /**
+   * Whether the buyer tried to add something while browsing without an active link.
+   * The catalogue itself never needs this — only trying to order does.
+   */
+  const [accessPromptVisible, setAccessPromptVisible] = useState(false);
 
   const seller = useSellerContact(tiendaId);
 
@@ -95,6 +100,13 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
   const add = useCallback(
     (producto: ProductoCatalogo) => {
+      // The catalogue is browsable without a link, but placing an order still isn't —
+      // sending the request would 404 server-side anyway, so this is caught here instead
+      // of letting the buyer fill a cart they can never check out.
+      if (!producto.tieneVinculoActivo) {
+        setAccessPromptVisible(true);
+        return;
+      }
       // One cart, one supplier: a purchase request goes to a single store, so shopping
       // elsewhere has to be confirmed rather than silently dropping what is in the cart.
       if (!cart.belongsTo(tiendaId)) {
@@ -260,10 +272,12 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
               })
             }
           >
-            {t("marketplace.viewCart", {
-              value: formatQuantity(cart.itemCount),
-              total: formatMoney(cart.total),
-            })}
+            {cart.hidePrices
+              ? t("marketplace.viewCartNoTotal", { value: formatQuantity(cart.itemCount) })
+              : t("marketplace.viewCart", {
+                  value: formatQuantity(cart.itemCount),
+                  total: formatMoney(cart.total),
+                })}
           </Button>
         </View>
       )}
@@ -292,6 +306,44 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
               }}
             >
               {t("marketplace.switchStoreConfirm")}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        {/*
+          Reached by tapping "add" on a product while browsing without an active link.
+          The catalogue stays open behind it — this only blocks starting an order, not
+          looking around.
+        */}
+        <Dialog visible={accessPromptVisible} onDismiss={() => setAccessPromptVisible(false)}>
+          <Dialog.Title>{t("marketplace.linkRequiredTitle")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{t("marketplace.linkRequiredBody")}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setAccessPromptVisible(false)}>{t("common.cancel")}</Button>
+            <Button
+              onPress={() => {
+                setAccessPromptVisible(false);
+                router.push({
+                  pathname: "/marketplace/solicitar",
+                  params: { tiendaId, nombre: tiendaNombre },
+                });
+              }}
+            >
+              {t("marketplace.requestAccess")}
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setAccessPromptVisible(false);
+                router.push({
+                  pathname: "/marketplace/canjear",
+                  params: { tiendaId, nombre: tiendaNombre },
+                });
+              }}
+            >
+              {t("marketplace.redeemCode")}
             </Button>
           </Dialog.Actions>
         </Dialog>
