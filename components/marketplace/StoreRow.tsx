@@ -21,12 +21,14 @@ interface Props {
 /**
  * One supplier in the directory.
  *
- * The catalogue can be BROWSED regardless of link state — a published store's window is
- * open to any buyer in its country, so the row always opens it. What the link still
- * decides is whether there is anything else to do here: an active link needs no further
- * action (the buyer already orders from inside the catalogue), a pending one can only be
- * waited on, and no link at all offers the two ways in — the code the rep handed over, or
- * asking the store for access — for when the buyer decides they want to order.
+ * Whether the catalogue can be BROWSED without an active link depends on the store's own
+ * `permiteExploracionSinVinculo` toggle — "open" stores work like before (any buyer in the
+ * store's country can look before linking), "restricted" ones only open the catalogue for a
+ * buyer with an active link. What the link status decides on top of that is whether there is
+ * anything else to do here: an active link needs no further action (the buyer already orders
+ * from inside the catalogue, and always browses regardless of the toggle), a pending one can
+ * only be waited on, and no link at all offers the two ways in — the code the rep handed
+ * over, or asking the store for access — for when the buyer decides they want to order.
  */
 const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
   const theme = useTheme() as CustomTheme;
@@ -35,6 +37,9 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
 
   const estado = tienda.estadoVinculo ?? null;
   const active = estado === "activa";
+  // An active link always gets in, regardless of the store's toggle — see the doc comment
+  // above. Without one, browsing follows the store's own choice.
+  const canBrowse = active || tienda.permiteExploracionSinVinculo;
 
   const subtitle = [
     tienda.categoria,
@@ -46,7 +51,7 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
     .join(" · ");
 
   return (
-    <AppCard onPress={onOpen}>
+    <AppCard onPress={canBrowse ? onOpen : undefined}>
       <View style={styles.content}>
         <View style={styles.header}>
           <StoreLogo nombre={tienda.nombre} logoUrl={tienda.logoUrl} />
@@ -71,8 +76,17 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
                 {tienda.descripcion}
               </Text>
             )}
+            {/* Restricted + not linked yet: say so up front, instead of letting the buyer
+                discover it only after tapping in and finding nothing works there. */}
+            {!canBrowse && (
+              <Text variant="bodySmall" style={styles.restricted} numberOfLines={2}>
+                {t("marketplace.restrictedCatalogNotice")}
+              </Text>
+            )}
           </View>
-          <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />
+          {canBrowse && (
+            <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />
+          )}
         </View>
 
         <View style={styles.actions}>
@@ -83,15 +97,24 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
               {t("marketplace.openCatalog")}
             </Button>
           ) : estado === "pendiente" ? (
-            // Nothing for the buyer to do until the supplier's rep approves, but browsing
-            // is still open — the button just cannot start an order.
-            <Button mode="text" compact onPress={onOpen}>
-              {t("marketplace.awaitingApproval")}
-            </Button>
+            canBrowse ? (
+              // Nothing for the buyer to do until the supplier's rep approves, but
+              // browsing is still open — the button just cannot start an order.
+              <Button mode="text" compact onPress={onOpen}>
+                {t("marketplace.awaitingApproval")}
+              </Button>
+            ) : (
+              // Restricted store: nothing to do but wait, and nothing to browse either.
+              <Text variant="bodySmall" style={styles.subtitle}>
+                {t("marketplace.awaitingApproval")}
+              </Text>
+            )
           ) : estado === "bloqueada" ? (
-            <Button mode="text" compact onPress={onOpen}>
-              {t("marketplace.openCatalog")}
-            </Button>
+            canBrowse ? (
+              <Button mode="text" compact onPress={onOpen}>
+                {t("marketplace.openCatalog")}
+              </Button>
+            ) : null
           ) : (
             <View style={styles.buttonRow}>
               <Button mode="text" compact onPress={onRedeem}>
@@ -140,6 +163,10 @@ const createStyles = (theme: CustomTheme) =>
     },
     description: {
       color: theme.colors.onSurfaceVariant,
+    },
+    restricted: {
+      color: theme.colors.onSurfaceVariant,
+      fontStyle: "italic",
     },
     actions: {
       flexDirection: "row",

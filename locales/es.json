@@ -1036,6 +1036,7 @@
     "priceHiddenNote": "Este suplidor muestra el precio y el total en cuanto tu solicitud se acepta.",
     "linkRequiredTitle": "Vincúlate con esta tienda para pedir",
     "linkRequiredBody": "Puedes explorar el catálogo libremente. Para hacer un pedido, canjea un código del vendedor de la tienda o solicita acceso.",
+    "restrictedCatalogNotice": "Catálogo restringido. Canjea un código o solicita acceso para verlo.",
     "tax": "Impuesto",
     "area": "Categoría",
     "quantity": "Cantidad",
