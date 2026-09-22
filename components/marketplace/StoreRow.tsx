@@ -38,8 +38,10 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
   const estado = tienda.estadoVinculo ?? null;
   const active = estado === "activa";
   // An active link always gets in, regardless of the store's toggle — see the doc comment
-  // above. Without one, browsing follows the store's own choice.
-  const canBrowse = active || tienda.permiteExploracionSinVinculo;
+  // above. Without one, browsing follows the store's own choice — checked against `false`
+  // specifically, not truthiness, so a response that omits the field (rollout ordering, a
+  // legacy payload) reads as "open" like the backend's own default, not as restricted.
+  const canBrowse = active || tienda.permiteExploracionSinVinculo !== false;
 
   const subtitle = [
     tienda.categoria,

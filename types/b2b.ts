@@ -39,8 +39,13 @@ export interface TiendaMarketplace {
    * "open" mode: the catalog is visible before linking. `false` is "restricted": the app
    * should go straight to "redeem a code" / "request access" instead of opening a catalog
    * that would just 404. A buyer with an ACTIVE link can always browse, regardless of this.
+   *
+   * Optional, not just nullable: the paired backend field can still be absent from a
+   * response (rollout ordering, a cached/legacy payload). Missing must read as "open" —
+   * the backend's own default — never as restricted, so callers check
+   * `permiteExploracionSinVinculo !== false`, not truthiness.
    */
-  permiteExploracionSinVinculo: boolean;
+  permiteExploracionSinVinculo?: boolean;
 }
 
 export interface VinculoB2B {
