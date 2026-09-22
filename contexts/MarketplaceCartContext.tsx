@@ -13,6 +13,12 @@ interface MarketplaceCartValue {
   itemCount: number;
   /** Running total at catalogue prices. The server prices the request when it lands. */
   total: number;
+  /**
+   * True when this store hides price/total from the buyer until a request is accepted.
+   * All lines in a cart share it — a cart is single-store and the preference is resolved
+   * per store/link, never per product — so screens read it once instead of per line.
+   */
+  hidePrices: boolean;
   isEmpty: boolean;
   /** True when the cart is empty or already belongs to this store. */
   belongsTo: (tiendaId: string) => boolean;
@@ -113,7 +119,8 @@ export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = 
                 codigoProducto: producto.codigo,
                 descripcion: producto.nombre || producto.codigo,
                 cantidad,
-                precio: producto.precio,
+                precio: producto.precio ?? 0,
+                precioOculto: producto.precioOculto,
                 unidad: producto.unidad,
                 imagenUrl: producto.imagenUrl,
                 disponible: producto.disponible,
@@ -165,6 +172,7 @@ export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = 
     const { lines } = cart;
     const itemCount = lines.reduce((sum, line) => round2(sum + line.cantidad), 0);
     const total = lines.reduce((sum, line) => round2(sum + round2(line.cantidad * line.precio)), 0);
+    const hidePrices = lines.some((line) => line.precioOculto);
 
     return {
       tiendaId,
@@ -172,6 +180,7 @@ export const MarketplaceCartProvider: React.FC<{ children: React.ReactNode }> = 
       lines,
       itemCount,
       total,
+      hidePrices,
       isEmpty: lines.length === 0,
       belongsTo,
       add,

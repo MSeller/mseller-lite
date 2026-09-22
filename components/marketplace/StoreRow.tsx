@@ -21,10 +21,12 @@ interface Props {
 /**
  * One supplier in the directory.
  *
- * The row is shaped by the link this buyer has with the store, because that is the only
- * thing that decides what they can do next: an active link opens the catalogue, a
- * pending one can only be waited on, and no link at all offers the two ways in — the
- * code the rep handed over, or asking the store for access.
+ * The catalogue can be BROWSED regardless of link state — a published store's window is
+ * open to any buyer in its country, so the row always opens it. What the link still
+ * decides is whether there is anything else to do here: an active link needs no further
+ * action (the buyer already orders from inside the catalogue), a pending one can only be
+ * waited on, and no link at all offers the two ways in — the code the rep handed over, or
+ * asking the store for access — for when the buyer decides they want to order.
  */
 const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
   const theme = useTheme() as CustomTheme;
@@ -44,7 +46,7 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
     .join(" · ");
 
   return (
-    <AppCard onPress={active ? onOpen : undefined}>
+    <AppCard onPress={onOpen}>
       <View style={styles.content}>
         <View style={styles.header}>
           <StoreLogo nombre={tienda.nombre} logoUrl={tienda.logoUrl} />
@@ -52,6 +54,13 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
             <Text variant="titleSmall" style={styles.name} numberOfLines={2}>
               {tienda.nombre}
             </Text>
+            {/* The one line that decides whether a browsing buyer stops to look, before
+                they've opened anything. Separate from `descripcion`, which is longer. */}
+            {!!tienda.eslogan && (
+              <Text variant="bodySmall" style={styles.eslogan} numberOfLines={2}>
+                {tienda.eslogan}
+              </Text>
+            )}
             {!!subtitle && (
               <Text variant="bodySmall" style={styles.subtitle} numberOfLines={1}>
                 {subtitle}
@@ -63,7 +72,7 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
               </Text>
             )}
           </View>
-          {active && <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />}
+          <Icon source="chevron-right" size={24} color={theme.colors.onSurfaceVariant} />
         </View>
 
         <View style={styles.actions}>
@@ -74,12 +83,16 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
               {t("marketplace.openCatalog")}
             </Button>
           ) : estado === "pendiente" ? (
-            // Nothing for the buyer to do until the supplier's rep approves: the button
-            // stays visible so the row does not look broken, but it cannot be pressed.
-            <Button mode="text" compact disabled onPress={() => undefined}>
+            // Nothing for the buyer to do until the supplier's rep approves, but browsing
+            // is still open — the button just cannot start an order.
+            <Button mode="text" compact onPress={onOpen}>
               {t("marketplace.awaitingApproval")}
             </Button>
-          ) : estado === "bloqueada" ? null : (
+          ) : estado === "bloqueada" ? (
+            <Button mode="text" compact onPress={onOpen}>
+              {t("marketplace.openCatalog")}
+            </Button>
+          ) : (
             <View style={styles.buttonRow}>
               <Button mode="text" compact onPress={onRedeem}>
                 {t("marketplace.redeemCode")}
@@ -117,6 +130,10 @@ const createStyles = (theme: CustomTheme) =>
     name: {
       color: theme.colors.onSurface,
       fontWeight: "700",
+    },
+    eslogan: {
+      color: theme.colors.onSurfaceVariant,
+      fontStyle: "italic",
     },
     subtitle: {
       color: theme.colors.onSurfaceVariant,

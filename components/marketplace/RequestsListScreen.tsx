@@ -84,7 +84,7 @@ const RequestsListScreen: React.FC = () => {
                 {item.noSolicitud}
               </Text>
               <Text variant="titleMedium" style={styles.total} numberOfLines={1}>
-                {formatMoney(item.total)}
+                {item.precioOculto ? t("marketplace.priceHiddenLabel") : formatMoney(item.total ?? 0)}
               </Text>
             </View>
 

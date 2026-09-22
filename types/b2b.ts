@@ -27,6 +27,8 @@ export interface TiendaMarketplace {
   id: string;
   nombre: string;
   descripcion?: string;
+  /** Short tagline shown on the store's card, next to the name. */
+  eslogan?: string;
   logoUrl?: string;
   categoria?: string;
   minimoPedido?: number;
@@ -60,7 +62,12 @@ export interface SolicitarVinculoRequest {
 
 // ── Catalogue ───────────────────────────────────────────────────────────────
 
-/** A catalogue row. One price, already resolved server-side for this buyer. */
+/**
+ * A catalogue row. One price, already resolved server-side for this buyer — when the
+ * buyer isn't linked to the store yet, this is still visible: browsing a published
+ * store's catalogue never requires a code or a pending request, only PLACING an order
+ * does (see `tieneVinculoActivo`).
+ */
 export interface ProductoCatalogo {
   codigo: string;
   nombre?: string;
@@ -71,11 +78,24 @@ export interface ProductoCatalogo {
   factor: number;
   impuesto: number;
   promocion: boolean;
-  precio: number;
+  /** `null` when `precioOculto` is `true` — not a product with no price loaded. */
+  precio: number | null;
+  /**
+   * `true` means the store (or this buyer's own link) chose not to reveal price/total
+   * until a request is accepted. Render "Price shown after your order is placed"
+   * instead of a blank amount or RD$0.00.
+   */
+  precioOculto: boolean;
   /** Coarse in/out of stock. NEVER a quantity — the store does not publish its stock. */
   disponible: boolean;
   /** Thumbnail for the grid. */
   imagenUrl?: string;
+  /**
+   * Whether this buyer has an ACTIVE link with the store. The catalogue can be explored
+   * without one, but sending a purchase request still needs it — screens use this flag
+   * to show "redeem a code" / "request access" instead of the add-to-cart action.
+   */
+  tieneVinculoActivo: boolean;
 }
 
 /** The same product with its full gallery; the list may be empty or hold a single image. */
@@ -102,8 +122,9 @@ export interface SolicitudLinea {
   cantidadSolicitada: number;
   /** What the supplier confirmed — may be lower, or zero. */
   cantidadConfirmada: number;
-  precio: number;
-  importe: number;
+  /** `null` while `SolicitudB2B.precioOculto` is `true` and the request is still pending. */
+  precio: number | null;
+  importe: number | null;
   unidad?: string;
 }
 
@@ -114,7 +135,13 @@ export interface SolicitudB2B {
   tiendaId: string;
   tiendaNombre: string;
   estado: EstadoSolicitud;
-  total: number;
+  /**
+   * `null` while `precioOculto` is `true` and the request hasn't been accepted yet —
+   * shown as soon as it is, since the real order exists by then anyway.
+   */
+  total: number | null;
+  /** `true` when this store/link hides price from the buyer until the order is placed. */
+  precioOculto: boolean;
   comentario?: string;
   /** The supplier's real order number, once the request is accepted. */
   noPedidoStr?: string;
@@ -172,7 +199,10 @@ export interface CarritoLinea {
   codigoProducto: string;
   descripcion: string;
   cantidad: number;
+  /** `0` when `precioOculto` is `true` — there is no catalogue price to preview with. */
   precio: number;
+  /** Mirrors `ProductoCatalogo.precioOculto` at the moment this line was added. */
+  precioOculto?: boolean;
   unidad?: string;
   imagenUrl?: string;
   disponible: boolean;
