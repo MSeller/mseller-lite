@@ -1011,6 +1011,7 @@
     "priceHiddenNote": "This supplier shows the price and total once your request is accepted.",
     "linkRequiredTitle": "Link with this store to order",
     "linkRequiredBody": "You can browse the catalog freely. To place an order, redeem a code from the store's rep or request access.",
+    "restrictedCatalogNotice": "Restricted catalog. Redeem a code or request access to see it.",
     "tax": "Tax",
     "area": "Category",
     "quantity": "Quantity",
