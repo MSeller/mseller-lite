@@ -128,8 +128,11 @@ const DocumentCreateScreen: React.FC = () => {
     if (!existe) setCondicionPago(null);
   }, [conditions, conditionsLoading, condicionPago]);
 
-  const canSave = !cart.isEmpty && !!customer && !!condicionPago && !submitting;
-  const dirty = !cart.isEmpty || !!customer;
+  // Waits for the catalogue: until it loads, the reconcile effect above has not had the chance
+  // to clear a customer's condition the tenant has since removed.
+  const canSave =
+    !cart.isEmpty && !!customer && !!condicionPago && !conditionsLoading && !submitting;
+  const dirty = !cart.isEmpty || !!customer || !!nota.trim();
 
   const handleSubmit = useCallback(async () => {
     if (!customer || !condicionPago || cart.isEmpty) return;

@@ -75,6 +75,29 @@ const CartLineRow: React.FC<Props> = ({
   // that reads as a bug rather than a case price.
   const packing = line.factor > 1 ? formatUnitWithFactor(line.unidad, line.factor) : "";
 
+  // Every field commits as it is typed, not only on blur: the editor can be collapsed (tapping
+  // another row) or the order saved from the header while a field still has focus, and
+  // neither fires onBlur — the typed value would be lost or saved stale.
+  const changeQuantity = (text: string) => {
+    setQuantityText(text);
+    const value = parseNumericInput(text);
+    // A transient 0 ("0" on the way to "0.5") must not remove the line; only blur may.
+    if (value > 0) {
+      lastCommitted.current = value;
+      onChangeQuantity(value);
+    }
+  };
+
+  const changePrice = (text: string) => {
+    setPriceText(text);
+    onChangeLine({ precio: parseNumericInput(text) });
+  };
+
+  const changeDiscount = (text: string) => {
+    setDiscountText(text);
+    onChangeLine({ porcientoDescuento: Math.min(100, Math.max(0, parseNumericInput(text))) });
+  };
+
   const commitQuantity = () => {
     const value = parseNumericInput(quantityText);
     lastCommitted.current = value;
@@ -157,7 +180,7 @@ const CartLineRow: React.FC<Props> = ({
             <TextInput
               mode="outlined"
               value={quantityText}
-              onChangeText={setQuantityText}
+              onChangeText={changeQuantity}
               onBlur={commitQuantity}
               onSubmitEditing={commitQuantity}
               keyboardType="decimal-pad"
@@ -191,8 +214,7 @@ const CartLineRow: React.FC<Props> = ({
               mode="outlined"
               label={t("documents.unitPrice")}
               value={priceText}
-              onChangeText={setPriceText}
-              onBlur={() => onChangeLine({ precio: parseNumericInput(priceText) })}
+              onChangeText={changePrice}
               keyboardType="decimal-pad"
               inputMode="decimal"
               disabled={!canEditPrice}
@@ -214,16 +236,13 @@ const CartLineRow: React.FC<Props> = ({
               mode="outlined"
               label={t("documents.discountPercent")}
               value={discountText}
-              onChangeText={setDiscountText}
+              onChangeText={changeDiscount}
               // A discount IS a price concession: gating the price field but not
               // this one let a seller without the permission reach the same
               // result by another route.
               disabled={!canEditPrice}
-              onBlur={() => {
-                const value = Math.min(100, Math.max(0, parseNumericInput(discountText)));
-                setDiscountText(String(value));
-                onChangeLine({ porcientoDescuento: value });
-              }}
+              // Shows the clamped value once the seller is done ("150" reads back as 100).
+              onBlur={() => setDiscountText(String(line.porcientoDescuento))}
               keyboardType="decimal-pad"
               inputMode="decimal"
               style={styles.priceInput}
