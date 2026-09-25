@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -17,20 +17,22 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme, StatusTokens } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../services/entregaService";
 import { EntregaRuta } from "../../types/entrega";
 import { RutaPreparacionStatus } from "../../types/preparacion";
 import { vehiculoLabel } from "../../utils/mapLinks";
 
-const statusColor: Record<RutaPreparacionStatus, string> = {
-  borrador: "#9E9E9E",
-  confirmada: "#1976D2",
-  en_preparacion: "#F9A825",
-  lista_despacho: "#EF6C00",
-  en_ruta: "#1F6B54",
-  completada: "#00897B",
-  cancelada: "#D32F2F",
+// Status reads through `custom.status`; the chip's label tells the steps within a tone apart.
+const statusTone: Record<RutaPreparacionStatus, keyof StatusTokens> = {
+  borrador: "neutral",
+  confirmada: "neutral",
+  en_preparacion: "warning",
+  lista_despacho: "warning",
+  en_ruta: "positive",
+  completada: "positive",
+  cancelada: "negative",
 };
 
 interface DeliveryRoutesScreenProps {
@@ -39,7 +41,8 @@ interface DeliveryRoutesScreenProps {
 }
 
 export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutesScreenProps) {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
 
@@ -79,7 +82,7 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
   }, [loadRutas]);
 
   const renderCard = (ruta: EntregaRuta) => {
-    const color = statusColor[ruta.status] ?? statusColor.borrador;
+    const tone = theme.custom.status[statusTone[ruta.status] ?? "neutral"];
     const progress =
       ruta.totalFacturas > 0 ? ruta.facturasEntregadas / ruta.totalFacturas : 0;
     const veh = [vehiculoLabel(ruta.vehiculoTipo), ruta.vehiculoPlaca]
@@ -99,7 +102,7 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
             {
               backgroundColor: theme.colors.surface,
               borderLeftWidth: ruta.esActiva ? 4 : 0,
-              borderLeftColor: "#1F6B54",
+              borderLeftColor: theme.custom.status.positive.base,
             },
           ]}
         >
@@ -124,8 +127,8 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
                 )}
               </View>
               <Chip
-                style={{ backgroundColor: color }}
-                textStyle={{ color: "#FFF", fontSize: 11 }}
+                style={{ backgroundColor: tone.container }}
+                textStyle={[styles.chipText, { color: tone.onContainer }]}
                 compact
               >
                 {t(`entrega.status.${ruta.status}`)}
@@ -158,7 +161,7 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
 
             <ProgressBar
               progress={progress}
-              color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
+              color={progress >= 1 ? theme.custom.status.positive.base : theme.colors.primary}
               style={styles.progressBar}
             />
           </Card.Content>
@@ -221,22 +224,28 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-  scrollContent: { padding: 16, paddingTop: 0, paddingBottom: 100 },
-  cardTouchable: { marginBottom: 12 },
-  card: { borderRadius: 14 },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
-  activeChip: { backgroundColor: "#D6EDE3" },
-  activeChipText: { color: "#2E7D32", fontSize: 11 },
-  metaItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
-  progressBar: { height: 6, borderRadius: 3, marginTop: 4 },
-  emptyState: { alignItems: "center", justifyContent: "center", paddingVertical: 64 },
-});
+const PROGRESS_BAR_HEIGHT = 6;
+
+const createStyles = (theme: CustomTheme) => {
+  const { radius, type, status } = theme.custom;
+  return StyleSheet.create({
+    container: { flex: 1 },
+    header: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
+    scrollContent: { padding: 16, paddingTop: 0, paddingBottom: 100 },
+    cardTouchable: { marginBottom: 12 },
+    card: { borderRadius: radius.container },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    titleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+    chipText: { fontSize: type.caption.fontSize },
+    activeChip: { backgroundColor: status.positive.container },
+    activeChipText: { color: status.positive.onContainer, fontSize: type.caption.fontSize },
+    metaItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+    progressBar: { height: PROGRESS_BAR_HEIGHT, borderRadius: PROGRESS_BAR_HEIGHT / 2, marginTop: 4 },
+    emptyState: { alignItems: "center", justifyContent: "center", paddingVertical: 64 },
+  });
+};

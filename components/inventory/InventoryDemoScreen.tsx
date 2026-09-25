@@ -25,17 +25,8 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
   const userContext = useUser();
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
-  // The tonal blocks below take their background from the theme: a fixed light
-  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
-  // which is exactly where these values become unreadable.
-  const tonal = useMemo(
-    () => ({
-      warehouseInfo: [styles.warehouseInfo, { backgroundColor: theme.colors.primaryContainer }],
-      apiItem: [styles.apiItem, { backgroundColor: theme.colors.surfaceVariant }],
-      archDescription: [styles.archDescription, { backgroundColor: theme.colors.surfaceVariant }],
-    }),
-    [theme]
-  );
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { status } = theme.custom;
 
   const envConfig = getEnvironmentConfig();
 
@@ -68,11 +59,18 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
                     icon={envConfig.isLocalDevelopment ? "server" : "cloud"}
                     style={{
                       backgroundColor: envConfig.isLocalDevelopment
-                        ? "#4CAF50"
-                        : "#2196F3",
+                        ? status.positive.container
+                        : theme.colors.primaryContainer,
                       marginLeft: 8,
                     }}
-                    textStyle={{ color: "white", fontSize: 12 }}
+                    textStyle={[
+                      styles.envChipText,
+                      {
+                        color: envConfig.isLocalDevelopment
+                          ? status.positive.onContainer
+                          : theme.colors.onPrimaryContainer,
+                      },
+                    ]}
                     compact
                   >
                     {envConfig.mode.toUpperCase()}
@@ -97,7 +95,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               Esta pantalla mostraría la funcionalidad completa del sistema de
               inventario móvil una vez que esté conectado a la API del servidor.
             </Paragraph>
-            <Paragraph style={tonal.warehouseInfo}>
+            <Paragraph style={styles.warehouseInfo}>
               <Text style={{ fontWeight: "bold" }}>
                 {t("inventory.warehouse")}:
               </Text>{" "}
@@ -186,23 +184,23 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.apiTitle}>
                 Operaciones Básicas:
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • GET /consumo/inventariomovil/conteos-activos/{`{localidadId}`}
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • GET /consumo/inventariomovil/conteo/{`{conteoId}`}/productos
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • POST /consumo/inventariomovil/contar-producto
               </Paragraph>
             </View>
 
             <View style={styles.apiSection}>
               <Paragraph style={styles.apiTitle}>Código de Barras:</Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • GET /consumo/inventariomovil/validar-codigo-barra
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • POST /consumo/inventariomovil/contar-por-codigo-barra
               </Paragraph>
             </View>
@@ -211,13 +209,13 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.apiTitle}>
                 Conteo Sistemático por Zonas:
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • GET /api/inventariozonas/mi-zona/{`{conteoId}`}
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • GET /api/inventariozonas/siguiente-producto-zona
               </Paragraph>
-              <Paragraph style={tonal.apiItem}>
+              <Paragraph style={styles.apiItem}>
                 • POST /api/inventariozonas/contar-producto-zona
               </Paragraph>
             </View>
@@ -282,7 +280,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.archTitle}>
                 Servidor de Desarrollo:
               </Paragraph>
-              <Paragraph style={tonal.archDescription}>
+              <Paragraph style={styles.archDescription}>
                 • El servidor local debe estar ejecutándose en
                 https://localhost:7174{"\n"}• El modo local bypasa la
                 configuración de usuario{"\n"}• Todas las requests van
@@ -294,12 +292,14 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
               <Paragraph style={styles.archTitle}>Modo Actual:</Paragraph>
               <Paragraph
                 style={[
-                  tonal.archDescription,
+                  styles.archDescription,
                   {
                     backgroundColor: envConfig.isLocalDevelopment
-                      ? "#E8F5E8"
-                      : "#DCE7F3",
-                    color: envConfig.isLocalDevelopment ? "#2E7D32" : "#1565C0",
+                      ? status.positive.container
+                      : theme.colors.primaryContainer,
+                    color: envConfig.isLocalDevelopment
+                      ? status.positive.onContainer
+                      : theme.colors.onPrimaryContainer,
                   },
                 ]}
               >
@@ -320,7 +320,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Servicios:</Paragraph>
-              <Paragraph style={tonal.archDescription}>
+              <Paragraph style={styles.archDescription}>
                 • InventoryMobileService - API principal{"\n"}•
                 InventoryOfflineManager - Sincronización offline{"\n"}•
                 AsyncStorage - Persistencia local
@@ -329,7 +329,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Componentes UI:</Paragraph>
-              <Paragraph style={tonal.archDescription}>
+              <Paragraph style={styles.archDescription}>
                 • InventoryMainScreen - Dashboard principal{"\n"}•
                 ProductCountingScreen - Captura de conteos{"\n"}•
                 InventoryProgressScreen - Seguimiento de progreso
@@ -338,7 +338,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.archItem}>
               <Paragraph style={styles.archTitle}>Tipos de Datos:</Paragraph>
-              <Paragraph style={tonal.archDescription}>
+              <Paragraph style={styles.archDescription}>
                 • TypeScript completo con interfaces para todas las operaciones
                 {"\n"}• Enums para estados y tipos de operación{"\n"}•
                 Validación automática de tipos en tiempo de compilación
@@ -364,7 +364,9 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type } = theme.custom;
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -373,7 +375,7 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: radius.container,
   },
   header: {
     flexDirection: "row",
@@ -389,32 +391,34 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
   },
+  envChipText: {
+    fontSize: type.overline.fontSize,
+  },
   localModeInfo: {
-    fontSize: 12,
-    color: "#4CAF50",
+    fontSize: type.overline.fontSize,
+    color: theme.custom.status.positive.base,
     fontWeight: "bold",
     marginTop: 4,
   },
   warehouseInfo: {
-    backgroundColor: "#DCE7F3",
+    backgroundColor: theme.colors.primaryContainer,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.segment,
     marginTop: 8,
   },
   featureItem: {
     marginBottom: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: theme.custom.hairline,
+    borderBottomColor: colors.hairline,
   },
   featureTitle: {
     fontWeight: "bold",
-    fontSize: 16,
+    fontSize: type.body.fontSize,
     marginBottom: 4,
   },
   featureDescription: {
-    fontSize: 14,
-    opacity: 0.8,
+    ...type.bodySmall,
   },
   apiSection: {
     marginBottom: 16,
@@ -424,16 +428,17 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   apiItem: {
-    fontSize: 12,
+    fontSize: type.overline.fontSize,
+    // Endpoint paths read as code.
     fontFamily: "monospace",
-    backgroundColor: "#EDF1F6",
+    backgroundColor: colors.fill,
     padding: 4,
     marginBottom: 4,
-    borderRadius: 4,
+    borderRadius: radius.tag,
   },
   stepItem: {
     marginBottom: 12,
-    fontSize: 14,
+    fontSize: type.bodySmall.fontSize,
   },
   archItem: {
     marginBottom: 16,
@@ -443,18 +448,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   archDescription: {
-    fontSize: 14,
-    backgroundColor: "#EDF1F6",
+    fontSize: type.bodySmall.fontSize,
+    backgroundColor: colors.fill,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.segment,
     fontFamily: "monospace",
   },
+  // A terminal-style block: the inverse surface keeps it contrasting in both modes.
   codeBlock: {
-    fontSize: 14,
-    backgroundColor: "#2D2D2D",
-    color: "#F8F8F2",
+    fontSize: type.bodySmall.fontSize,
+    backgroundColor: theme.colors.inverseSurface,
+    color: theme.colors.inverseOnSurface,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.segment,
     fontFamily: "monospace",
   },
   footer: {
@@ -462,8 +468,9 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   footerButton: {
-    borderRadius: 8,
+    borderRadius: radius.control,
   },
-});
+  });
+};
 
 export default InventoryDemoScreen;

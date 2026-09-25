@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -17,6 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme, StatusTone } from "@/constants/Theme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../services/preparacionService";
@@ -25,18 +26,30 @@ import {
   RutaPreparacionStatus,
 } from "../../types/preparacion";
 
+type StatusToneKey = "neutral" | "info" | "warning" | "positive" | "negative";
+
 const statusConfig: Record<
   RutaPreparacionStatus,
-  { color: string; label: string }
+  { tone: StatusToneKey; label: string }
 > = {
-  borrador: { color: "#9E9E9E", label: "Borrador" },
-  confirmada: { color: "#1976D2", label: "Confirmada" },
-  en_preparacion: { color: "#F9A825", label: "En Preparación" },
-  lista_despacho: { color: "#EF6C00", label: "Lista Despacho" },
-  en_ruta: { color: "#1F6B54", label: "En Ruta" },
-  completada: { color: "#00897B", label: "Completada" },
-  cancelada: { color: "#D32F2F", label: "Cancelada" },
+  borrador: { tone: "neutral", label: "Borrador" },
+  confirmada: { tone: "info", label: "Confirmada" },
+  en_preparacion: { tone: "warning", label: "En Preparación" },
+  lista_despacho: { tone: "warning", label: "Lista Despacho" },
+  en_ruta: { tone: "positive", label: "En Ruta" },
+  completada: { tone: "positive", label: "Completada" },
+  cancelada: { tone: "negative", label: "Cancelada" },
 };
+
+/** Chip colours for a status. "info" (confirmed, not started) has no status tone, so it takes the MD3 primary container. */
+const toneFor = (theme: CustomTheme, key: StatusToneKey): StatusTone =>
+  key === "info"
+    ? {
+        base: theme.colors.primary,
+        container: theme.colors.primaryContainer,
+        onContainer: theme.colors.onPrimaryContainer,
+      }
+    : theme.custom.status[key];
 
 interface PickingRoutesScreenProps {
   /** Rendered above the title, under the status bar — the Rutas section switcher. */
@@ -44,7 +57,8 @@ interface PickingRoutesScreenProps {
 }
 
 export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesScreenProps) {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const { can, loading: accessLoading } = useNavigationAccess();
@@ -98,6 +112,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
 
   const renderRutaCard = (ruta: RutaPreparacion) => {
     const status = statusConfig[ruta.status] ?? statusConfig.borrador;
+    const tone = toneFor(theme, status.tone);
     const progress = getProgress(ruta);
 
     return (
@@ -119,8 +134,8 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
                 {ruta.noRuta}
               </Text>
               <Chip
-                style={{ backgroundColor: status.color }}
-                textStyle={{ color: "#FFF", fontSize: 11 }}
+                style={{ backgroundColor: tone.container }}
+                textStyle={[styles.chipText, { color: tone.onContainer }]}
                 compact
               >
                 {status.label}
@@ -151,7 +166,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
             <View style={styles.progressRow}>
               <ProgressBar
                 progress={progress}
-                color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
+                color={progress >= 1 ? theme.custom.status.positive.base : theme.colors.primary}
                 style={styles.progressBar}
               />
               <Text
@@ -272,7 +287,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -290,7 +305,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    borderRadius: 14,
+    borderRadius: theme.custom.radius.container,
+  },
+  chipText: {
+    ...theme.custom.type.caption,
+    fontWeight: "600",
   },
   cardHeader: {
     flexDirection: "row",
@@ -324,7 +343,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 14,
-    borderRadius: 4,
-    backgroundColor: "#DCE2EA",
+    borderRadius: theme.custom.radius.tag,
+    backgroundColor: theme.custom.colors.hairline,
   },
 });

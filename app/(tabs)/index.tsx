@@ -259,15 +259,15 @@ const createStyles = (theme: CustomTheme) => {
       justifyContent: "center",
     },
     container: {
-      paddingHorizontal: spacing.md,
+      paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
-      paddingBottom: spacing.xl,
+      paddingBottom: spacing.xxl,
     },
     header: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.md,
-      paddingVertical: spacing.md,
+      gap: spacing.lg,
+      paddingVertical: spacing.lg,
     },
     headerText: {
       flex: 1,
@@ -291,17 +291,17 @@ const createStyles = (theme: CustomTheme) => {
     },
     testChip: {
       alignSelf: "flex-start",
-      marginBottom: spacing.md,
+      marginBottom: spacing.lg,
       backgroundColor: theme.custom.status.warning.container,
     },
     actions: {
       flexDirection: "row",
       gap: spacing.sm,
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
     },
     action: {
       flex: 1,
-      borderRadius: radius.md,
+      borderRadius: radius.container,
     },
     actionContent: {
       paddingVertical: 6,
@@ -310,13 +310,13 @@ const createStyles = (theme: CustomTheme) => {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.sm,
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
     },
     recentCard: {
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
     },
     recentRow: {
-      paddingHorizontal: spacing.md,
+      paddingHorizontal: spacing.lg,
       paddingVertical: 12,
     },
     recentDivider: {
@@ -341,7 +341,7 @@ const createStyles = (theme: CustomTheme) => {
     },
     empty: {
       textAlign: "center",
-      marginTop: spacing.xl,
+      marginTop: spacing.xxl,
     },
   });
 };

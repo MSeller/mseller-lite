@@ -126,7 +126,7 @@ const createStyles = (theme: CustomTheme) =>
     modal: {
       backgroundColor: theme.colors.surface,
       marginHorizontal: 16,
-      borderRadius: 20,
+      borderRadius: theme.custom.radius.container,
       padding: 20,
       gap: 12,
     },

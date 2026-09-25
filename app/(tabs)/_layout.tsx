@@ -1,12 +1,14 @@
 import { Tabs } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
+import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
+import type { CustomTheme } from "@/constants/Theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -17,6 +19,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
   const palette = Colors[colorScheme ?? "light"];
+  const { custom } = useTheme() as CustomTheme;
   const insets = useSafeAreaInsets();
   // Tabs are offered by user type (hooks/useNavigationAccess). `href: null` hides a
   // tab and unregisters its route, so it cannot be reached by deep link either; the
@@ -41,7 +44,7 @@ export default function TabLayout() {
         <View
           style={[
             styles.iconWrap,
-            focused && { backgroundColor: `${palette.tint}14` },
+            focused && { backgroundColor: custom.colors.tintSoft },
           ]}
         >
           <IconSymbol size={24} name={name} color={color} />
@@ -156,11 +159,13 @@ export default function TabLayout() {
   );
 }
 
+const ICON_WELL_HEIGHT = 30;
+
 const styles = StyleSheet.create({
   iconWrap: {
     width: 56,
-    height: 30,
-    borderRadius: 15,
+    height: ICON_WELL_HEIGHT,
+    borderRadius: ICON_WELL_HEIGHT / 2,
     alignItems: "center",
     justifyContent: "center",
   },

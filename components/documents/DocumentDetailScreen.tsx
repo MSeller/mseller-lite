@@ -360,7 +360,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     noteBox: {
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: theme.custom.radius.sm,
+      borderRadius: theme.custom.radius.control,
       padding: 12,
       marginTop: 4,
     },
@@ -416,11 +416,11 @@ const createStyles = (theme: CustomTheme) =>
       fontWeight: "800",
     },
     shareButton: {
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       marginTop: 4,
     },
     newButton: {
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       borderColor: theme.colors.outlineVariant,
     },
     newButtonContent: {

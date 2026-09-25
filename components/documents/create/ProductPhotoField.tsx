@@ -134,7 +134,7 @@ const createStyles = (theme: CustomTheme) =>
     tile: {
       width: TILE,
       height: TILE,
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.container,
       overflow: "hidden",
       backgroundColor: theme.colors.surfaceVariant,
       alignItems: "center",
@@ -146,7 +146,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     overlay: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(0,0,0,0.35)",
+      backgroundColor: theme.colors.backdrop,
       alignItems: "center",
       justifyContent: "center",
     },

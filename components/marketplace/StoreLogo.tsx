@@ -23,7 +23,7 @@ const StoreLogo: React.FC<Props> = ({ nombre, logoUrl, size = 52 }) => {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const shape = { width: size, height: size, borderRadius: theme.custom.radius.sm };
+  const shape = { width: size, height: size, borderRadius: theme.custom.radius.control };
 
   if (uri) {
     return (

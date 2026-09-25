@@ -1,191 +1,245 @@
 import type { MD3Theme } from "react-native-paper";
 import { MD3DarkTheme, MD3LightTheme } from "react-native-paper";
-import { Platform, StyleSheet } from "react-native";
+import { StyleSheet, type TextStyle } from "react-native";
 
 /**
- * MSeller Lite design system.
+ * MSeller design system v2 "editorial" — the same guide as the iOS app
+ * (mobile-seller `docs/design/DESIGN_SYSTEM.md`, `utils/Theme.swift` and
+ * `Images.xcassets/Theme`). Both apps share these values; change them in iOS
+ * first and mirror them here in a paired PR. The written rules are in
+ * `docs/design/DESIGN_SYSTEM.md`.
  *
- * The organising idea is **tonal depth instead of drop shadows**. The page sits on
- * a soft paper tone and content surfaces are pure white (inverted in dark mode),
- * so a card reads as raised because of the tone step, not because it is casting a
- * shadow onto the page. Shadows are reserved for the two things that genuinely
- * float above the content — the FAB and the bottom action bar — and even there
- * they are wide and faint rather than dark and tight.
+ * The organising ideas, carried over from iOS:
+ * - Blue (`tint`) is for things you can TAP. Text and data read in navy `ink`.
+ * - Full-bleed rows on a plain page, separated by hairlines, over boxed cards.
+ * - The brand gradient is reserved for the summary card and the primary call to
+ *   action, and those are the only things that cast a shadow.
  *
- * What that buys: no grey haloes, no stacked shadows where cards sit next to each
- * other, and a surface that still separates cleanly when a screen is dense.
- *
- * Use the `custom` tokens rather than hand-rolling values in a StyleSheet:
- * `theme.custom.surface.card`, `.inset`, `.floating`, plus `spacing` and `radius`.
+ * Views read `theme.custom` tokens; no hex literals, magic font sizes or radii
+ * in a StyleSheet (`pnpm design:check` lists them).
  */
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Palette
+// Palette — iOS asset catalog values (Any / Dark)
 // ─────────────────────────────────────────────────────────────────────────────
 
+interface Palette {
+  tint: string;
+  tintSoft: string;
+  ink: string;
+  inkSecondary: string;
+  inkTertiary: string;
+  background: string;
+  surfaceRaised: string;
+  surfaceCard: string;
+  /**
+   * Recessed well — search fields, steppers, the disabled CTA. iOS gets this
+   * from system fills; React Native has none, so it is the one tone here that
+   * is not in the iOS asset catalog.
+   */
+  fill: string;
+  hairline: string;
+  destructive: string;
+  success: string;
+  successSwitch: string;
+  offer: string;
+  warningBackground: string;
+  warningForeground: string;
+  unsavedDot: string;
+  gradientStart: string;
+  gradientEnd: string;
+  gradientEdge: string;
+  onGradient: string;
+  onGradientSecondary: string;
+  onGradientDivider: string;
+  onGradientAlert: string;
+}
+
+const lightPalette: Palette = {
+  tint: "#2563EB",
+  tintSoft: "rgba(37, 99, 235, 0.10)",
+  ink: "#10182B",
+  inkSecondary: "#667085",
+  inkTertiary: "#697489",
+  background: "#FFFFFF",
+  surfaceRaised: "#FAFBFD",
+  surfaceCard: "#FFFFFF",
+  fill: "#F1F3F7",
+  hairline: "#D9DDE5",
+  destructive: "#D92D20",
+  success: "#15803D",
+  successSwitch: "#34C759",
+  offer: "#4F46E5",
+  warningBackground: "#FFF6E6",
+  warningForeground: "#7A4B00",
+  unsavedDot: "#F5A524",
+  gradientStart: "#2563EB",
+  gradientEnd: "#142B5E",
+  gradientEdge: "rgba(255, 255, 255, 0)",
+  onGradient: "#FFFFFF",
+  onGradientSecondary: "rgba(255, 255, 255, 0.78)",
+  onGradientDivider: "rgba(255, 255, 255, 0.20)",
+  onGradientAlert: "#FFCC9E",
+};
+
+const darkPalette: Palette = {
+  tint: "#6E9BFF",
+  tintSoft: "rgba(110, 155, 255, 0.16)",
+  ink: "#F2F4F8",
+  inkSecondary: "#8B93A5",
+  inkTertiary: "#7D8699",
+  background: "#0A0E17",
+  surfaceRaised: "#111726",
+  surfaceCard: "#131A2A",
+  fill: "#1A2233",
+  hairline: "#262D3B",
+  destructive: "#FF6B61",
+  success: "#4ADE80",
+  successSwitch: "#30D158",
+  offer: "#9B96FF",
+  warningBackground: "#2A2111",
+  warningForeground: "#F5C26B",
+  unsavedDot: "#FFB84D",
+  gradientStart: "#2563EB",
+  gradientEnd: "#142B5E",
+  gradientEdge: "rgba(255, 255, 255, 0.08)",
+  onGradient: "#FFFFFF",
+  onGradientSecondary: "rgba(255, 255, 255, 0.78)",
+  onGradientDivider: "rgba(255, 255, 255, 0.20)",
+  onGradientAlert: "#FFCC9E",
+};
+
 /**
- * Primary is a deepened, desaturated take on the MSeller blue (#0055b3). The
- * original is a bright link-blue: at the size a primary button or a document
- * total is drawn it reads loud rather than considered. Holding the same hue but
- * dropping the lightness keeps the brand recognisable and lets the accent carry
- * weight without shouting.
+ * Paper's MD3 roles, derived from the palette so Paper components (buttons,
+ * inputs, chips, dialogs) land on the same colours as the hand-built views.
  *
- * Secondary is a slate companion to it, NOT a success green. Paper reuses the
- * secondary role for every tonal button and selected segment, so a semantic
- * colour there turns "create customer" and "filter: all" green and makes the
- * whole app read as a status display. Status colours live in
- * `custom.status` instead, where only status components reach them.
+ * `secondary` stays a slate, not a status colour: Paper reuses it for every
+ * tonal button and selected segment. Status lives in `custom.status`.
  */
-const lightColors = {
-  primary: "#14395E",
-  primaryContainer: "#DCE7F3",
-  secondary: "#41566E",
-  secondaryContainer: "#DEE6EF",
-  tertiary: "#8A5A12",
-  tertiaryContainer: "#F6E7CB",
-  error: "#B02D26",
-  errorContainer: "#F8DEDC",
+const toMd3Colors = (p: Palette, isDark: boolean) => ({
+  primary: p.tint,
+  primaryContainer: isDark ? "#1A253C" : "#E9EFFD",
+  secondary: p.inkSecondary,
+  secondaryContainer: p.fill,
+  tertiary: p.offer,
+  tertiaryContainer: isDark ? "#25234A" : "#EDECFC",
+  error: p.destructive,
+  errorContainer: isDark ? "#3A1512" : "#FDECEA",
 
-  // The tone step that replaces every card shadow: paper page, white surfaces.
-  background: "#F5F7FA",
-  surface: "#FFFFFF",
-  // Filled/recessed blocks — search fields, totals panels, quantity steppers.
-  surfaceVariant: "#EDF1F6",
-  surfaceDisabled: "rgba(20, 26, 33, 0.10)",
+  background: p.background,
+  surface: p.surfaceCard,
+  surfaceVariant: p.fill,
+  surfaceDisabled: isDark ? "rgba(242, 244, 248, 0.10)" : "rgba(16, 24, 43, 0.08)",
 
-  onPrimary: "#FFFFFF",
-  onPrimaryContainer: "#0B2440",
-  onSecondary: "#FFFFFF",
-  onSecondaryContainer: "#16283C",
-  onTertiary: "#FFFFFF",
-  onTertiaryContainer: "#42290A",
-  onError: "#FFFFFF",
-  onErrorContainer: "#4A1310",
+  onPrimary: isDark ? "#0A1A3F" : "#FFFFFF",
+  onPrimaryContainer: isDark ? "#D6E2FF" : p.gradientEnd,
+  onSecondary: isDark ? p.background : "#FFFFFF",
+  onSecondaryContainer: p.ink,
+  onTertiary: isDark ? "#1A1747" : "#FFFFFF",
+  onTertiaryContainer: isDark ? "#DCDAFF" : "#2B2580",
+  onError: isDark ? "#3A0703" : "#FFFFFF",
+  onErrorContainer: isDark ? "#FFD9D5" : "#7A1A12",
 
-  // Ink, not pure black — #000 on white is harsh at body sizes.
-  onSurface: "#141A21",
-  onSurfaceVariant: "#5C6773",
-  onSurfaceDisabled: "rgba(20, 26, 33, 0.38)",
-  onBackground: "#141A21",
+  onSurface: p.ink,
+  onSurfaceVariant: p.inkSecondary,
+  onSurfaceDisabled: isDark ? "rgba(242, 244, 248, 0.38)" : "rgba(16, 24, 43, 0.38)",
+  onBackground: p.ink,
 
-  outline: "#B9C2CD",
-  // Hairline borders live here: present enough to define an edge, quiet enough
-  // that a list of cards doesn't turn into a grid of boxes.
-  outlineVariant: "#E3E8EF",
+  // Outlined inputs need an edge a step stronger than a separator hairline.
+  outline: isDark ? "#3A4357" : "#B4BBC8",
+  outlineVariant: p.hairline,
 
-  inverseSurface: "#232A32",
-  inverseOnSurface: "#F1F4F8",
-  inversePrimary: "#9DC2EA",
-  backdrop: "rgba(20, 26, 33, 0.4)",
+  inverseSurface: p.ink,
+  inverseOnSurface: p.background,
+  inversePrimary: isDark ? "#2563EB" : "#6E9BFF",
+  backdrop: isDark ? "rgba(0, 0, 0, 0.55)" : "rgba(16, 24, 43, 0.4)",
   scrim: "#000000",
   shadow: "#000000",
 
-  // Paper paints these behind elevated components. They are deliberately equal
-  // to `surface` so a stray `elevation` prop cannot reintroduce the grey-card
-  // look this palette is built to avoid.
+  // Paper paints these behind elevated components. Equal to the card surface so
+  // a stray `elevation` cannot bring back grey, shadowed panels; level3 is the
+  // search bar's fill, which needs to read as a well on a white page.
   elevation: {
     level0: "transparent",
-    level1: "#FFFFFF",
-    level2: "#FFFFFF",
-    level3: "#FFFFFF",
-    level4: "#FFFFFF",
-    level5: "#FFFFFF",
+    level1: p.surfaceCard,
+    level2: p.surfaceCard,
+    level3: p.fill,
+    level4: p.surfaceCard,
+    level5: p.surfaceCard,
   },
-};
-
-const darkColors = {
-  primary: "#9DC2EA",
-  primaryContainer: "#1C3B5C",
-  secondary: "#AFC2D8",
-  secondaryContainer: "#2E4055",
-  tertiary: "#E7BE7D",
-  tertiaryContainer: "#5A3D12",
-  error: "#F0A9A3",
-  errorContainer: "#5E1E1A",
-
-  // Same tone step, inverted: the page is the darker layer, cards lift off it.
-  background: "#0E1216",
-  surface: "#171D23",
-  surfaceVariant: "#222932",
-  surfaceDisabled: "rgba(231, 235, 239, 0.10)",
-
-  onPrimary: "#0B2440",
-  onPrimaryContainer: "#D6E6F7",
-  onSecondary: "#12233A",
-  onSecondaryContainer: "#DCE6F2",
-  onTertiary: "#3A2708",
-  onTertiaryContainer: "#F8E4C4",
-  onError: "#480F0C",
-  onErrorContainer: "#F9DAD7",
-
-  onSurface: "#E7EBEF",
-  onSurfaceVariant: "#9BA6B2",
-  onSurfaceDisabled: "rgba(231, 235, 239, 0.38)",
-  onBackground: "#E7EBEF",
-
-  outline: "#5A6570",
-  outlineVariant: "#2A323B",
-
-  inverseSurface: "#E7EBEF",
-  inverseOnSurface: "#1A2027",
-  inversePrimary: "#14395E",
-  backdrop: "rgba(0, 0, 0, 0.55)",
-  scrim: "#000000",
-  shadow: "#000000",
-
-  elevation: {
-    level0: "transparent",
-    level1: "#171D23",
-    level2: "#171D23",
-    level3: "#171D23",
-    level4: "#171D23",
-    level5: "#171D23",
-  },
-};
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Typography
+// Typography — SF / Roboto, weights and sizes from iOS `Theme.font(_:)`
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Only weight and tracking are touched — the platform's own family is left
- * alone, so nothing depends on a bundled font being present.
- *
- * Headings get negative tracking (large type set at default spacing looks loose)
- * and real weight; body copy keeps MD3's metrics, which are already well tuned
- * for reading.
- */
-const typography = {
-  headlineLarge: { fontWeight: "700" as const, letterSpacing: -0.5 },
-  headlineMedium: { fontWeight: "700" as const, letterSpacing: -0.4 },
-  headlineSmall: { fontWeight: "700" as const, letterSpacing: -0.3 },
+const paperTypography = {
+  headlineLarge: { fontWeight: "700" as const, letterSpacing: -0.8 },
+  headlineMedium: { fontWeight: "700" as const, letterSpacing: -0.6 },
+  headlineSmall: { fontWeight: "700" as const, letterSpacing: -0.4 },
   titleLarge: { fontWeight: "700" as const, letterSpacing: -0.2 },
-  titleMedium: { fontWeight: "600" as const, letterSpacing: -0.1 },
+  titleMedium: { fontWeight: "600" as const, letterSpacing: 0 },
   titleSmall: { fontWeight: "600" as const, letterSpacing: 0 },
-  labelLarge: { fontWeight: "600" as const, letterSpacing: 0.1 },
+  labelLarge: { fontWeight: "600" as const, letterSpacing: 0 },
 };
 
 const withTypography = (fonts: MD3Theme["fonts"]): MD3Theme["fonts"] => {
   const next = { ...fonts };
-  for (const [variant, overrides] of Object.entries(typography)) {
+  for (const [variant, overrides] of Object.entries(paperTypography)) {
     const key = variant as keyof MD3Theme["fonts"];
     next[key] = { ...(next[key] as object), ...overrides } as never;
   }
   return next;
 };
 
+export interface TypeTokens {
+  /** Entity name (customer, screen title): 34 bold, tracking −0.025em. */
+  largeTitle: TextStyle;
+  /** Section label: 12 semibold UPPERCASE, tracking 0.12em, inkTertiary. Uppercase the string. */
+  overline: TextStyle;
+  /** 17 semibold. */
+  rowTitle: TextStyle;
+  /** 17 regular. */
+  body: TextStyle;
+  /** 15 regular. */
+  bodySmall: TextStyle;
+  /** 13 regular. */
+  caption: TextStyle;
+  /** Money and quantities: bold, tabular digits. */
+  figure: (size: number) => TextStyle;
+}
+
+const buildType = (p: Palette): TypeTokens => ({
+  largeTitle: { fontSize: 34, lineHeight: 41, fontWeight: "700", letterSpacing: -0.85, color: p.ink },
+  overline: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "600",
+    letterSpacing: 1.44,
+    textTransform: "uppercase",
+    color: p.inkTertiary,
+  },
+  rowTitle: { fontSize: 17, lineHeight: 22, fontWeight: "600", color: p.ink },
+  body: { fontSize: 17, lineHeight: 22, fontWeight: "400", color: p.ink },
+  bodySmall: { fontSize: 15, lineHeight: 20, fontWeight: "400", color: p.inkSecondary },
+  caption: { fontSize: 13, lineHeight: 18, fontWeight: "400", color: p.inkTertiary },
+  figure: (size: number) => ({
+    fontSize: size,
+    lineHeight: Math.round(size * 1.2),
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+    color: p.ink,
+  }),
+});
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Design tokens
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Semantic status colours, kept OUT of the MD3 roles on purpose.
- *
- * Paper reuses `secondary`/`tertiary` for tonal buttons, selected chips and
- * segmented buttons, so encoding "this succeeded" in those roles leaks the
- * meaning across half the UI. These are read only by components that actually
- * report state — the document status chip, a mode indicator — so green means
- * green and a button is just a button.
+ * Semantic status colours, kept OUT of the MD3 roles on purpose: Paper reuses
+ * `secondary`/`tertiary` for tonal buttons and selected chips, so status there
+ * would leak across the UI. Only components that report state read these.
  */
 export interface StatusTone {
   /** Solid tone — dots, icons, small emphasis. */
@@ -203,34 +257,47 @@ export interface StatusTokens {
   neutral: StatusTone;
 }
 
-const lightStatus: StatusTokens = {
-  positive: { base: "#1F6B54", container: "#D6EDE3", onContainer: "#0A3428" },
-  warning: { base: "#8A5A12", container: "#F6E7CB", onContainer: "#42290A" },
-  negative: { base: "#B02D26", container: "#F8DEDC", onContainer: "#4A1310" },
-  neutral: { base: "#5C6773", container: "#EDF1F6", onContainer: "#49535E" },
-};
-
-const darkStatus: StatusTokens = {
-  positive: { base: "#7FCCB0", container: "#1B4739", onContainer: "#CDEDE0" },
-  warning: { base: "#E7BE7D", container: "#4C340F", onContainer: "#F8E4C4" },
-  negative: { base: "#F0A9A3", container: "#5E1E1A", onContainer: "#F9DAD7" },
-  neutral: { base: "#9BA6B2", container: "#222932", onContainer: "#B6C0CB" },
-};
+const buildStatus = (p: Palette, isDark: boolean): StatusTokens => ({
+  positive: {
+    base: p.success,
+    container: isDark ? "#12291B" : "#E7F5EC",
+    onContainer: isDark ? "#BBF7D0" : "#0F5A2B",
+  },
+  warning: { base: p.warningForeground, container: p.warningBackground, onContainer: p.warningForeground },
+  negative: {
+    base: p.destructive,
+    container: isDark ? "#3A1512" : "#FDECEA",
+    onContainer: isDark ? "#FFD9D5" : "#7A1A12",
+  },
+  neutral: { base: p.inkSecondary, container: p.fill, onContainer: p.inkSecondary },
+});
 
 export interface SurfaceTokens {
-  /** A content card: white surface, hairline edge, no shadow. */
+  /** A content card: card surface, hairline edge, no shadow. */
   card: object;
-  /** A recessed block — search fields, totals panels, steppers. */
+  /** A recessed well — search fields, totals panels, steppers. */
   inset: object;
-  /** Genuinely floating UI (FAB, bottom bar). Wide and faint, never tight and dark. */
+  /** Pinned bars (bottom action bar): page tone with a hairline, no shadow. */
   floating: object;
+  /** Shadow for brand-gradient elements, the only ones allowed to cast one. */
+  gradientShadow: object;
 }
 
+export interface ColorTokens extends Palette {}
+
 export interface CustomThemeTokens {
+  /** iOS spacing scale: 4 / 8 / 12 / 16 / 20 / 28 (`spacingXS…XXL`). */
   spacing: { xs: number; sm: number; md: number; lg: number; xl: number; xxl: number };
-  radius: { sm: number; md: number; lg: number; xl: number; pill: number };
+  /** Page gutter: 16 on phones, 28 on tablets (use `gutterFor(width)`). */
+  gutter: number;
+  /** iOS radii: containers 12, controls/CTA 10, segments 8, tags 6. `pill` is for switches and dots only. */
+  radius: { container: number; control: number; segment: number; tag: number; pill: number };
+  /** Minimum touch target (44). */
+  touchTarget: number;
   /** Hairline that renders as one physical pixel rather than a drawn line. */
   hairline: number;
+  colors: ColorTokens;
+  type: TypeTokens;
   surface: SurfaceTokens;
   status: StatusTokens;
 }
@@ -239,46 +306,43 @@ export interface CustomTheme extends MD3Theme {
   custom: CustomThemeTokens;
 }
 
-const spacing = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32, xxl: 48 };
+const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
+const radius = { container: 12, control: 10, segment: 8, tag: 6, pill: 999 };
 
-/**
- * Radii are generous and few. Small mixed radii (4 next to 12 next to 24) are
- * most of what makes an interface look assembled rather than designed.
- */
-const radius = { sm: 10, md: 14, lg: 18, xl: 24, pill: 999 };
+/** 28 on regular width (tablet), 16 on compact (phone) — iOS `Theme.gutter(for:)`. */
+export const gutterFor = (width: number): number => (width >= 600 ? spacing.xxl : spacing.lg);
 
-const buildTokens = (colors: typeof lightColors, isDark: boolean): CustomThemeTokens => ({
+const buildTokens = (p: Palette, isDark: boolean): CustomThemeTokens => ({
   spacing,
+  gutter: spacing.lg,
   radius,
+  touchTarget: 44,
   hairline: StyleSheet.hairlineWidth,
-  status: isDark ? darkStatus : lightStatus,
+  colors: p,
+  type: buildType(p),
+  status: buildStatus(p, isDark),
   surface: {
     card: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.md,
+      backgroundColor: p.surfaceCard,
+      borderRadius: radius.container,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: colors.outlineVariant,
+      borderColor: p.hairline,
     },
     inset: {
-      backgroundColor: colors.surfaceVariant,
-      borderRadius: radius.md,
+      backgroundColor: p.fill,
+      borderRadius: radius.container,
     },
     floating: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      // Android's `elevation` and iOS/web's shadow* are separate systems; both
-      // are set so the FAB reads the same on every platform. Dark mode drops the
-      // shadow entirely — a shadow on a dark page is invisible and only muddies
-      // the edge; the tone step is doing the work there.
-      ...Platform.select({
-        android: { elevation: isDark ? 0 : 3 },
-        default: {
-          shadowColor: "#0B1622",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: isDark ? 0 : 0.1,
-          shadowRadius: 20,
-        },
-      }),
+      backgroundColor: p.background,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: p.hairline,
+    },
+    gradientShadow: {
+      shadowColor: p.gradientEnd,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: isDark ? 0.5 : 0.28,
+      shadowRadius: 14,
+      elevation: 6,
     },
   },
 });
@@ -287,34 +351,19 @@ const buildTokens = (colors: typeof lightColors, isDark: boolean): CustomThemeTo
 // Themes
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const lightTheme: MD3Theme = {
-  ...MD3LightTheme,
-  // Paper derives component corner radii from this; 4 lands its components on
-  // the same curve as the explicit radii above.
-  roundness: 4,
-  colors: { ...MD3LightTheme.colors, ...lightColors },
-  fonts: withTypography(MD3LightTheme.fonts),
-};
+const buildTheme = (base: MD3Theme, p: Palette, isDark: boolean): CustomTheme => ({
+  ...base,
+  // Paper derives radii from this: buttons 5× (10 = radiusControl), chips 2× (8 = radiusSegment).
+  roundness: 2,
+  colors: { ...base.colors, ...toMd3Colors(p, isDark) },
+  fonts: withTypography(base.fonts),
+  custom: buildTokens(p, isDark),
+});
 
-export const darkTheme: MD3Theme = {
-  ...MD3DarkTheme,
-  roundness: 4,
-  colors: { ...MD3DarkTheme.colors, ...darkColors },
-  fonts: withTypography(MD3DarkTheme.fonts),
-};
-
-export const customLightTheme: CustomTheme = {
-  ...lightTheme,
-  custom: buildTokens(lightColors, false),
-};
-
-export const customDarkTheme: CustomTheme = {
-  ...darkTheme,
-  custom: buildTokens(darkColors as typeof lightColors, true),
-};
+export const customLightTheme: CustomTheme = buildTheme(MD3LightTheme, lightPalette, false);
+export const customDarkTheme: CustomTheme = buildTheme(MD3DarkTheme, darkPalette, true);
 
 export const getTheme = (isDark: boolean): CustomTheme =>
   isDark ? customDarkTheme : customLightTheme;
 
-/** Type for theme colors (for TypeScript support) */
-export type ThemeColors = typeof lightColors;
+export const palettes = { light: lightPalette, dark: darkPalette };

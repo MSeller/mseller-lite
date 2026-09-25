@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { parseNumericInput, parseStrictNumericInput } from "../documentFormat";
+import { parseNumericInput, parseStrictNumericInput, productDisplayName } from "../documentFormat";
 
 describe("parseNumericInput", () => {
   it("reads plain and comma decimals and treats empty as 0", () => {
@@ -33,5 +33,31 @@ describe("parseStrictNumericInput", () => {
     expect(parseStrictNumericInput("12abc")).toBeNull();
     expect(parseStrictNumericInput("1.2.3")).toBeNull();
     expect(parseStrictNumericInput("abc")).toBeNull();
+  });
+});
+
+// Same cases as mobile-seller MSellerLogicTests/ProductDisplayNameTests.swift: both apps must
+// show a product under the same name.
+describe("productDisplayName", () => {
+  it("turns capitals into title case", () => {
+    expect(productDisplayName("CARIDOM ALCAPARRADO 12/10")).toBe("Caridom Alcaparrado 12/10");
+  });
+
+  it("lowercases a unit that follows a size", () => {
+    expect(productDisplayName("CARIDOM COARSE CORNMEAL 6/4 LB")).toBe("Caridom Coarse Cornmeal 6/4 lb");
+    expect(productDisplayName("LECHE 1 L")).toBe("Leche 1 l");
+  });
+
+  it("capitalizes a unit word that does not follow a size", () => {
+    expect(productDisplayName("UN PAQUETE")).toBe("Un Paquete");
+  });
+
+  it("keeps size tokens as typed", () => {
+    expect(productDisplayName("REFRESCO 12OZ")).toBe("Refresco 12OZ");
+  });
+
+  it("preserves accents and spacing", () => {
+    expect(productDisplayName("JAMÓN  ÁREA")).toBe("Jamón  Área");
+    expect(productDisplayName("")).toBe("");
   });
 });

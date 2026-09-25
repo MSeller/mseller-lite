@@ -31,17 +31,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 }) => {
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
-  // The tonal blocks below take their background from the theme: a fixed light
-  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
-  // which is exactly where these values become unreadable.
-  const tonal = useMemo(
-    () => ({
-      summaryItem: [styles.summaryItem, { backgroundColor: theme.colors.surfaceVariant }],
-      quantityText: [styles.quantityText, { backgroundColor: theme.colors.surfaceVariant }],
-    }),
-    [theme]
-  );
-
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // State
   const [loading, setLoading] = useState(true);
@@ -172,7 +162,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
               </Text>
 
               <View style={styles.summaryGrid}>
-                <View style={tonal.summaryItem}>
+                <View style={styles.summaryItem}>
                   <Text variant="headlineMedium" style={styles.summaryNumber}>
                     {summary.totalProductosContados +
                       summary.productosPendientes}
@@ -182,7 +172,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={tonal.summaryItem}>
+                <View style={styles.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -197,7 +187,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={tonal.summaryItem}>
+                <View style={styles.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -212,7 +202,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                   </Text>
                 </View>
 
-                <View style={tonal.summaryItem}>
+                <View style={styles.summaryItem}>
                   <Text
                     variant="headlineMedium"
                     style={[
@@ -335,12 +325,12 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 
                   <View style={styles.quantityInfo}>
                     {(product as any).cantidadSnapshot !== undefined && (
-                      <Text variant="bodySmall" style={tonal.quantityText}>
+                      <Text variant="bodySmall" style={styles.quantityText}>
                         Esperado: {(product as any).cantidadSnapshot}
                       </Text>
                     )}
                     {(product as any).cantidadContada !== undefined && (
-                      <Text variant="bodySmall" style={tonal.quantityText}>
+                      <Text variant="bodySmall" style={styles.quantityText}>
                         Contado: {(product as any).cantidadContada}
                       </Text>
                     )}
@@ -351,7 +341,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
                         <Text
                           variant="bodySmall"
                           style={[
-                            tonal.quantityText,
+                            styles.quantityText,
                             { color: theme.colors.error, fontWeight: "bold" },
                           ]}
                         >
@@ -406,7 +396,9 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type } = theme.custom;
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -421,10 +413,9 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: radius.container,
   },
   sectionTitle: {
-    fontSize: 18,
     marginBottom: 16,
   },
   summaryGrid: {
@@ -437,18 +428,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
     padding: 12,
-    backgroundColor: "#EDF1F6",
-    borderRadius: 8,
+    backgroundColor: colors.fill,
+    borderRadius: radius.segment,
   },
   summaryNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
+    ...type.figure(24),
     marginBottom: 4,
   },
   summaryLabel: {
-    fontSize: 12,
+    ...type.caption,
     textAlign: "center",
-    opacity: 0.7,
   },
   divider: {
     marginVertical: 16,
@@ -464,12 +453,12 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: 4, // half the bar's height
   },
   discrepancyAlert: {
-    backgroundColor: "#F8DEDC",
+    backgroundColor: theme.custom.status.negative.container,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.segment,
     marginTop: 8,
   },
   filterChips: {
@@ -484,29 +473,27 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: theme.custom.hairline,
+    borderBottomColor: colors.hairline,
   },
   productInfo: {
     flex: 1,
     marginRight: 12,
   },
   productCode: {
-    fontSize: 14,
+    fontSize: type.bodySmall.fontSize,
     fontWeight: "bold",
-    color: "#5C6773",
+    color: colors.inkTertiary,
     marginBottom: 4,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: "bold",
+    ...type.rowTitle,
     marginBottom: 4,
   },
   location: {
-    fontSize: 12,
+    ...type.caption,
     fontStyle: "italic",
     marginBottom: 8,
-    opacity: 0.7,
   },
   quantityInfo: {
     flexDirection: "row",
@@ -514,16 +501,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quantityText: {
-    fontSize: 12,
-    backgroundColor: "#EDF1F6",
+    fontSize: type.caption.fontSize,
+    backgroundColor: colors.fill,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radius.tag,
   },
   emptyState: {
     alignItems: "center",
     paddingVertical: 32,
   },
-});
+  });
+};
 
 export default InventoryProgressScreen;

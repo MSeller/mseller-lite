@@ -1,15 +1,17 @@
 import { Tabs, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import React from "react";
+import React, { useMemo } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Icon, Text, useTheme } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 
 function TabHeader({ rutaId }: { rutaId: string }) {
   const router = useRouter();
   const navigation = useNavigation();
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -31,7 +33,7 @@ function TabHeader({ rutaId }: { rutaId: string }) {
         {
           paddingTop: insets.top + 8,
           backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.colors.surfaceVariant,
+          borderBottomColor: theme.custom.colors.hairline,
         },
       ]}
     >
@@ -64,6 +66,8 @@ function TabHeader({ rutaId }: { rutaId: string }) {
 
 export default function RutaIdLayout() {
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const { can } = useNavigationAccess();
   // A fixed tab bar height overrides React Navigation's inset padding, which put the
@@ -79,8 +83,8 @@ export default function RutaIdLayout() {
       screenOptions={{
         headerShown: true,
         header: () => <TabHeader rutaId={rutaId ?? ""} />,
-        tabBarActiveTintColor: "#003ec7",
-        tabBarInactiveTintColor: "#9E9E9E",
+        tabBarActiveTintColor: theme.custom.colors.tint,
+        tabBarInactiveTintColor: theme.custom.colors.inkTertiary,
         tabBarStyle: [
           styles.tabBar,
           { height: 60 + insets.bottom, paddingBottom: 8 + insets.bottom },
@@ -128,19 +132,19 @@ export default function RutaIdLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
     paddingBottom: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: theme.custom.hairline,
     gap: 12,
   },
   backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: theme.custom.radius.pill,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -148,10 +152,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   moduleLabel: {
-    fontWeight: "700",
-    letterSpacing: 1,
-    fontSize: 10,
-    textTransform: "uppercase",
+    ...theme.custom.type.overline,
   },
   routeTitle: {
     fontWeight: "800",
@@ -161,7 +162,9 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     // A hairline rule marks the boundary. An upward shadow only smudges the
     // edge of the screen and reads as a rendering artefact on a light page.
-    borderTopWidth: StyleSheet.hairlineWidth,
+    backgroundColor: theme.custom.colors.surfaceCard,
+    borderTopWidth: theme.custom.hairline,
+    borderTopColor: theme.custom.colors.hairline,
     elevation: 0,
   },
   tabBarLabel: {

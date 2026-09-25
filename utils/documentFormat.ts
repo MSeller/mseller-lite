@@ -73,6 +73,34 @@ export const formatMoney = (value: number, currency = "$"): string => {
   return `${safe < 0 ? "-" : ""}${currency}${formatted}`;
 };
 
+/** Units lowercased when they follow a size ("6/4 LB" → "6/4 lb"). */
+const SIZE_UNITS = new Set([
+  "lb", "lbs", "oz", "kg", "g", "gr", "grs", "mg", "ml", "l", "lt", "lts", "cc",
+  "un", "und", "unid", "cm", "mm", "m", "gal",
+]);
+
+/**
+ * Product name for display, as iOS `ProductDisplayName.titleCased`: ERP names
+ * arrive in capitals ("CARIDOM COARSE CORNMEAL 6/4 LB") and read as
+ * "Caridom Coarse Cornmeal 6/4 lb" — size tokens with digits stay as typed and a
+ * unit right after a size is lowercased. Display only; stored data never changes.
+ */
+export const productDisplayName = (name: string): string => {
+  let previousHadDigit = false;
+  return name
+    .split(" ")
+    .map((word) => {
+      const hasDigit = /\d/.test(word);
+      const afterSize = previousHadDigit;
+      previousHadDigit = hasDigit;
+      if (!word || hasDigit) return word;
+      const lower = word.toLocaleLowerCase("es");
+      if (afterSize && SIZE_UNITS.has(lower.replace(/^\p{P}+|\p{P}+$/gu, ""))) return lower;
+      return lower.charAt(0).toLocaleUpperCase("es") + lower.slice(1);
+    })
+    .join(" ");
+};
+
 /** Quantity for display — trims the decimals when the value is whole. */
 export const formatQuantity = (value: number): string => {
   if (!Number.isFinite(value)) return "0";

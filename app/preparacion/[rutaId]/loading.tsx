@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -36,6 +36,8 @@ const vehiculoTipoLabel = (tipo?: string | null) => {
 
 function LoadingScreen() {
   const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { status } = theme.custom;
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
   const numericRutaId = parseInt(rutaId ?? "0", 10);
@@ -194,9 +196,10 @@ function LoadingScreen() {
     const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
     const locked = item.confirmado || isDeclined;
 
-    const accent = isDeclined ? "#C62828" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.onContainer : "#2E7D32") : theme.custom.status.warning.onContainer;
-    const pillBg = isDeclined ? "#FDECEA" : item.confirmado ? (item.conIncidencia ? theme.custom.status.warning.container : "#E7F5E9") : theme.custom.status.warning.container;
-    const pillFg = accent;
+    const tone = isDeclined ? status.negative : item.confirmado ? (item.conIncidencia ? status.warning : status.positive) : status.warning;
+    const accent = tone.base;
+    const pillBg = tone.container;
+    const pillFg = tone.onContainer;
     const pillText = isDeclined
       ? t("preparacion.declined")
       : item.confirmado
@@ -210,7 +213,7 @@ function LoadingScreen() {
           <Card.Content style={styles.cardContent}>
             <View style={styles.header}>
               <View style={[styles.seqBadge, { backgroundColor: accent }]}>
-                {isDeclined ? <Icon source="close" size={18} color="#FFFFFF" /> : item.confirmado ? <Icon source="check" size={18} color="#FFFFFF" /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
+                {isDeclined ? <Icon source="close" size={18} color={theme.custom.colors.background} /> : item.confirmado ? <Icon source="check" size={18} color={theme.custom.colors.background} /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
               </View>
               <View style={{ flex: 1 }}>
                 <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>{item.nombreCliente}</Text>
@@ -222,7 +225,7 @@ function LoadingScreen() {
                   </View>
                 )}
               </View>
-              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: 11, fontWeight: "700" }}>
+              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={[styles.pillText, { color: pillFg }]}>
                 {pillText}
               </Chip>
             </View>
@@ -233,7 +236,7 @@ function LoadingScreen() {
               {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
             </View>
             {!!reason && (
-              <View style={[styles.reasonBox, { backgroundColor: isDeclined ? "#FDECEA" : theme.custom.status.warning.container }]}>
+              <View style={[styles.reasonBox, { backgroundColor: pillBg }]}>
                 <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
                 <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
               </View>
@@ -253,9 +256,9 @@ function LoadingScreen() {
                 <Pressable
                   key={`${prod.codigoProducto}-${idx}`}
                   onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)}
-                  style={[styles.itemCard, { backgroundColor: isChecked ? "#EAF4EC" : theme.colors.surfaceVariant, borderColor: isChecked ? "#ABD9B3" : "transparent" }]}
+                  style={[styles.itemCard, { backgroundColor: isChecked ? status.positive.container : theme.colors.surfaceVariant, borderColor: isChecked ? status.positive.base : "transparent" }]}
                 >
-                  <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color="#2E7D32" />
+                  <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color={status.positive.base} />
                   <View style={styles.itemInfo}>
                     <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: "700", lineHeight: 20 }} numberOfLines={2}>
                       {prod.descripcion || prod.codigoProducto}
@@ -270,7 +273,7 @@ function LoadingScreen() {
               );
             })}
 
-            <Button mode="contained" buttonColor="#2E7D32" onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
+            <Button mode="contained" buttonColor={status.positive.base} onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
               {t("preparacion.confirmLoad")}
             </Button>
             {!complete && (
@@ -281,7 +284,7 @@ function LoadingScreen() {
                 <Button mode="outlined" textColor={theme.custom.status.warning.base} onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
                   {t("preparacion.confirmWithIssue")}
                 </Button>
-                <Button mode="outlined" textColor="#C62828" onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
+                <Button mode="outlined" textColor={status.negative.base} onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
                   {t("preparacion.declineInvoice")}
                 </Button>
               </>
@@ -304,7 +307,7 @@ function LoadingScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
       {!!veh && (
-        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+        <View style={[styles.infoCard, { backgroundColor: theme.colors.surface, borderColor: theme.custom.colors.hairline }]}>
           <View style={styles.infoRow}>
             <Icon source="truck" size={16} color={theme.colors.primary} />
             <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
@@ -312,14 +315,14 @@ function LoadingScreen() {
         </View>
       )}
 
-      <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.colors.surfaceVariant }]}>
+      <View style={[styles.progress, { backgroundColor: theme.colors.surface, borderColor: theme.custom.colors.hairline }]}>
         <View style={styles.progressHeaderRow}>
           <Text style={[styles.progressLabel, { color: theme.colors.onSurfaceVariant }]}>{t("preparacion.loadingProgressLabel")}</Text>
-          <Text style={[styles.progressMetric, { color: allLoaded ? "#2E7D32" : theme.colors.primary }]}>
+          <Text style={[styles.progressMetric, { color: allLoaded ? status.positive.base : theme.colors.primary }]}>
             {t("preparacion.loadingClientsShort", { loaded: loadedC, total: totalC })}
           </Text>
         </View>
-        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? "#2E7D32" : theme.colors.primary} style={styles.progressBar} />
+        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? status.positive.base : theme.colors.primary} style={styles.progressBar} />
       </View>
 
       <FlatList
@@ -333,7 +336,7 @@ function LoadingScreen() {
 
       {allLoaded && (
         <View style={[styles.dispatchBar, { backgroundColor: theme.colors.surface }]}>
-          <Button mode="contained" buttonColor="#2E7D32" icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={{ fontSize: 15, fontWeight: "700" }}>
+          <Button mode="contained" buttonColor={status.positive.base} icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} style={styles.dispatchBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
             {t("preparacion.dispatchRoute")}
           </Button>
         </View>
@@ -360,7 +363,7 @@ function LoadingScreen() {
           </Dialog.Content>
           <Dialog.Actions>
             <Button onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor="#C62828" onPress={handleDecline}>{t("preparacion.declineInvoice")}</Button>
+            <Button textColor={status.negative.base} onPress={handleDecline}>{t("preparacion.declineInvoice")}</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -371,42 +374,49 @@ function LoadingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: 6, borderWidth: 1, gap: 4 },
-  infoRow: { flexDirection: "row", alignItems: "center" },
-  progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: 6, borderWidth: 1 },
-  progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  progressLabel: { fontSize: 13, fontWeight: "600", letterSpacing: 0.2 },
-  progressMetric: { fontSize: 13, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
-  progressBar: { height: 8, borderRadius: 4 },
-  listContent: { padding: 16, paddingBottom: 120 },
-  separator: { height: 10 },
-  card: { borderRadius: 6, borderLeftWidth: 5 },
-  cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
-  cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
-  header: { flexDirection: "row", alignItems: "center", gap: 12 },
-  seqBadge: { width: 38, height: 38, borderRadius: 8, justifyContent: "center", alignItems: "center" },
-  seqText: { color: "#FFFFFF", fontWeight: "800", fontSize: 15 },
-  metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
-  addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
-  invoiceText: { fontSize: 16, fontWeight: "800", letterSpacing: 0.3, marginLeft: 6 },
-  reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: 6 },
-  dispatchBar: { padding: 16, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
-  cardDivider: { marginTop: 12, marginBottom: 10 },
-  sectionLabel: { fontSize: 11, fontWeight: "800", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10 },
-  itemCard: { flexDirection: "row", alignItems: "center", borderRadius: 6, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
-  itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
-  qtyBox: { minWidth: 48, alignItems: "center", justifyContent: "center", paddingLeft: 8 },
-  qtyNum: { fontSize: 24, fontWeight: "800", lineHeight: 26 },
-  qtyUnit: { fontSize: 11, fontWeight: "600", textTransform: "uppercase", marginTop: 1 },
-  actionBtn: { marginTop: 8, borderRadius: 6 },
-  actionBtnContent: { minHeight: 50 },
-  actionBtnLabel: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
-  issueBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E6C08A" },
-  declineBtn: { marginTop: 8, borderRadius: 6, borderColor: "#E7B4B4" },
-});
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, status, type } = theme.custom;
+  return StyleSheet.create({
+    container: { flex: 1 },
+    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+    infoCard: { marginHorizontal: 16, marginTop: 12, padding: 12, borderRadius: radius.container, borderWidth: 1, gap: 4 },
+    infoRow: { flexDirection: "row", alignItems: "center" },
+    progress: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16, borderRadius: radius.container, borderWidth: 1 },
+    progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+    progressLabel: { ...type.caption, fontWeight: "600", letterSpacing: 0.2 },
+    progressMetric: { ...type.caption, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
+    progressBar: { height: 8, borderRadius: 4 },
+    listContent: { padding: 16, paddingBottom: 120 },
+    separator: { height: 10 },
+    card: { borderRadius: radius.container, borderLeftWidth: 5 },
+    cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
+    cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
+    header: { flexDirection: "row", alignItems: "center", gap: 12 },
+    seqBadge: { width: 38, height: 38, borderRadius: radius.segment, justifyContent: "center", alignItems: "center" },
+    // Drawn on the solid status tone, so it takes the page colour: white in light, near-black in dark.
+    seqText: { ...type.figure(15), color: colors.background },
+    pillText: { ...type.caption, fontWeight: "700" },
+    metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
+    addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
+    invoiceText: { ...type.figure(16), letterSpacing: 0.3, marginLeft: 6 },
+    reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: radius.segment },
+    dispatchBar: { padding: 16, borderTopWidth: theme.custom.hairline, borderTopColor: colors.hairline },
+    dispatchBtn: { borderRadius: radius.control },
+    cardDivider: { marginTop: 12, marginBottom: 10 },
+    sectionLabel: { ...type.overline, marginBottom: 10 },
+    itemCard: { flexDirection: "row", alignItems: "center", borderRadius: radius.segment, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
+    itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
+    qtyBox: { minWidth: 48, alignItems: "center", justifyContent: "center", paddingLeft: 8 },
+    qtyNum: { ...type.figure(24), lineHeight: 26 },
+    qtyUnit: { ...type.caption, fontWeight: "600", textTransform: "uppercase", marginTop: 1 },
+    actionBtn: { marginTop: 8, borderRadius: radius.control },
+    actionBtnContent: { minHeight: 50 },
+    // Size only: the button supplies the label colour.
+    actionBtnLabel: { fontSize: type.bodySmall.fontSize, lineHeight: type.bodySmall.lineHeight, fontWeight: "700", letterSpacing: 0.3 },
+    issueBtn: { marginTop: 8, borderRadius: radius.control, borderColor: status.warning.base },
+    declineBtn: { marginTop: 8, borderRadius: radius.control, borderColor: status.negative.base },
+  });
+};
 
 export default function LoadingScreenRoute() {
   const { t } = useTranslation();

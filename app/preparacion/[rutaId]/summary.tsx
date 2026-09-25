@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   SectionList,
@@ -18,6 +18,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
 import {
@@ -46,7 +47,8 @@ interface SummarySection {
 }
 
 function SummaryScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -277,7 +279,11 @@ function SummaryScreen() {
                   <Text
                     style={[
                       styles.qtyText,
-                      { color: match ? "#1F6B54" : "#F57C00" },
+                      {
+                        color: match
+                          ? theme.custom.status.positive.base
+                          : theme.custom.status.warning.base,
+                      },
                     ]}
                   >
                     {item.cantidadConfirmada}
@@ -289,7 +295,11 @@ function SummaryScreen() {
                     / {item.cantidadSolicitada}
                   </Text>
                   {match && (
-                    <Icon source="check-circle" size={18} color="#1F6B54" />
+                    <Icon
+                      source="check-circle"
+                      size={18}
+                      color={theme.custom.status.positive.base}
+                    />
                   )}
                 </View>
               </View>
@@ -326,7 +336,7 @@ function SummaryScreen() {
                 }]}>
                   {item.cantidadConfirmada}
                 </Text>
-                <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                   / {item.cantidadSolicitada}
                 </Text>
               </View>
@@ -366,7 +376,10 @@ function SummaryScreen() {
       <View
         style={[
           styles.bottomBar,
-          { backgroundColor: theme.colors.surface, borderTopColor: "#E0E0E0" },
+          {
+            backgroundColor: theme.colors.surface,
+            borderTopColor: theme.custom.colors.hairline,
+          },
         ]}
       >
         <Button
@@ -410,7 +423,7 @@ function SummaryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -437,8 +450,8 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: theme.custom.hairline,
+    borderBottomColor: theme.custom.colors.hairline,
   },
   tab: {
     flex: 1,
@@ -474,8 +487,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end" as const,
   },
   qtyText: {
-    fontSize: 22,
-    fontWeight: "900",
+    ...theme.custom.type.figure(22),
   },
   listContent: {
     paddingBottom: 140,
@@ -490,7 +502,7 @@ const styles = StyleSheet.create({
   bottomBar: {
     padding: 16,
     paddingBottom: 32,
-    borderTopWidth: 1,
+    borderTopWidth: theme.custom.hairline,
   },
   completeButton: {
     minHeight: 48,

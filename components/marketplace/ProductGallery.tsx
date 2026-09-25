@@ -113,7 +113,7 @@ const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
     frame: {
       height: 280,
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       backgroundColor: theme.colors.surfaceVariant,
     },
     placeholder: {

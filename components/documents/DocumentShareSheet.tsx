@@ -536,7 +536,7 @@ const createStyles = (theme: CustomTheme) =>
     modal: {
       backgroundColor: theme.colors.surface,
       marginHorizontal: 16,
-      borderRadius: theme.custom.radius.lg,
+      borderRadius: theme.custom.radius.container,
       maxHeight: "88%",
     },
     content: { padding: 20, gap: 12 },
@@ -547,7 +547,7 @@ const createStyles = (theme: CustomTheme) =>
     lastPrint: { flexDirection: "row", alignItems: "center", gap: 6 },
     lastPrintText: { color: theme.colors.onSurfaceVariant, flex: 1 },
     actions: { gap: 8 },
-    action: { borderRadius: theme.custom.radius.md },
+    action: { borderRadius: theme.custom.radius.container },
     // 52px keeps every action a comfortable tap target on a touch screen.
     actionContent: { height: 52 },
     notice: {
@@ -555,7 +555,7 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "flex-start",
       gap: 8,
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: theme.custom.radius.sm,
+      borderRadius: theme.custom.radius.control,
       padding: 12,
     },
     noticeText: { color: theme.colors.onSurfaceVariant, flex: 1, lineHeight: 18 },
@@ -563,7 +563,7 @@ const createStyles = (theme: CustomTheme) =>
     form: { gap: 10 },
     input: { backgroundColor: theme.colors.surface },
     formActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8 },
-    sendButton: { borderRadius: theme.custom.radius.md, minWidth: 140 },
+    sendButton: { borderRadius: theme.custom.radius.container, minWidth: 140 },
     historyBlock: { gap: 6, marginTop: 4 },
     historyTitle: { color: theme.colors.onSurfaceVariant, textTransform: "uppercase", letterSpacing: 0.6 },
     historyRow: {
@@ -582,7 +582,7 @@ const createStyles = (theme: CustomTheme) =>
     historyRight: { alignItems: "flex-end", gap: 2 },
     stateChip: { alignSelf: "flex-end" },
     stateChipText: { fontSize: 11, fontWeight: "600", marginVertical: 2 },
-    banner: { borderRadius: theme.custom.radius.sm, padding: 12 },
+    banner: { borderRadius: theme.custom.radius.control, padding: 12 },
     ticketBlock: { gap: 8 },
   });
 

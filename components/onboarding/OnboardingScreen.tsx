@@ -430,7 +430,8 @@ const OnboardingScreen: React.FC = () => {
                       selected && { borderColor: theme.colors.onSurface },
                     ]}
                   >
-                    {selected && <Icon source="check" size={20} color="#FFFFFF" />}
+                    {/* The swatch is a saturated brand colour in both modes: white, like text on the gradient. */}
+                    {selected && <Icon source="check" size={20} color={theme.custom.colors.onGradient} />}
                   </Pressable>
                 );
               })}
@@ -586,11 +587,11 @@ const createStyles = (theme: CustomTheme) =>
     center: {
       alignItems: "center",
       justifyContent: "center",
-      padding: theme.custom.spacing.xl,
+      padding: theme.custom.spacing.xxl,
       gap: theme.custom.spacing.sm,
     },
     configuringTitle: {
-      marginTop: theme.custom.spacing.md,
+      marginTop: theme.custom.spacing.lg,
       textAlign: "center",
     },
     appbar: {
@@ -600,7 +601,7 @@ const createStyles = (theme: CustomTheme) =>
       height: 4,
     },
     body: {
-      padding: theme.custom.spacing.lg,
+      padding: theme.custom.spacing.xl,
       paddingBottom: theme.custom.spacing.xxl,
       width: "100%",
       maxWidth: 560,
@@ -614,16 +615,16 @@ const createStyles = (theme: CustomTheme) =>
       marginBottom: theme.custom.spacing.xs,
     },
     subtitle: {
-      marginBottom: theme.custom.spacing.lg,
+      marginBottom: theme.custom.spacing.xl,
     },
     muted: {
       color: theme.colors.onSurfaceVariant,
     },
     field: {
-      marginBottom: theme.custom.spacing.md,
+      marginBottom: theme.custom.spacing.lg,
     },
     section: {
-      marginTop: theme.custom.spacing.md,
+      marginTop: theme.custom.spacing.lg,
     },
     sectionLabel: {
       marginBottom: theme.custom.spacing.sm,
@@ -634,12 +635,12 @@ const createStyles = (theme: CustomTheme) =>
     logoRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: theme.custom.spacing.md,
+      gap: theme.custom.spacing.lg,
     },
     logoBox: {
       width: 96,
       height: 96,
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       borderWidth: 1,
       borderColor: theme.colors.outlineVariant,
       backgroundColor: theme.colors.surface,
@@ -659,7 +660,7 @@ const createStyles = (theme: CustomTheme) =>
     swatches: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: theme.custom.spacing.md,
+      gap: theme.custom.spacing.lg,
     },
     swatch: {
       width: 44,
@@ -672,14 +673,14 @@ const createStyles = (theme: CustomTheme) =>
     },
     optionCard: {
       borderWidth: 1.5,
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       backgroundColor: theme.colors.surface,
-      marginBottom: theme.custom.spacing.md,
+      marginBottom: theme.custom.spacing.lg,
     },
     optionRow: {
       flexDirection: "row",
       alignItems: "center",
-      padding: theme.custom.spacing.md,
+      padding: theme.custom.spacing.lg,
       gap: theme.custom.spacing.sm,
     },
     optionText: {
@@ -688,9 +689,9 @@ const createStyles = (theme: CustomTheme) =>
     },
     footer: {
       flexDirection: "row",
-      gap: theme.custom.spacing.md,
-      paddingHorizontal: theme.custom.spacing.lg,
-      paddingVertical: theme.custom.spacing.md,
+      gap: theme.custom.spacing.lg,
+      paddingHorizontal: theme.custom.spacing.xl,
+      paddingVertical: theme.custom.spacing.lg,
       borderTopWidth: theme.custom.hairline,
       borderTopColor: theme.colors.outlineVariant,
       backgroundColor: theme.colors.background,

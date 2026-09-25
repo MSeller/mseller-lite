@@ -98,7 +98,7 @@ const createStyles = (theme: CustomTheme) =>
       flexGrow: 1,
     },
     content: {
-      padding: theme.custom.spacing.md,
+      padding: theme.custom.spacing.lg,
       minHeight: 132,
     },
     titleRow: {

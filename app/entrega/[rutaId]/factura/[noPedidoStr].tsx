@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Image, Linking, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -43,6 +43,8 @@ const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
   const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { status } = theme.custom;
   // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -252,13 +254,13 @@ export default function FacturaEntregaScreen() {
         </Card>
 
         {alreadyRecorded && (
-          <Chip icon="information" style={styles.recordedChip} textStyle={{ fontSize: 12 }}>
+          <Chip icon="information" style={styles.recordedChip} textStyle={{ fontSize: theme.custom.type.caption.fontSize }}>
             {t("entrega.alreadyRecorded", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
           </Chip>
         )}
 
         {(data.faltantesCarga?.length ?? 0) > 0 && (
-          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: 12, color: theme.custom.status.warning.onContainer }}>
+          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: theme.custom.type.caption.fontSize, color: status.warning.onContainer }}>
             {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
           </Chip>
         )}
@@ -319,10 +321,10 @@ export default function FacturaEntregaScreen() {
       </ScrollView>
 
       {/* Actions */}
-      <View style={[styles.actions, { backgroundColor: theme.colors.surface }]}>
+      <View style={styles.actions}>
         {partialMode ? (
           <>
-            <Button mode="contained" buttonColor={theme.custom.status.warning.base} icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
+            <Button mode="contained" buttonColor={status.warning.base} icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
               {t("entrega.confirmPartial")}
             </Button>
             <Button mode="text" onPress={() => { setPartialMode(false); setFaltantes({}); }} disabled={submitting}>
@@ -333,7 +335,7 @@ export default function FacturaEntregaScreen() {
           <>
             <Button
               mode="contained"
-              buttonColor="#2E7D32"
+              buttonColor={status.positive.base}
               icon="check-circle"
               loading={submitting}
               disabled={submitting}
@@ -351,10 +353,10 @@ export default function FacturaEntregaScreen() {
               </Button>
             </View>
             <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="outlined" textColor="#5E35B1" icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); }}>
+              <Button mode="outlined" textColor={theme.colors.tertiary} icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); }}>
                 {t("entrega.deliverLater")}
               </Button>
-              <Button mode="outlined" textColor="#C62828" icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); }}>
+              <Button mode="outlined" textColor={status.negative.base} icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); }}>
                 {t("entrega.notDelivered")}
               </Button>
             </View>
@@ -417,13 +419,13 @@ export default function FacturaEntregaScreen() {
                   <Image source={{ uri: fotoUri }} style={styles.photo} />
                   {uploadingPhoto ? (
                     <View style={styles.photoOverlay}>
-                      <ActivityIndicator color="#FFF" />
-                      <Text style={{ color: "#FFF", marginTop: 4 }}>{t("entrega.uploadingPhoto")}</Text>
+                      <ActivityIndicator color={theme.custom.colors.onGradient} />
+                      <Text style={styles.photoOverlayText}>{t("entrega.uploadingPhoto")}</Text>
                     </View>
                   ) : (
                     fotoUrl && (
                       <View style={styles.photoBadge}>
-                        <Icon source="check-circle" size={22} color="#2E7D32" />
+                        <Icon source="check-circle" size={PHOTO_BADGE_SIZE} color={status.positive.base} />
                       </View>
                     )
                   )}
@@ -438,7 +440,7 @@ export default function FacturaEntregaScreen() {
             <Button onPress={() => setDeliverOpen(false)} disabled={submitting}>{t("common.cancel")}</Button>
             <Button
               mode="contained"
-              buttonColor="#2E7D32"
+              buttonColor={status.positive.base}
               loading={submitting}
               disabled={submitting || uploadingPhoto}
               onPress={confirmDelivery}
@@ -502,35 +504,48 @@ export default function FacturaEntregaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  scroll: { padding: 16, paddingBottom: 24 },
-  card: { borderRadius: 12, marginBottom: 12 },
-  custHeader: { flexDirection: "row", alignItems: "center" },
-  infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
-  infoText: { flex: 1, color: "#5C6773" },
-  recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#DCE7F3" },
-  issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: "#F6E7CB" },
-  lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
-  totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-  stepper: { flexDirection: "row", alignItems: "center" },
-  stepBtn: { margin: 0, width: 30, height: 30 },
-  stepInput: { width: 52, height: 34, textAlign: "center", fontSize: 14, paddingHorizontal: 2 },
-  actions: { padding: 12, borderTopWidth: 1, borderTopColor: "#E0E0E0" },
-  actionRow: { flexDirection: "row", gap: 8 },
-  payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  payChip: { marginBottom: 4 },
-  photoWrap: { alignSelf: "flex-start", position: "relative" },
-  photo: { width: 120, height: 120, borderRadius: 8, backgroundColor: "#EDF1F6" },
-  photoOverlay: {
-    position: "absolute",
-    top: 0, left: 0, right: 0, bottom: 0,
-    borderRadius: 8,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoBadge: { position: "absolute", top: 4, right: 4, backgroundColor: "#FFF", borderRadius: 11 },
-  actionBtn: { flex: 1 },
-});
+const PHOTO_BADGE_SIZE = 22;
+
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type, surface, status } = theme.custom;
+  return StyleSheet.create({
+    container: { flex: 1 },
+    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+    scroll: { padding: 16, paddingBottom: 24 },
+    card: { borderRadius: radius.container, marginBottom: 12 },
+    custHeader: { flexDirection: "row", alignItems: "center" },
+    infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
+    infoText: { flex: 1, color: colors.inkSecondary },
+    recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: colors.tintSoft },
+    issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: status.warning.container },
+    lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
+    totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
+    stepper: { flexDirection: "row", alignItems: "center" },
+    stepBtn: { margin: 0, width: 30, height: 30 },
+    stepInput: { width: 52, height: 34, textAlign: "center", fontSize: type.bodySmall.fontSize, paddingHorizontal: 2 },
+    actions: { ...surface.floating, padding: 12 },
+    actionRow: { flexDirection: "row", gap: 8 },
+    payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    payChip: { marginBottom: 4 },
+    photoWrap: { alignSelf: "flex-start", position: "relative" },
+    photo: { width: 120, height: 120, borderRadius: radius.segment, backgroundColor: colors.fill },
+    photoOverlay: {
+      position: "absolute",
+      top: 0, left: 0, right: 0, bottom: 0,
+      borderRadius: radius.segment,
+      backgroundColor: theme.colors.backdrop,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    // White in both modes: it sits on the dark scrim over the photo, like text on the gradient.
+    photoOverlayText: { color: colors.onGradient, marginTop: 4 },
+    photoBadge: {
+      position: "absolute",
+      top: 4,
+      right: 4,
+      backgroundColor: colors.surfaceCard,
+      borderRadius: PHOTO_BADGE_SIZE / 2,
+    },
+    actionBtn: { flex: 1 },
+  });
+};

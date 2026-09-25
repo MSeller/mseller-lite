@@ -130,8 +130,8 @@ const createStyles = (theme: CustomTheme) =>
     imageWrap: {
       height: 120,
       backgroundColor: theme.colors.surfaceVariant,
-      borderTopLeftRadius: theme.custom.radius.md,
-      borderTopRightRadius: theme.custom.radius.md,
+      borderTopLeftRadius: theme.custom.radius.container,
+      borderTopRightRadius: theme.custom.radius.container,
       overflow: "hidden",
     },
     imageWrapDimmed: {

@@ -50,17 +50,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
   const { userProfile } = useUser();
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
-  // The tonal blocks below take their background from the theme: a fixed light
-  // panel keeps a light surface under Paper's light-on-dark text in dark mode,
-  // which is exactly where these values become unreadable.
-  const tonal = useMemo(
-    () => ({
-      quantityInfo: [styles.quantityInfo, { backgroundColor: theme.colors.surfaceVariant }],
-      currentProduct: [styles.currentProduct, { backgroundColor: theme.colors.surfaceVariant }],
-    }),
-    [theme]
-  );
-
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // State
   const [loading, setLoading] = useState(false);
@@ -443,10 +433,17 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                   icon={isScanning ? "loading" : "barcode-scan"}
                   style={{
                     backgroundColor: isScanning
-                      ? theme.colors.secondary
+                      ? theme.custom.status.warning.container
                       : theme.colors.primaryContainer,
                   }}
-                  textStyle={{ fontSize: 12 }}
+                  textStyle={[
+                    styles.chipText,
+                    {
+                      color: isScanning
+                        ? theme.custom.status.warning.onContainer
+                        : theme.colors.onPrimaryContainer,
+                    },
+                  ]}
                 >
                   {isScanning ? "Scanning..." : "Scanner Ready"}
                 </Chip>
@@ -560,7 +557,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
               )}
 
               {"cantidadSnapshot" in foundProduct && (
-                <View style={tonal.quantityInfo}>
+                <View style={styles.quantityInfo}>
                   <Paragraph>
                     {t("inventory.expectedQuantity")}:{" "}
                     {foundProduct.cantidadSnapshot}
@@ -633,7 +630,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
               {currentProduct && (
                 <View
-                  style={tonal.currentProduct}
+                  style={styles.currentProduct}
                   onTouchEnd={() => {
                     setFoundProduct(currentProduct);
                     setCountedQuantity("");
@@ -685,7 +682,9 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type } = theme.custom;
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -700,11 +699,13 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: radius.container,
   },
   sectionTitle: {
-    fontSize: 18,
     marginBottom: 16,
+  },
+  chipText: {
+    fontSize: type.overline.fontSize,
   },
   searchModeToggle: {
     flexDirection: "row",
@@ -727,24 +728,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   productName: {
-    fontSize: 16,
-    fontWeight: "bold",
+    ...type.rowTitle,
     marginBottom: 8,
   },
   productCode: {
-    fontSize: 14,
+    fontSize: type.bodySmall.fontSize,
     fontWeight: "bold",
-    color: "#5C6773",
+    color: colors.inkTertiary,
   },
   location: {
-    fontSize: 14,
+    fontSize: type.bodySmall.fontSize,
     fontStyle: "italic",
     marginBottom: 8,
   },
   quantityInfo: {
-    backgroundColor: "#EDF1F6",
+    backgroundColor: colors.fill,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: radius.segment,
     marginBottom: 8,
   },
   divider: {
@@ -770,13 +770,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     padding: 12,
-    backgroundColor: "#EDF1F6",
-    borderRadius: 8,
+    backgroundColor: colors.fill,
+    borderRadius: radius.segment,
   },
   productInfo: {
     flex: 1,
     marginRight: 12,
   },
-});
+  });
+};
 
 export default ProductCountingScreen;
