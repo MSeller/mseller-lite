@@ -43,9 +43,8 @@ function RootLayoutContent() {
   /**
    * React Navigation paints the page behind every screen from its OWN theme, and
    * its default is a flat grey that has nothing to do with our palette. Deriving
-   * it from the design system is what makes the paper-tone page consistent app
-   * wide — and it is what lets white cards read as raised without a shadow,
-   * instead of sitting invisibly on a near-white background.
+   * it from the design system is what keeps every screen's page, headers and
+   * hairlines on the same tokens as the iOS app, in light and dark mode.
    */
   const navigationTheme = useMemo(() => {
     const isDark = colorScheme === "dark";
@@ -114,7 +113,6 @@ function RootLayoutContent() {
         <Stack.Screen name="api-test" options={{ title: t("navigation.apiTest") }} />
         <Stack.Screen name="+not-found" />
       </Stack>
-      <StatusBar style="auto" />
     </ThemeProvider>
   );
 }
@@ -188,6 +186,9 @@ export default function RootLayout() {
               <MarketplaceCartProvider>
                 <RootLayoutContent />
                 <EnvironmentBadge />
+                {/* Here rather than in the navigator so the sign-in and setup screens, which
+                    render before it, also follow the system appearance. */}
+                <StatusBar style="auto" />
               </MarketplaceCartProvider>
             </PrinterProvider>
           </UserProvider>

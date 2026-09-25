@@ -25,7 +25,7 @@ const ProgressHeader: React.FC<ProgressHeaderProps> = ({
   const accent = complete ? status.positive.base : theme.colors.primary;
 
   return (
-    <AppCard style={styles.card} contentStyle={{ padding: spacing.md }}>
+    <AppCard style={styles.card} contentStyle={{ padding: spacing.lg }}>
       <View style={styles.topRow}>
         <Text
           variant="labelSmall"

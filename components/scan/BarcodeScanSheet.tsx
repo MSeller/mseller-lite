@@ -35,6 +35,13 @@ const TIPOS_CODIGO = [
 /** The same code read again within this window is the same scan, not a second one. */
 const MISMO_CODIGO_MS = 1500;
 
+/**
+ * The sheet is a camera viewfinder: a black stage (`colors.scrim`) with white chrome in
+ * both light and dark mode, like the system camera. That is deliberate, so the one
+ * foreground colour lives here instead of following the theme.
+ */
+const SOBRE_CAMARA = "#FFFFFF";
+
 interface Props {
   visible: boolean;
   onDismiss: () => void;
@@ -71,7 +78,7 @@ const BarcodeScanSheet: React.FC<Props> = ({ visible, onDismiss, onScan, title, 
             size={24}
             onPress={onDismiss}
             accessibilityLabel={t("common.close")}
-            iconColor="#fff"
+            iconColor={SOBRE_CAMARA}
           />
         </View>
 
@@ -85,7 +92,7 @@ const BarcodeScanSheet: React.FC<Props> = ({ visible, onDismiss, onScan, title, 
           />
         ) : (
           <View style={styles.center}>
-            <Icon source="barcode-off" size={48} color="#fff" />
+            <Icon source="barcode-off" size={48} color={SOBRE_CAMARA} />
             <Text style={styles.notice}>{t("scan.unavailable")}</Text>
           </View>
         )}
@@ -149,7 +156,7 @@ const Escaner: React.FC<EscanerProps> = ({ camara, onScan, continuous, onDone, s
   if (!permiso.granted) {
     return (
       <View style={styles.center}>
-        <Icon source="camera-off" size={48} color="#fff" />
+        <Icon source="camera-off" size={48} color={SOBRE_CAMARA} />
         <Text style={styles.notice}>{t("scan.permission")}</Text>
         {permiso.canAskAgain && (
           <Button mode="contained" onPress={pedirPermiso}>
@@ -179,7 +186,7 @@ const createStyles = (theme: CustomTheme) =>
     modal: {
       flex: 1,
       margin: 0,
-      backgroundColor: "#000",
+      backgroundColor: theme.colors.scrim,
     },
     header: {
       flexDirection: "row",
@@ -189,7 +196,7 @@ const createStyles = (theme: CustomTheme) =>
       paddingTop: 12,
     },
     title: {
-      color: "#fff",
+      color: SOBRE_CAMARA,
       fontWeight: "700",
       flex: 1,
     },
@@ -201,7 +208,7 @@ const createStyles = (theme: CustomTheme) =>
     frame: {
       width: "75%",
       aspectRatio: 1.6,
-      borderRadius: 16,
+      borderRadius: theme.custom.radius.container,
       borderWidth: 3,
       borderColor: theme.colors.primaryContainer,
     },
@@ -213,7 +220,7 @@ const createStyles = (theme: CustomTheme) =>
       paddingHorizontal: 32,
     },
     notice: {
-      color: "#fff",
+      color: SOBRE_CAMARA,
       textAlign: "center",
     },
     footer: {
@@ -221,7 +228,7 @@ const createStyles = (theme: CustomTheme) =>
       gap: 12,
     },
     feedback: {
-      color: "#fff",
+      color: SOBRE_CAMARA,
       textAlign: "center",
     },
     doneContent: {

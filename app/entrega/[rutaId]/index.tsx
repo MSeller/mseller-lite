@@ -1,5 +1,5 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { FlatList, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -17,6 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme, StatusTokens } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import {
@@ -32,19 +33,24 @@ import {
   vehiculoLabel,
 } from "../../../utils/mapLinks";
 
-const detalleStatus: Record<RutaDetalleStatus, { color: string; bg: string; key: string; icon: string }> = {
-  activo: { color: "#F57C00", bg: "#FFF3E0", key: "entrega.detalle.pending", icon: "clock-outline" },
-  entregado: { color: "#2E7D32", bg: "#D6EDE3", key: "entrega.detalle.entregado", icon: "check-circle" },
-  entregado_con_novedad: { color: "#00897B", bg: "#E0F2F1", key: "entrega.detalle.entregado_con_novedad", icon: "check-decagram" },
-  parcial: { color: "#B26A00", bg: "#FFF8E1", key: "entrega.detalle.parcial", icon: "alert-circle-outline" },
-  entregar_despues: { color: "#5E35B1", bg: "#EDE7F6", key: "entrega.detalle.entregar_despues", icon: "calendar-clock" },
-  no_entregado: { color: "#C62828", bg: "#F8DEDC", key: "entrega.detalle.no_entregado", icon: "close-circle-outline" },
-  excluido: { color: "#9E9E9E", bg: "#EDF1F6", key: "entrega.detalle.excluido", icon: "minus-circle-outline" },
-  reasignado: { color: "#9E9E9E", bg: "#EDF1F6", key: "entrega.detalle.reasignado", icon: "swap-horizontal" },
+// A rescheduled stop ("accent") is neither a problem nor done; a delivery with a note ("info")
+// is done but must not read as a clean delivery.
+type DetalleTone = keyof StatusTokens;
+
+const detalleStatus: Record<RutaDetalleStatus, { tone: DetalleTone; key: string; icon: string }> = {
+  activo: { tone: "warning", key: "entrega.detalle.pending", icon: "clock-outline" },
+  entregado: { tone: "positive", key: "entrega.detalle.entregado", icon: "check-circle" },
+  entregado_con_novedad: { tone: "info", key: "entrega.detalle.entregado_con_novedad", icon: "check-decagram" },
+  parcial: { tone: "warning", key: "entrega.detalle.parcial", icon: "alert-circle-outline" },
+  entregar_despues: { tone: "accent", key: "entrega.detalle.entregar_despues", icon: "calendar-clock" },
+  no_entregado: { tone: "negative", key: "entrega.detalle.no_entregado", icon: "close-circle-outline" },
+  excluido: { tone: "neutral", key: "entrega.detalle.excluido", icon: "minus-circle-outline" },
+  reasignado: { tone: "neutral", key: "entrega.detalle.reasignado", icon: "swap-horizontal" },
 };
 
 export default function RutaEntregaDetalleScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -105,10 +111,11 @@ export default function RutaEntregaDetalleScreen() {
 
   const renderStop = ({ item }: { item: EntregaFacturaResumen }) => {
     const st = detalleStatus[item.statusDetalle] ?? detalleStatus.activo;
+    const tone = theme.custom.status[st.tone];
     const canNavigate = hasCoords(item);
     return (
       <Card elevation={0}
-        style={[styles.stopCard, { backgroundColor: theme.colors.surface, borderLeftColor: st.color }]}
+        style={[styles.stopCard, { backgroundColor: theme.colors.surface, borderLeftColor: tone.base }]}
         onPress={() =>
           router.push(
             `/entrega/${numericRutaId}/factura/${encodeURIComponent(item.noPedidoStr)}` as any
@@ -149,7 +156,7 @@ export default function RutaEntregaDetalleScreen() {
             />
           </View>
           <View style={styles.stopFooter}>
-            <Chip compact style={{ backgroundColor: st.bg }} textStyle={{ color: st.color, fontSize: 11 }} icon={st.icon}>
+            <Chip compact style={{ backgroundColor: tone.container }} textStyle={{ color: tone.onContainer, fontSize: theme.custom.type.caption.fontSize }} icon={st.icon}>
               {t(st.key)}
             </Chip>
             <Text variant="bodyMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
@@ -176,7 +183,7 @@ export default function RutaEntregaDetalleScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      <View style={[styles.summary, { backgroundColor: theme.colors.surface }]}>
+      <View style={styles.summary}>
         <View style={styles.summaryRow}>
           <Text variant="titleLarge" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
             {data?.noRuta}
@@ -195,7 +202,7 @@ export default function RutaEntregaDetalleScreen() {
         </Text>
         <ProgressBar
           progress={progress}
-          color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
+          color={progress >= 1 ? theme.custom.status.positive.base : theme.colors.primary}
           style={styles.progressBar}
         />
       </View>
@@ -227,11 +234,11 @@ export default function RutaEntregaDetalleScreen() {
       />
 
       {isEnRuta && (
-        <View style={[styles.closeBar, { backgroundColor: theme.colors.surface }]}>
+        <View style={styles.closeBar}>
           <Button
             mode="contained"
             icon="flag-checkered"
-            buttonColor="#2E7D32"
+            buttonColor={theme.custom.status.positive.base}
             disabled={hasPending || closing || total === 0}
             loading={closing}
             onPress={handleClose}
@@ -284,37 +291,41 @@ export default function RutaEntregaDetalleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-  summary: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-  },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  vehRow: { flexDirection: "row", alignItems: "center" },
-  progressBar: { height: 8, borderRadius: 4, marginTop: 8 },
-  actionBar: { padding: 16, paddingBottom: 0 },
-  listContent: { padding: 16, paddingBottom: 120 },
-  stopCard: { borderRadius: 12, borderLeftWidth: 4 },
-  stopHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  seqBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "#14395E",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  seqText: { color: "#FFF", fontWeight: "bold", fontSize: 13 },
-  stopInfo: { flex: 1 },
-  stopFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-  closeBar: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
-  },
-  mapOption: { justifyContent: "flex-start", marginVertical: 2 },
-});
+const PROGRESS_BAR_HEIGHT = 8;
+const SEQ_BADGE_SIZE = 30;
+
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type, surface, hairline } = theme.custom;
+  return StyleSheet.create({
+    container: { flex: 1 },
+    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+    summary: {
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      backgroundColor: colors.surfaceCard,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    vehRow: { flexDirection: "row", alignItems: "center" },
+    progressBar: { height: PROGRESS_BAR_HEIGHT, borderRadius: PROGRESS_BAR_HEIGHT / 2, marginTop: 8 },
+    actionBar: { padding: 16, paddingBottom: 0 },
+    listContent: { padding: 16, paddingBottom: 120 },
+    stopCard: { borderRadius: radius.container, borderLeftWidth: 4 },
+    stopHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
+    // Sequence numbers are data, not actions: an ink disc with page-coloured digits.
+    seqBadge: {
+      width: SEQ_BADGE_SIZE,
+      height: SEQ_BADGE_SIZE,
+      borderRadius: SEQ_BADGE_SIZE / 2,
+      backgroundColor: colors.ink,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    seqText: { ...type.figure(type.caption.fontSize ?? 13), color: colors.background },
+    stopInfo: { flex: 1 },
+    stopFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
+    closeBar: { ...surface.floating, padding: 16 },
+    mapOption: { justifyContent: "flex-start", marginVertical: 2 },
+  });
+};

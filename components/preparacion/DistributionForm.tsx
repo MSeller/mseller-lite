@@ -14,6 +14,7 @@ import {
   TextInput,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme } from "../../constants/Theme";
 import { ConsolidadoDistribucion, DistribucionCliente } from "../../types/preparacion";
 
 interface ClienteDistribucion {
@@ -45,7 +46,9 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
   onCancel,
   loading = false,
 }) => {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { status } = theme.custom;
 
   const [cantidadPreparada, setCantidadPreparada] = useState(
     cantidadTotal.toString()
@@ -198,7 +201,7 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
 
           {hayDiferencia && !excedido && (
             <View style={styles.warningRow}>
-              <Icon source="alert" size={18} color="#F57C00" />
+              <Icon source="alert" size={18} color={status.warning.base} />
               <Text style={styles.warningText}>
                 Diferencia: {diferencia} unidades
               </Text>
@@ -206,8 +209,8 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
           )}
           {excedido && (
             <View style={styles.warningRow}>
-              <Icon source="alert-circle" size={18} color="#D32F2F" />
-              <Text style={[styles.warningText, { color: "#D32F2F" }]}>
+              <Icon source="alert-circle" size={18} color={status.negative.base} />
+              <Text style={[styles.warningText, { color: status.negative.base }]}>
                 No puede exceder la cantidad solicitada
               </Text>
             </View>
@@ -265,7 +268,7 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
               variant="bodyLarge"
               style={{
                 fontWeight: "bold",
-                color: distribucionValida ? "#388E3C" : "#D32F2F",
+                color: distribucionValida ? status.positive.base : status.negative.base,
               }}
             >
               {distribucionValida ? "✓" : "⚠"} Total distribuido:{" "}
@@ -296,7 +299,10 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
       <View
         style={[
           styles.bottomBar,
-          { backgroundColor: theme.colors.surface, borderTopColor: "#E0E0E0" },
+          {
+            backgroundColor: theme.colors.surface,
+            borderTopColor: theme.custom.colors.hairline,
+          },
         ]}
       >
         <Button
@@ -322,7 +328,7 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -331,8 +337,8 @@ const styles = StyleSheet.create({
   },
   productHeader: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: theme.custom.hairline,
+    borderBottomColor: theme.custom.colors.hairline,
   },
   section: {
     padding: 16,
@@ -357,8 +363,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   quantityInputContent: {
-    fontSize: 32,
-    fontWeight: "900",
+    ...theme.custom.type.figure(32),
     textAlign: "center",
   },
   warningRow: {
@@ -368,7 +373,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   warningText: {
-    color: "#F57C00",
+    color: theme.custom.status.warning.base,
     fontWeight: "600",
   },
   clientRow: {
@@ -387,22 +392,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   clientInputContent: {
-    fontSize: 18,
-    fontWeight: "bold",
+    ...theme.custom.type.figure(18),
     textAlign: "center",
   },
   totalRow: {
     marginTop: 12,
     paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E0E0E0",
+    borderTopWidth: theme.custom.hairline,
+    borderTopColor: theme.custom.colors.hairline,
   },
   bottomBar: {
     flexDirection: "row",
     padding: 16,
     paddingBottom: 32,
     gap: 12,
-    borderTopWidth: 1,
+    borderTopWidth: theme.custom.hairline,
   },
   bottomButton: {
     flex: 1,

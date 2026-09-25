@@ -34,6 +34,7 @@ import {
   formatMoney,
   formatUnitWithFactor,
   parseNumericInput,
+  productDisplayName,
 } from "../../../utils/documentFormat";
 import { productThumbnailUrl, type UploadedProductPhoto } from "../../../utils/productPhoto";
 import BarcodeScanSheet from "../../scan/BarcodeScanSheet";
@@ -286,7 +287,7 @@ const ProductPickerModal: React.FC<Props> = ({
 
             <View style={styles.rowBody}>
               <Text variant="titleSmall" style={styles.rowTitle} numberOfLines={2}>
-                {item.nombre || item.codigo}
+                {item.nombre ? productDisplayName(item.nombre) : item.codigo}
               </Text>
               <Text variant="bodySmall" style={styles.rowMeta} numberOfLines={1}>
                 {item.codigo}
@@ -542,7 +543,7 @@ const createStyles = (theme: CustomTheme) =>
     countChipText: {
       color: theme.colors.onPrimaryContainer,
       fontWeight: "700",
-      fontSize: 12,
+      fontSize: theme.custom.type.overline.fontSize,
     },
     doneButton: {
       marginRight: 4,
@@ -553,7 +554,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     searchbar: {
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.control,
       minHeight: 52,
     },
     searchInput: {
@@ -588,18 +589,18 @@ const createStyles = (theme: CustomTheme) =>
     thumb: {
       width: 44,
       height: 44,
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.container,
       backgroundColor: theme.colors.surfaceVariant,
       alignItems: "center",
       justifyContent: "center",
     },
     thumbTouch: {
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.container,
     },
     thumbImage: {
       width: 44,
       height: 44,
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.container,
     },
     inCartBadge: {
       position: "absolute",
@@ -607,7 +608,7 @@ const createStyles = (theme: CustomTheme) =>
       bottom: -2,
       width: 18,
       height: 18,
-      borderRadius: 9,
+      borderRadius: 18 / 2,
       backgroundColor: theme.colors.primary,
       borderWidth: 2,
       borderColor: theme.colors.surface,
@@ -643,7 +644,7 @@ const createStyles = (theme: CustomTheme) =>
       backgroundColor: theme.colors.surface,
     },
     footerButton: {
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.control,
     },
     footerButtonContent: {
       height: 52,

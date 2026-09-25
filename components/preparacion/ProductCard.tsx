@@ -41,13 +41,13 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const codigo = nombre ? producto.codigoProducto : null;
 
   return (
-    <AppCard style={styles.card} contentStyle={{ padding: spacing.md }}>
+    <AppCard style={styles.card} contentStyle={{ padding: spacing.lg }}>
       <View style={styles.row}>
         <View
           style={[
             styles.tile,
             {
-              borderRadius: radius.sm,
+              borderRadius: radius.control,
               backgroundColor: isConfirmed
                 ? status.positive.container
                 : theme.colors.surfaceVariant,
@@ -119,7 +119,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </View>
 
       {isConfirmed ? (
-        <View style={[styles.footer, { marginTop: spacing.md }]}>
+        <View style={[styles.footer, { marginTop: spacing.lg }]}>
           <StatusChip
             tone="positive"
             label={`${t("preparacion.confirmed")} · ${formatQty(pickedQty)}${unidad ? ` ${unidad}` : ""}`}
@@ -131,7 +131,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             mode="contained"
             onPress={onConfirm}
             icon="clipboard-check-outline"
-            style={[styles.confirmBtn, { marginTop: spacing.md, borderRadius: radius.sm }]}
+            style={[styles.confirmBtn, { marginTop: spacing.lg, borderRadius: radius.control }]}
             contentStyle={styles.confirmBtnContent}
             labelStyle={styles.confirmBtnLabel}
           >

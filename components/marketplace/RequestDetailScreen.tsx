@@ -353,7 +353,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     rejection: {
       padding: 14,
-      borderRadius: theme.custom.radius.md,
+      borderRadius: theme.custom.radius.container,
       backgroundColor: theme.custom.status.negative.container,
       gap: 4,
     },
@@ -398,7 +398,7 @@ const createStyles = (theme: CustomTheme) =>
       flexWrap: "wrap",
       paddingVertical: 8,
       paddingHorizontal: 10,
-      borderRadius: theme.custom.radius.sm,
+      borderRadius: theme.custom.radius.control,
       backgroundColor: theme.custom.status.warning.container,
     },
     requested: {

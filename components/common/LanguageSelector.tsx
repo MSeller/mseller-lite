@@ -3,9 +3,10 @@ import {
   LanguageCode,
   useTranslation,
 } from "@/hooks/useTranslation";
-import React from "react";
+import type { CustomTheme } from "@/constants/Theme";
+import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
-import { Button, Divider, Menu } from "react-native-paper";
+import { Button, Divider, Menu, useTheme } from "react-native-paper";
 
 interface LanguageSelectorProps {
   visible: boolean;
@@ -19,6 +20,8 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   anchor,
 }) => {
   const { changeLanguage, currentLanguage } = useTranslation();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   const handleLanguageChange = async (languageCode: LanguageCode) => {
     try {
@@ -73,26 +76,31 @@ export const LanguageButton: React.FC<LanguageButtonProps> = ({ onPress }) => {
       onPress={onPress}
       icon="translate"
       compact
-      style={styles.languageButton}
+      style={buttonStyles.languageButton}
     >
       {currentLang?.code.toUpperCase() || "EN"}
     </Button>
   );
 };
 
-const styles = StyleSheet.create({
-  menuContent: {
-    backgroundColor: "white",
-    borderRadius: 8,
-    minWidth: 120,
-  },
-  menuItemTitle: {
-    fontSize: 16,
-  },
-  activeLanguage: {
-    fontWeight: "bold",
-    color: "#6200ee",
-  },
+const createStyles = (theme: CustomTheme) =>
+  StyleSheet.create({
+    menuContent: {
+      backgroundColor: theme.custom.colors.surfaceCard,
+      borderRadius: theme.custom.radius.segment,
+      minWidth: 120,
+    },
+    menuItemTitle: {
+      fontSize: theme.custom.type.body.fontSize,
+      color: theme.custom.colors.ink,
+    },
+    activeLanguage: {
+      fontWeight: "bold",
+      color: theme.custom.colors.tint,
+    },
+  });
+
+const buttonStyles = StyleSheet.create({
   languageButton: {
     minWidth: 60,
   },

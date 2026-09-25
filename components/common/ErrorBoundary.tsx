@@ -5,7 +5,9 @@
 
 import * as SplashScreen from "expo-splash-screen";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Appearance, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+import { getTheme, type CustomTheme } from "../../constants/Theme";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -73,7 +75,9 @@ class ErrorBoundary extends React.Component<
         );
       }
 
-      // Default fallback UI
+      // Default fallback UI. This boundary sits outside PaperProvider (it guards it), so it
+      // reads the theme for the current system appearance directly.
+      const styles = createStyles(getTheme(Appearance.getColorScheme() === "dark"));
       return (
         <View style={styles.container}>
           <Text style={styles.title}>Oops! Something went wrong</Text>
@@ -92,39 +96,37 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-    backgroundColor: "#EDF1F6",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#141A21",
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  message: {
-    fontSize: 16,
-    color: "#5C6773",
-    textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 24,
-  },
-  button: {
-    backgroundColor: "#14395E",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
+const createStyles = (theme: CustomTheme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      padding: theme.custom.spacing.xl,
+      backgroundColor: theme.custom.colors.background,
+    },
+    title: {
+      ...theme.fonts.headlineSmall,
+      color: theme.custom.colors.ink,
+      marginBottom: theme.custom.spacing.lg,
+      textAlign: "center",
+    },
+    message: {
+      ...theme.custom.type.body,
+      color: theme.custom.colors.inkSecondary,
+      textAlign: "center",
+      marginBottom: theme.custom.spacing.xxl,
+    },
+    button: {
+      backgroundColor: theme.custom.colors.tint,
+      paddingHorizontal: theme.custom.spacing.xxl,
+      paddingVertical: theme.custom.spacing.md,
+      borderRadius: theme.custom.radius.control,
+    },
+    buttonText: {
+      ...theme.custom.type.rowTitle,
+      color: theme.colors.onPrimary,
+    },
+  });
 
 export default ErrorBoundary;

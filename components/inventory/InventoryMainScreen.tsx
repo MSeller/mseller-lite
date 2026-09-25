@@ -1,5 +1,5 @@
 import { isAxiosError } from "axios";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
   Button,
@@ -41,6 +41,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
   const { userProfile } = useUser();
   const { t } = useTranslation();
   const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   // State
   const [loading, setLoading] = useState(true);
@@ -138,25 +139,26 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
     }
   };
 
-  const getCountStatusColor = (estado: EstadoConteo) => {
+  // Status chips: tinted container with its own text tone, so they read in both modes.
+  const getCountStatusTone = (estado: EstadoConteo) => {
+    const { status } = theme.custom;
     switch (estado) {
       case EstadoConteo.EnProgreso:
-        return "#1976D2"; // Material Blue 700
+        return status.info;
       case EstadoConteo.Completado:
-        return "#1F6B54"; // Material Green 700
+        return status.positive;
       case EstadoConteo.Reconciliado:
-        return "#7B1FA2"; // Material Purple 700
+        return status.accent;
       case EstadoConteo.Planificado:
-        return "#616161"; // Material Grey 700
+        return status.neutral;
       default:
-        return "#D32F2F"; // Material Red 700
+        return status.negative;
     }
   };
 
-  const getCountStatusTextColor = (estado: EstadoConteo) => {
-    // All these background colors work well with white text
-    return "#FFFFFF";
-  };
+  const getCountStatusColor = (estado: EstadoConteo) => getCountStatusTone(estado).container;
+
+  const getCountStatusTextColor = (estado: EstadoConteo) => getCountStatusTone(estado).onContainer;
 
   const getCountStatusText = (estado: EstadoConteo) => {
     switch (estado) {
@@ -470,7 +472,9 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => {
+  const { colors, radius, type } = theme.custom;
+  return StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -485,11 +489,11 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: radius.container,
   },
   warningCard: {
     borderLeftWidth: 4,
-    borderLeftColor: "#FFA726",
+    borderLeftColor: theme.custom.status.warning.base,
   },
   header: {
     flexDirection: "row",
@@ -533,12 +537,12 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: 8 / 2,
     marginBottom: 4,
   },
   progressText: {
     textAlign: "center",
-    fontSize: 12,
+    fontSize: type.overline.fontSize,
   },
   divider: {
     marginVertical: 16,
@@ -559,8 +563,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    borderBottomWidth: theme.custom.hairline,
+    borderBottomColor: colors.hairline,
   },
   countItemInfo: {
     flex: 1,
@@ -570,7 +574,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 16,
+    borderRadius: radius.tag,
     alignSelf: "flex-start",
   },
   fab: {
@@ -579,6 +583,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-});
+  });
+};
 
 export default InventoryMainScreen;

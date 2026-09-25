@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, View, type LayoutChangeEvent } from "react-native";
+import { useTheme } from "react-native-paper";
 
+import type { CustomTheme } from "../../constants/Theme";
 import type { Ticket, TicketNode } from "../../services/printing/markup/types";
 import { buildQrMatrix } from "../../services/printing/qr";
 
@@ -15,17 +17,19 @@ interface Props {
 const MONO = Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" });
 /** Advance width of a monospace glyph relative to its font size (Menlo/Roboto Mono ≈ 0.6). */
 const GLYPH_RATIO = 0.6;
-const PAPER = "#fdfdf8";
-const INK = "#1a1a1a";
+/**
+ * Thermal paper and print, fixed in both light and dark mode on purpose: this is a picture of
+ * a receipt, and a dark-mode receipt would misrepresent what the customer gets. The only
+ * colors in this file; keep them here rather than in the theme.
+ */
+const RECEIPT = { paper: "#FDFDF8", ink: "#1A1A1A", edge: "#D8D8CC", cut: "#9A9A90" } as const;
 
 /**
  * The ticket as it will come out of the printer: monospace at the printer's column count,
  * with alignment, bold, double size, separators and the QR drawn to scale.
- *
- * Colors are fixed paper-and-ink rather than themed — this is a picture of a receipt, and a
- * dark-mode receipt would misrepresent what the customer gets.
  */
 const TicketPreview: React.FC<Props> = ({ ticket, columns, hasCutter = true }) => {
+  const { custom } = useTheme() as CustomTheme;
   const [width, setWidth] = useState(0);
 
   const onLayout = (e: LayoutChangeEvent) => {
@@ -37,7 +41,7 @@ const TicketPreview: React.FC<Props> = ({ ticket, columns, hasCutter = true }) =
   const lineHeight = Math.ceil(fontSize * 1.35);
 
   return (
-    <View style={styles.paper}>
+    <View style={[styles.paper, { borderRadius: custom.radius.tag }]}>
       <View onLayout={onLayout} style={styles.content}>
         {width > 0 &&
           ticket.nodes.map((node, index) => (
@@ -64,7 +68,7 @@ const PreviewNode: React.FC<{
   lineHeight: number;
   hasCutter: boolean;
 }> = ({ node, columns, width, fontSize, lineHeight, hasCutter }) => {
-  const base = { fontFamily: MONO, fontSize, lineHeight, color: INK };
+  const base = { fontFamily: MONO, fontSize, lineHeight, color: RECEIPT.ink };
 
   switch (node.kind) {
     case "hr":
@@ -133,7 +137,7 @@ const PreviewQr: React.FC<{ data: string; maxWidth: number; fontSize: number }> 
 
   if (!matrix) {
     return (
-      <Text style={{ fontFamily: MONO, fontSize, color: INK, textAlign: "center" }}>[QR]</Text>
+      <Text style={{ fontFamily: MONO, fontSize, color: RECEIPT.ink, textAlign: "center" }}>[QR]</Text>
     );
   }
 
@@ -142,7 +146,7 @@ const PreviewQr: React.FC<{ data: string; maxWidth: number; fontSize: number }> 
 
   return (
     <View style={styles.qrWrap}>
-      <View style={{ width: side, height: side, backgroundColor: PAPER }}>
+      <View style={{ width: side, height: side, backgroundColor: RECEIPT.paper }}>
         {rows.map((runs, r) =>
           runs.map((run) => (
             <View
@@ -153,7 +157,7 @@ const PreviewQr: React.FC<{ data: string; maxWidth: number; fontSize: number }> 
                 left: run.start * module,
                 width: run.length * module,
                 height: module,
-                backgroundColor: INK,
+                backgroundColor: RECEIPT.ink,
               }}
             />
           ))
@@ -165,19 +169,18 @@ const PreviewQr: React.FC<{ data: string; maxWidth: number; fontSize: number }> 
 
 const styles = StyleSheet.create({
   paper: {
-    backgroundColor: PAPER,
-    borderRadius: 4,
+    backgroundColor: RECEIPT.paper,
     paddingVertical: 16,
     paddingHorizontal: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "#d8d8cc",
+    borderColor: RECEIPT.edge,
   },
   content: { width: "100%" },
   cut: {
     marginVertical: 8,
     borderTopWidth: 1,
     borderStyle: "dashed",
-    borderColor: "#9a9a90",
+    borderColor: RECEIPT.cut,
   },
   qrWrap: { alignItems: "center", paddingVertical: 8 },
 });

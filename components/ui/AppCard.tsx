@@ -56,7 +56,7 @@ const AppCard: React.FC<Props> = ({
     <View style={[base, styles.clip]}>
       <TouchableRipple
         onPress={onPress}
-        style={[{ borderRadius: radius.md }, contentStyle]}
+        style={[{ borderRadius: radius.container }, contentStyle]}
         borderless
       >
         <View>{children}</View>

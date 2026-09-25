@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -17,6 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../services/preparacionService";
@@ -24,18 +25,16 @@ import {
   RutaPreparacion,
   RutaPreparacionStatus,
 } from "../../types/preparacion";
+import { RUTA_STATUS_TONE } from "../../utils/routeStatus";
 
-const statusConfig: Record<
-  RutaPreparacionStatus,
-  { color: string; label: string }
-> = {
-  borrador: { color: "#9E9E9E", label: "Borrador" },
-  confirmada: { color: "#1976D2", label: "Confirmada" },
-  en_preparacion: { color: "#F9A825", label: "En Preparación" },
-  lista_despacho: { color: "#EF6C00", label: "Lista Despacho" },
-  en_ruta: { color: "#1F6B54", label: "En Ruta" },
-  completada: { color: "#00897B", label: "Completada" },
-  cancelada: { color: "#D32F2F", label: "Cancelada" },
+const statusLabel: Record<RutaPreparacionStatus, string> = {
+  borrador: "Borrador",
+  confirmada: "Confirmada",
+  en_preparacion: "En Preparación",
+  lista_despacho: "Lista Despacho",
+  en_ruta: "En Ruta",
+  completada: "Completada",
+  cancelada: "Cancelada",
 };
 
 interface PickingRoutesScreenProps {
@@ -44,7 +43,8 @@ interface PickingRoutesScreenProps {
 }
 
 export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesScreenProps) {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const { can, loading: accessLoading } = useNavigationAccess();
@@ -97,7 +97,8 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
       : 0;
 
   const renderRutaCard = (ruta: RutaPreparacion) => {
-    const status = statusConfig[ruta.status] ?? statusConfig.borrador;
+    const label = statusLabel[ruta.status] ?? statusLabel.borrador;
+    const tone = theme.custom.status[RUTA_STATUS_TONE[ruta.status] ?? "neutral"];
     const progress = getProgress(ruta);
 
     return (
@@ -119,11 +120,11 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
                 {ruta.noRuta}
               </Text>
               <Chip
-                style={{ backgroundColor: status.color }}
-                textStyle={{ color: "#FFF", fontSize: 11 }}
+                style={{ backgroundColor: tone.container }}
+                textStyle={[styles.chipText, { color: tone.onContainer }]}
                 compact
               >
-                {status.label}
+                {label}
               </Chip>
             </View>
 
@@ -151,7 +152,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
             <View style={styles.progressRow}>
               <ProgressBar
                 progress={progress}
-                color={progress >= 1 ? "#1F6B54" : theme.colors.primary}
+                color={progress >= 1 ? theme.custom.status.positive.base : theme.colors.primary}
                 style={styles.progressBar}
               />
               <Text
@@ -272,7 +273,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: CustomTheme) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -290,7 +291,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    borderRadius: 14,
+    borderRadius: theme.custom.radius.container,
+  },
+  chipText: {
+    ...theme.custom.type.caption,
+    fontWeight: "600",
   },
   cardHeader: {
     flexDirection: "row",
@@ -324,7 +329,7 @@ const styles = StyleSheet.create({
   },
   skeletonLine: {
     height: 14,
-    borderRadius: 4,
-    backgroundColor: "#DCE2EA",
+    borderRadius: theme.custom.radius.tag,
+    backgroundColor: theme.custom.colors.hairline,
   },
 });

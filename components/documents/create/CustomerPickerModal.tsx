@@ -351,7 +351,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     searchbar: {
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.control,
       minHeight: 52,
     },
     searchInput: {
@@ -387,7 +387,7 @@ const createStyles = (theme: CustomTheme) =>
     avatar: {
       width: 44,
       height: 44,
-      borderRadius: 22,
+      borderRadius: 44 / 2,
       backgroundColor: theme.colors.primaryContainer,
       alignItems: "center",
       justifyContent: "center",
@@ -414,7 +414,7 @@ const createStyles = (theme: CustomTheme) =>
       backgroundColor: theme.colors.surface,
     },
     footerButton: {
-      borderRadius: 12,
+      borderRadius: theme.custom.radius.control,
     },
     footerButtonContent: {
       height: 52,

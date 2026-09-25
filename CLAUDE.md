@@ -44,3 +44,20 @@ cloud.mseller.app and must stay aligned with mseller-cloud. When mseller-cloud's
 onboarding flow changes, update this app in a paired PR; when a change here affects what the
 backend stores, change the portal first. The file map and contract are in
 `docs/REGISTRATION_PARITY.md`.
+
+## Design Parity with mobile-seller (iOS)
+
+This app uses the **same design guide and colors as the iOS app** (`mobile-seller`, design system
+v2 "editorial"). The iOS repo is the source of truth (`docs/design/DESIGN_SYSTEM.md`,
+`utils/Theme.swift`, `Images.xcassets/Theme`); this repo mirrors it in `constants/Theme.ts` and
+`docs/design/DESIGN_SYSTEM.md`.
+
+- Every screen you create or touch follows `docs/design/DESIGN_SYSTEM.md`, in light **and** dark
+  mode. Colors, type, spacing and radii come from `theme.custom` — no hex/`rgba()` literals, font
+  families or magic sizes/radii in view code; `pnpm design:check <changed files>` must not report
+  anything new.
+- When the iOS tokens or guide change, update `constants/Theme.ts` and the guide here in a paired
+  PR (and vice versa: propose shared-guide changes in mobile-seller first).
+- Capture flows mirror iOS screens: new order is ONE screen like iOS Pedido
+  (`DocumentViewController.swift`) — no multi-step wizards.
+- Design work is presentation-only: no changes to business logic, data flow or what gets saved.
