@@ -17,7 +17,7 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
-import type { CustomTheme, StatusTokens, StatusTone } from "@/constants/Theme";
+import type { CustomTheme, StatusTokens } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import {
@@ -33,24 +33,20 @@ import {
   vehiculoLabel,
 } from "../../../utils/mapLinks";
 
-// "later" is a rescheduled stop: not a problem, not done — it reads in Paper's tertiary tone.
-type DetalleTone = keyof StatusTokens | "later";
+// A rescheduled stop ("accent") is neither a problem nor done; a delivery with a note ("info")
+// is done but must not read as a clean delivery.
+type DetalleTone = keyof StatusTokens;
 
 const detalleStatus: Record<RutaDetalleStatus, { tone: DetalleTone; key: string; icon: string }> = {
   activo: { tone: "warning", key: "entrega.detalle.pending", icon: "clock-outline" },
   entregado: { tone: "positive", key: "entrega.detalle.entregado", icon: "check-circle" },
-  entregado_con_novedad: { tone: "positive", key: "entrega.detalle.entregado_con_novedad", icon: "check-decagram" },
+  entregado_con_novedad: { tone: "info", key: "entrega.detalle.entregado_con_novedad", icon: "check-decagram" },
   parcial: { tone: "warning", key: "entrega.detalle.parcial", icon: "alert-circle-outline" },
-  entregar_despues: { tone: "later", key: "entrega.detalle.entregar_despues", icon: "calendar-clock" },
+  entregar_despues: { tone: "accent", key: "entrega.detalle.entregar_despues", icon: "calendar-clock" },
   no_entregado: { tone: "negative", key: "entrega.detalle.no_entregado", icon: "close-circle-outline" },
   excluido: { tone: "neutral", key: "entrega.detalle.excluido", icon: "minus-circle-outline" },
   reasignado: { tone: "neutral", key: "entrega.detalle.reasignado", icon: "swap-horizontal" },
 };
-
-const toneFor = (theme: CustomTheme, tone: DetalleTone): StatusTone =>
-  tone === "later"
-    ? { base: theme.colors.tertiary, container: theme.colors.tertiaryContainer, onContainer: theme.colors.onTertiaryContainer }
-    : theme.custom.status[tone];
 
 export default function RutaEntregaDetalleScreen() {
   const theme = useTheme() as CustomTheme;
@@ -115,7 +111,7 @@ export default function RutaEntregaDetalleScreen() {
 
   const renderStop = ({ item }: { item: EntregaFacturaResumen }) => {
     const st = detalleStatus[item.statusDetalle] ?? detalleStatus.activo;
-    const tone = toneFor(theme, st.tone);
+    const tone = theme.custom.status[st.tone];
     const canNavigate = hasCoords(item);
     return (
       <Card elevation={0}

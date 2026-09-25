@@ -47,7 +47,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     label: {
       color: theme.custom.colors.background,
-      fontSize: 10,
+      fontSize: theme.custom.type.overline.fontSize,
       fontWeight: "700",
       letterSpacing: 0.5,
     },

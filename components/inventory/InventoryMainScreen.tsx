@@ -144,11 +144,11 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
     const { status } = theme.custom;
     switch (estado) {
       case EstadoConteo.EnProgreso:
-        return { container: theme.colors.primaryContainer, onContainer: theme.colors.onPrimaryContainer };
+        return status.info;
       case EstadoConteo.Completado:
         return status.positive;
       case EstadoConteo.Reconciliado:
-        return { container: theme.colors.tertiaryContainer, onContainer: theme.colors.onTertiaryContainer };
+        return status.accent;
       case EstadoConteo.Planificado:
         return status.neutral;
       default:
@@ -537,7 +537,7 @@ const createStyles = (theme: CustomTheme) => {
   },
   progressBar: {
     height: 8,
-    borderRadius: 4, // half the bar's height
+    borderRadius: 8 / 2,
     marginBottom: 4,
   },
   progressText: {

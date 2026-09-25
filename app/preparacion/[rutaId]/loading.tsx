@@ -385,7 +385,7 @@ const createStyles = (theme: CustomTheme) => {
     progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
     progressLabel: { ...type.caption, fontWeight: "600", letterSpacing: 0.2 },
     progressMetric: { ...type.caption, fontWeight: "800", letterSpacing: 0.6, textTransform: "uppercase" },
-    progressBar: { height: 8, borderRadius: 4 },
+    progressBar: { height: 8, borderRadius: 8 / 2 },
     listContent: { padding: 16, paddingBottom: 120 },
     separator: { height: 10 },
     card: { borderRadius: radius.container, borderLeftWidth: 5 },

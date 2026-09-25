@@ -17,23 +17,12 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
-import type { CustomTheme, StatusTokens } from "@/constants/Theme";
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../services/entregaService";
 import { EntregaRuta } from "../../types/entrega";
-import { RutaPreparacionStatus } from "../../types/preparacion";
 import { vehiculoLabel } from "../../utils/mapLinks";
-
-// Status reads through `custom.status`; the chip's label tells the steps within a tone apart.
-const statusTone: Record<RutaPreparacionStatus, keyof StatusTokens> = {
-  borrador: "neutral",
-  confirmada: "neutral",
-  en_preparacion: "warning",
-  lista_despacho: "warning",
-  en_ruta: "positive",
-  completada: "positive",
-  cancelada: "negative",
-};
+import { RUTA_STATUS_TONE } from "../../utils/routeStatus";
 
 interface DeliveryRoutesScreenProps {
   /** Rendered above the title, under the status bar — the Rutas section switcher. */
@@ -82,7 +71,7 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
   }, [loadRutas]);
 
   const renderCard = (ruta: EntregaRuta) => {
-    const tone = theme.custom.status[statusTone[ruta.status] ?? "neutral"];
+    const tone = theme.custom.status[RUTA_STATUS_TONE[ruta.status] ?? "neutral"];
     const progress =
       ruta.totalFacturas > 0 ? ruta.facturasEntregadas / ruta.totalFacturas : 0;
     const veh = [vehiculoLabel(ruta.vehiculoTipo), ruta.vehiculoPlaca]

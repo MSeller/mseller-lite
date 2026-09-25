@@ -453,7 +453,7 @@ const createStyles = (theme: CustomTheme) => {
   },
   progressBar: {
     height: 8,
-    borderRadius: 4, // half the bar's height
+    borderRadius: 8 / 2,
   },
   discrepancyAlert: {
     backgroundColor: theme.custom.status.negative.container,

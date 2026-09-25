@@ -23,7 +23,7 @@ import { StyleSheet, type TextStyle } from "react-native";
 // Palette — iOS asset catalog values (Any / Dark)
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface Palette {
+export interface Palette {
   tint: string;
   tintSoft: string;
   ink: string;
@@ -255,21 +255,26 @@ export interface StatusTokens {
   warning: StatusTone;
   negative: StatusTone;
   neutral: StatusTone;
+  /** Informational, not a problem and not done yet (confirmed, in progress, delivered with a note). */
+  info: StatusTone;
+  /** A second, distinct state within a flow (rescheduled, reconciled) — the iOS `offer` indigo. */
+  accent: StatusTone;
 }
 
-const buildStatus = (p: Palette, isDark: boolean): StatusTokens => ({
+type Md3Colors = ReturnType<typeof toMd3Colors>;
+
+// Tinted containers come from the MD3 roles so a chip and a Paper component on the same role match.
+const buildStatus = (p: Palette, isDark: boolean, md3: Md3Colors): StatusTokens => ({
   positive: {
     base: p.success,
     container: isDark ? "#12291B" : "#E7F5EC",
     onContainer: isDark ? "#BBF7D0" : "#0F5A2B",
   },
   warning: { base: p.warningForeground, container: p.warningBackground, onContainer: p.warningForeground },
-  negative: {
-    base: p.destructive,
-    container: isDark ? "#3A1512" : "#FDECEA",
-    onContainer: isDark ? "#FFD9D5" : "#7A1A12",
-  },
+  negative: { base: p.destructive, container: md3.errorContainer, onContainer: md3.onErrorContainer },
   neutral: { base: p.inkSecondary, container: p.fill, onContainer: p.inkSecondary },
+  info: { base: p.tint, container: md3.primaryContainer, onContainer: md3.onPrimaryContainer },
+  accent: { base: p.offer, container: md3.tertiaryContainer, onContainer: md3.onTertiaryContainer },
 });
 
 export interface SurfaceTokens {
@@ -283,8 +288,6 @@ export interface SurfaceTokens {
   gradientShadow: object;
 }
 
-export interface ColorTokens extends Palette {}
-
 export interface CustomThemeTokens {
   /** iOS spacing scale: 4 / 8 / 12 / 16 / 20 / 28 (`spacingXS…XXL`). */
   spacing: { xs: number; sm: number; md: number; lg: number; xl: number; xxl: number };
@@ -296,7 +299,7 @@ export interface CustomThemeTokens {
   touchTarget: number;
   /** Hairline that renders as one physical pixel rather than a drawn line. */
   hairline: number;
-  colors: ColorTokens;
+  colors: Palette;
   type: TypeTokens;
   surface: SurfaceTokens;
   status: StatusTokens;
@@ -312,7 +315,7 @@ const radius = { container: 12, control: 10, segment: 8, tag: 6, pill: 999 };
 /** 28 on regular width (tablet), 16 on compact (phone) — iOS `Theme.gutter(for:)`. */
 export const gutterFor = (width: number): number => (width >= 600 ? spacing.xxl : spacing.lg);
 
-const buildTokens = (p: Palette, isDark: boolean): CustomThemeTokens => ({
+const buildTokens = (p: Palette, isDark: boolean, md3: Md3Colors): CustomThemeTokens => ({
   spacing,
   gutter: spacing.lg,
   radius,
@@ -320,7 +323,7 @@ const buildTokens = (p: Palette, isDark: boolean): CustomThemeTokens => ({
   hairline: StyleSheet.hairlineWidth,
   colors: p,
   type: buildType(p),
-  status: buildStatus(p, isDark),
+  status: buildStatus(p, isDark, md3),
   surface: {
     card: {
       backgroundColor: p.surfaceCard,
@@ -351,14 +354,21 @@ const buildTokens = (p: Palette, isDark: boolean): CustomThemeTokens => ({
 // Themes
 // ─────────────────────────────────────────────────────────────────────────────
 
-const buildTheme = (base: MD3Theme, p: Palette, isDark: boolean): CustomTheme => ({
-  ...base,
-  // Paper derives radii from this: buttons 5× (10 = radiusControl), chips 2× (8 = radiusSegment).
-  roundness: 2,
-  colors: { ...base.colors, ...toMd3Colors(p, isDark) },
-  fonts: withTypography(base.fonts),
-  custom: buildTokens(p, isDark),
-});
+const buildTheme = (base: MD3Theme, p: Palette, isDark: boolean): CustomTheme => {
+  const md3 = toMd3Colors(p, isDark);
+  return {
+    ...base,
+    // Paper derives every radius from this one number (Button and SegmentedButtons 5×, Card 3×,
+    // Chip 2×, Dialog and Searchbar 7×, TextInput and Menu 1×), so no value hits all the iOS
+    // radii. 2 puts buttons on `radius.control` (10) — the guide forbids pill buttons, which 4
+    // would give — at the cost of Paper Cards (6) and inputs (2) running squarer than iOS.
+    // New containers use AppCard, which takes `radius.container`.
+    roundness: 2,
+    colors: { ...base.colors, ...md3 },
+    fonts: withTypography(base.fonts),
+    custom: buildTokens(p, isDark, md3),
+  };
+};
 
 export const customLightTheme: CustomTheme = buildTheme(MD3LightTheme, lightPalette, false);
 export const customDarkTheme: CustomTheme = buildTheme(MD3DarkTheme, darkPalette, true);

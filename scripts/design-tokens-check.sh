@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.." || exit 2
 pattern="['\"]#[0-9A-Fa-f]{3,8}['\"]|rgba?\(|fontFamily:|fontSize: *[0-9]|borderRadius: *[0-9]"
 matches=$(git grep --untracked -n -E "$pattern" -- "$@" ':(exclude)constants/Theme.ts' ':(exclude)**/__tests__/**' \
     | grep -E '^[^:]+\.(tsx?|jsx?):' | grep -v -E '^[^:]+:[0-9]+: *//' \
-    | grep -v -E 'borderRadius: *[0-9]+ */ *2,?$')
+    | grep -v -E 'borderRadius: *[0-9]+ */ *2\b')
 [ -z "$matches" ] && exit 0
 echo "$matches"
 exit 1

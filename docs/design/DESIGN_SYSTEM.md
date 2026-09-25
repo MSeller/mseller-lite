@@ -36,7 +36,8 @@ size is geometry, not a token). Paper components pick the same palette up throug
 
 MD3 mapping (for Paper): `primary`=tint, `onSurface`=ink, `onSurfaceVariant`=inkSecondary,
 `outlineVariant`=hairline, `surface`=surfaceCard, `surfaceVariant`=fill, `error`=destructive,
-`tertiary`=offer. Status chips read `custom.status` (positive / warning / negative / neutral).
+`tertiary`=offer. Status chips read `custom.status` (positive / warning / negative / neutral / info /
+accent); route statuses share one map, `utils/routeStatus.ts`.
 
 ## Type (system font)
 
@@ -77,6 +78,9 @@ MD3 mapping (for Paper): `primary`=tint, `onSurface`=ink, `onSurfaceVariant`=ink
 - Colors come from the theme; never branch on `useColorScheme()` inside a view to pick a color.
 - Anything drawn outside Paper (gradients, status bar, native views) reads the current theme so it
   flips with the system appearance.
+- Two things deliberately do NOT flip, each as one named constant with a comment: the receipt
+  preview (`TicketPreview`, white paper and black ink, like the printed ticket) and the camera
+  viewfinder chrome (`BarcodeScanSheet`, white over the video, like the system camera).
 
 ## Accessibility and localization
 
