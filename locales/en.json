@@ -826,7 +826,9 @@
   },
   "profileUnavailable": {
     "title": "We couldn't load your account",
-    "body": "Check your connection and try again. If the problem continues, sign out and sign in again."
+    "body": "Check your connection and try again. If the problem continues, sign out and sign in again.",
+    "missingTitle": "We couldn't find your MSeller account",
+    "missingBody": "{{email}} isn't part of any business on MSeller. Ask your company's administrator for access, then try again."
   },
   "createBusiness": {
     "title": "Create your business account",
