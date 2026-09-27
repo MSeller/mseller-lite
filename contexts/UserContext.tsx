@@ -1,5 +1,5 @@
 import { User } from "firebase/auth";
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { updateAxiosConfig } from "../services/api";
 import { initializeUserSession } from "../services/userService";
 import { USER_TYPES, UserTypes } from "../types/user";
@@ -54,10 +54,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [profileMissing, setProfileMissing] = useState(false);
   const [previewUserType, setPreviewUserTypeState] = useState<UserTypes["type"] | null>(null);
   // The setter is inert outside development builds, so the preview cannot be reached by
-  // any production code path.
-  const setPreviewUserType = (type: UserTypes["type"] | null) => {
+  // any production code path and `previewUserType` stays null there.
+  const setPreviewUserType = useCallback((type: UserTypes["type"] | null) => {
     if (__DEV__) setPreviewUserTypeState(type);
-  };
+  }, []);
   // Development builds can be started with `EXPO_PUBLIC_PREVIEW_ROLE=<type>` on the Metro
   // command line, so every role's navigation can be captured from a script without
   // touching the menu under Más. Inlined at bundle time; absent in production builds.
@@ -66,7 +66,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     if (__DEV__ && type && USER_TYPES.includes(type)) setPreviewUserTypeState(type);
   }, []);
   const effectiveProfile = useMemo(
-    () => (__DEV__ && previewUserType && userProfile ? { ...userProfile, type: previewUserType } : userProfile),
+    () => (previewUserType && userProfile ? { ...userProfile, type: previewUserType } : userProfile),
     [userProfile, previewUserType],
   );
 
@@ -141,7 +141,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     error,
     profileMissing,
     refreshUserProfile,
-    previewUserType: __DEV__ ? previewUserType : null,
+    previewUserType,
     setPreviewUserType,
   };
 

@@ -31,12 +31,7 @@ const fetchPage = async (
  * a code yet should still see who is on the marketplace, and each row says what to do
  * next about that particular store.
  */
-interface Props {
-  /** True when opened from Más rather than as a tab: shows a back arrow to the list. */
-  showBack?: boolean;
-}
-
-const MarketplaceDirectoryScreen: React.FC<Props> = ({ showBack = false }) => {
+const MarketplaceDirectoryScreen: React.FC = () => {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -93,12 +88,6 @@ const MarketplaceDirectoryScreen: React.FC<Props> = ({ showBack = false }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header mode="small" style={styles.appbar}>
-        {showBack && (
-          <Appbar.BackAction
-            accessibilityLabel={t("common.back")}
-            onPress={() => (router.canGoBack() ? router.back() : router.navigate("/(tabs)/more"))}
-          />
-        )}
         <Appbar.Content title={t("marketplace.title")} />
         <Appbar.Action
           icon="ticket-confirmation-outline"

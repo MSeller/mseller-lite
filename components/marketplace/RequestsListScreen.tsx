@@ -124,7 +124,7 @@ const RequestsListScreen: React.FC = () => {
       <Appbar.Header mode="small" style={styles.appbar}>
         <Appbar.BackAction
           onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/(tabs)/more/marketplace")
+            router.canGoBack() ? router.back() : router.replace("/(tabs)/marketplace")
           }
         />
         <Appbar.Content title={t("marketplace.myRequests")} />

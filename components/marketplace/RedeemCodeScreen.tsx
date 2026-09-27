@@ -79,7 +79,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)/more/marketplace");
+    else router.replace("/(tabs)/marketplace");
   };
 
   const submit = async () => {

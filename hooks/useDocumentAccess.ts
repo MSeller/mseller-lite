@@ -32,7 +32,9 @@ export const allowedDocumentTypesFor = (profile: UserTypes | null): DocumentType
 };
 
 export interface DocumentAccess {
-  /** True when the signed-in user may see and capture documents. */
+  /** True when the signed-in user may open Documentos and read documents. */
+  canViewDocuments: boolean;
+  /** True when they may also capture one — at least one type is switched on for them. */
   canCreateDocuments: boolean;
   /** The types the user may create, in the order the form offers them. */
   allowedDocumentTypes: DocumentType[];
@@ -49,8 +51,11 @@ export const useDocumentAccess = (): DocumentAccess => {
     // While the profile loads, assume no access: flashing the tab and then
     // pulling it away is worse than showing it a moment later.
     const allowedDocumentTypes = loading ? [] : allowedDocumentTypesFor(userProfile);
+    const blocked =
+      !!userProfile && BLOCKED_USER_TYPES.includes(userProfile.type as (typeof BLOCKED_USER_TYPES)[number]);
 
     return {
+      canViewDocuments: !loading && !!userProfile && !blocked,
       canCreateDocuments: allowedDocumentTypes.length > 0,
       allowedDocumentTypes,
       loading,

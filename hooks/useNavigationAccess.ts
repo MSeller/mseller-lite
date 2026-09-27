@@ -28,7 +28,7 @@ export type NavSection =
 export type TabName = "documents" | "routes" | "stock" | "catalog" | "marketplace" | "loading";
 
 /** A module offered as a row under Más instead of as a tab. */
-export type MoreEntry = "routes" | "stock" | "catalog" | "marketplace";
+export type MoreEntry = "routes" | "stock" | "catalog";
 
 type UserType = UserTypes["type"];
 

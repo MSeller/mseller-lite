@@ -14,6 +14,7 @@ function TabHeader({ rutaId }: { rutaId: string }) {
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const { can } = useNavigationAccess();
 
   const handleBack = () => {
     // Pop the entire [rutaId] Tabs group off the Stack,
@@ -21,8 +22,11 @@ function TabHeader({ rutaId }: { rutaId: string }) {
     // switch tabs within the nested Tabs navigator.
     if (navigation.getParent()?.canGoBack()) {
       navigation.getParent()?.goBack();
-    } else {
+    } else if (can("picking")) {
       router.replace({ pathname: "/(tabs)/routes", params: { section: "picking" } });
+    } else {
+      // A driver loads from Carga, not from Preparación.
+      router.replace("/(tabs)/loading");
     }
   };
 

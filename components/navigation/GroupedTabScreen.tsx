@@ -50,13 +50,15 @@ export default function GroupedTabScreen<T extends NavSection>({
     // The tab is hidden when nothing is allowed; this is for a deep link or a
     // profile that is still loading.
     return (
-      <SafeAreaView style={[styles.empty, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.section, { backgroundColor: theme.colors.background }]}>
         {header}
-        {loading ? (
-          <ActivityIndicator size="large" />
-        ) : (
-          <EmptyState icon="lock-outline" message={t("navigation.noSections")} />
-        )}
+        <View style={styles.empty}>
+          {loading ? (
+            <ActivityIndicator size="large" />
+          ) : (
+            <EmptyState icon="lock-outline" message={t("navigation.noSections")} />
+          )}
+        </View>
       </SafeAreaView>
     );
   }

@@ -13,6 +13,7 @@ import { LEGAL_URLS } from "../../../constants/legal";
 import { usePrinter } from "../../../contexts/PrinterContext";
 import { useUser } from "../../../contexts/UserContext";
 import { useModuleMeta } from "../../../components/navigation/moduleMeta";
+import { IconSymbol } from "../../../components/ui/IconSymbol";
 import { useNavigationAccess } from "../../../hooks/useNavigationAccess";
 import { USER_TYPES } from "../../../types/user";
 import { AVAILABLE_LANGUAGES, useTranslation } from "../../../hooks/useTranslation";
@@ -34,12 +35,6 @@ export default function MoreTab() {
   // Modules the role uses less often live here instead of as tabs, so the bar stays at five.
   const { moreEntries } = useNavigationAccess();
   const meta = useModuleMeta();
-  const moreIcons = {
-    routes: "map-outline",
-    stock: "package-variant-closed",
-    catalog: "book-open-variant",
-    marketplace: "storefront-outline",
-  } as const;
 
   const languageName =
     AVAILABLE_LANGUAGES.find((language) => language.code === currentLanguage)?.nativeName ??
@@ -53,7 +48,12 @@ export default function MoreTab() {
             key={entry}
             title={meta[entry].title}
             description={meta[entry].description || undefined}
-            left={(props) => <List.Icon {...props} icon={moreIcons[entry]} />}
+            left={(props) => (
+              <List.Icon
+                {...props}
+                icon={({ size, color }) => <IconSymbol name={meta[entry].icon} size={size} color={color} />}
+              />
+            )}
             right={(props) => <List.Icon {...props} icon="chevron-right" />}
             onPress={() => router.push(`/(tabs)/more/${entry}`)}
           />

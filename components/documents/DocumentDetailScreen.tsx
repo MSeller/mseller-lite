@@ -18,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { useDocumentAccess } from "../../hooks/useDocumentAccess";
 import { isAwaitingApproval, useOrderApproval } from "../../hooks/useOrderApproval";
 import { useTranslation } from "../../hooks/useTranslation";
 import { getDocument, updateDocumentStatus } from "../../services/documentService";
@@ -60,6 +61,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   const [error, setError] = useState("");
   const [shareVisible, setShareVisible] = useState(false);
   const { canApprove } = useOrderApproval();
+  const { canCreateDocuments } = useDocumentAccess();
   const [rejectConfirm, setRejectConfirm] = useState(false);
   const [updating, setUpdating] = useState<DocumentStatus | null>(null);
   const [notice, setNotice] = useState("");
@@ -317,15 +319,17 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
             {t("documents.share.action")}
           </Button>
 
-          <Button
-            mode="outlined"
-            icon="plus"
-            onPress={() => router.replace("/documentos/nuevo")}
-            style={styles.newButton}
-            contentStyle={styles.newButtonContent}
-          >
-            {t("documents.newDocument")}
-          </Button>
+          {canCreateDocuments && (
+            <Button
+              mode="outlined"
+              icon="plus"
+              onPress={() => router.replace("/documentos/nuevo")}
+              style={styles.newButton}
+              contentStyle={styles.newButtonContent}
+            >
+              {t("documents.newDocument")}
+            </Button>
+          )}
         </ScrollView>
       )}
 
@@ -502,7 +506,7 @@ const createStyles = (theme: CustomTheme) =>
     approvalRow: {
       flexDirection: "row",
       gap: theme.custom.spacing.md,
-      marginTop: 4,
+      marginTop: theme.custom.spacing.xs,
     },
     approvalButton: {
       flex: 1,

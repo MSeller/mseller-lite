@@ -4,19 +4,26 @@ import type { UserTypes } from "../../types/user";
 import { canApproveOrders, isAwaitingApproval } from "../useOrderApproval";
 
 jest.mock("../../contexts/UserContext", () => ({ useUser: () => ({ userProfile: null, loading: true }) }));
+jest.mock("../../services/permissionService", () => ({ getMyPermissions: jest.fn() }));
 
-const approver = (type: UserTypes["type"], allowApprove = true): UserTypes =>
-  ({ type, cloudAccess: { orders: { enabled: true, allowApprove } } }) as unknown as UserTypes;
+const profile = (type: UserTypes["type"]): UserTypes => ({ type }) as UserTypes;
+const permissions = (granted: boolean, ready = true) => ({
+  ready,
+  has: (modulo: string, permiso: string) => granted && modulo === "pedidos" && permiso === "aprobar",
+});
 
 describe("canApproveOrders", () => {
-  it("requires the portal's allowApprove flag", () => {
-    expect(canApproveOrders(approver("administrator"))).toBe(true);
-    expect(canApproveOrders(approver("administrator", false))).toBe(false);
-    expect(canApproveOrders({ type: "administrator" } as UserTypes)).toBe(false);
+  it("requires the pedidos.aprobar role permission", () => {
+    expect(canApproveOrders(profile("administrator"), permissions(true))).toBe(true);
+    expect(canApproveOrders(profile("administrator"), permissions(false))).toBe(false);
+  });
+
+  it("offers nothing until the permissions have loaded", () => {
+    expect(canApproveOrders(profile("administrator"), permissions(true, false))).toBe(false);
   });
 
   it.each<UserTypes["type"]>(["driver", "inventory"])("never lets %s approve", (type) => {
-    expect(canApproveOrders(approver(type))).toBe(false);
+    expect(canApproveOrders(profile(type), permissions(true))).toBe(false);
   });
 });
 

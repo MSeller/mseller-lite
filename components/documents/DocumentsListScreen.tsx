@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { useDocumentAccess } from "../../hooks/useDocumentAccess";
 import { useOrderApproval } from "../../hooks/useOrderApproval";
 import { useTranslation } from "../../hooks/useTranslation";
 import { listDocuments } from "../../services/documentService";
@@ -48,7 +49,11 @@ const DocumentsListScreen: React.FC = () => {
   // "To approve": only orders still pending. Offered to approvers only, and it is a
   // status filter on top of the type filter, so switching it on forces the type to orders.
   const { canApprove } = useOrderApproval();
-  const [pendingOnly, setPendingOnly] = useState(false);
+  const [pendingChip, setPendingChip] = useState(false);
+  // The chip's state survives losing the permission (profile refresh, role preview);
+  // the filter must not, or the list stays confined with no control to clear it.
+  const pendingOnly = canApprove && pendingChip;
+  const { canCreateDocuments } = useDocumentAccess();
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -252,7 +257,7 @@ const DocumentsListScreen: React.FC = () => {
           value={pendingOnly ? "order" : typeFilter}
           onValueChange={(value) => {
             setTypeFilter(value as TypeFilter);
-            if (value !== "order") setPendingOnly(false);
+            if (value !== "order") setPendingChip(false);
           }}
           density="medium"
           style={styles.filters}
@@ -279,7 +284,7 @@ const DocumentsListScreen: React.FC = () => {
               mode={pendingOnly ? "flat" : "outlined"}
               selected={pendingOnly}
               icon="check-decagram-outline"
-              onPress={() => setPendingOnly((value) => !value)}
+              onPress={() => setPendingChip((value) => !value)}
               accessibilityState={{ selected: pendingOnly }}
             >
               {t("documents.filter.pendingApproval")}
@@ -333,16 +338,18 @@ const DocumentsListScreen: React.FC = () => {
         emailCliente={compartir?.emailCliente}
       />
 
-      <FAB
-        icon="plus"
-        label={t("documents.newDocument")}
-        style={styles.fab}
-        // Paper reads the content colour from these props, not from `style` —
-        // tinting the background there alone leaves dark text on a dark FAB.
-        color={theme.colors.onPrimary}
-        customSize={56}
-        onPress={() => router.push("/documentos/nuevo")}
-      />
+      {canCreateDocuments && (
+        <FAB
+          icon="plus"
+          label={t("documents.newDocument")}
+          style={styles.fab}
+          // Paper reads the content colour from these props, not from `style` —
+          // tinting the background there alone leaves dark text on a dark FAB.
+          color={theme.colors.onPrimary}
+          customSize={56}
+          onPress={() => router.push("/documentos/nuevo")}
+        />
+      )}
     </SafeAreaView>
   );
 };

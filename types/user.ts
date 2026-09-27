@@ -23,6 +23,15 @@ export const USER_TYPES: readonly UserType[] = [
   "superuser",
 ];
 
+/**
+ * The role permissions the portal keeps in its database, as `/portal/usuarios/me`
+ * (and its Consumo twin) return them: `permisos[modulo][permiso]`.
+ */
+export interface UserPermissions {
+  usuario: { tipo?: UserType | string };
+  permisos: Record<string, Record<string, boolean>>;
+}
+
 /** Per-user switches for the document types the mobile apps let them create. */
 export interface DocumentTypePermissions {
   invoice: boolean;

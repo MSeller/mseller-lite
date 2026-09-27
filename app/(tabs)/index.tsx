@@ -10,6 +10,7 @@ import AppCard from "@/components/ui/AppCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import type { CustomTheme } from "@/constants/Theme";
 import { useUser } from "@/contexts/UserContext";
+import { useDocumentAccess } from "@/hooks/useDocumentAccess";
 import { useHomeSummary } from "@/hooks/useHomeSummary";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -27,6 +28,8 @@ export default function HomeScreen() {
   const { t } = useTranslation();
   const { user, userProfile, loading } = useUser();
   const { can } = useNavigationAccess();
+  // Capturing is a finer permission than seeing Documentos (per-user document types).
+  const { canCreateDocuments } = useDocumentAccess();
   const summary = useHomeSummary();
 
   const greeting = (() => {
@@ -165,9 +168,9 @@ export default function HomeScreen() {
           </Chip>
         )}
 
-        {(can("documents") || can("products")) && (
+        {(canCreateDocuments || can("products")) && (
           <View style={styles.actions}>
-            {can("documents") && (
+            {canCreateDocuments && (
               <Button
                 mode="contained"
                 icon="plus"

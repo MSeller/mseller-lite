@@ -1,4 +1,4 @@
-import { useNavigationAccess, type MoreEntry, type TabName } from "../../hooks/useNavigationAccess";
+import { useNavigationAccess, type TabName } from "../../hooks/useNavigationAccess";
 import { useTranslation } from "../../hooks/useTranslation";
 import type { IconSymbolName } from "../ui/IconSymbol";
 
@@ -16,7 +16,7 @@ export interface ModuleMeta {
  * is titled "Entregas", not "Rutas": the group is an implementation detail when there is
  * nothing to switch between.
  */
-export function useModuleMeta(): Record<TabName | MoreEntry, ModuleMeta> {
+export function useModuleMeta(): Record<TabName, ModuleMeta> {
   const { t } = useTranslation();
   const { can } = useNavigationAccess();
 

@@ -37,8 +37,9 @@ inventory pickers, not drivers, on the load endpoints.
 
 ## Order approval
 
-Users with `cloudAccess.orders.allowApprove` (set in mseller-cloud) see Aprobar / Rechazar
-on a pending order and a "Por aprobar" filter in Documentos. The app calls
+Users whose role has the `pedidos.aprobar` permission (portal users screen; read through
+`GET /consumo/Usuario/me`, superusers bypass) see Aprobar / Rechazar on a pending order and
+a "Por aprobar" filter in Documentos. The app calls
 `PUT /consumo/Documento/{noPedidoStr}/status` with `{ status }`; the server resolves the
 transition against the business workflow and refuses anything else.
 
@@ -47,7 +48,8 @@ transition against the business workflow and refuses anything else.
 `documentTypes { invoice, order, quote }` on the Firestore user profile (set from the
 mseller-cloud user form) limits which types the seller may create; missing means all.
 `hooks/useDocumentAccess.ts` also drops quotes when the business config has
-`allowQuote: false`. Price editing keeps using the user's `editPrice`.
+`allowQuote: false`. A user with every type off still opens Documentos (list, detail,
+approval); only capture is withheld. Price editing keeps using the user's `editPrice`.
 
 ## Checking every role
 
