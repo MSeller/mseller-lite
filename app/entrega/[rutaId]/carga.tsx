@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -23,6 +23,8 @@ import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { PendientesFacturarBanner } from "../../../components/entrega/PendientesFacturarBanner";
+import { puedeSalirARuta } from "../../../utils/entregaAttempts";
 import { vehiculoLabel } from "../../../utils/mapLinks";
 
 export default function CargaScreen() {
@@ -47,6 +49,9 @@ export default function CargaScreen() {
   const [issueTarget, setIssueTarget] = useState<CargaCliente | null>(null);
   const [issueNote, setIssueNote] = useState("");
   const [declined, setDeclined] = useState<Record<number, string>>({});
+  // Cards declined this session: the server drops them from the load list (excluido), but the driver
+  // keeps seeing them marked "Rechazado" with the reason until leaving the screen.
+  const [declinedCards, setDeclinedCards] = useState<Record<number, CargaCliente>>({});
   const [dispatching, setDispatching] = useState(false);
 
   const loadCarga = useCallback(async () => {
@@ -54,9 +59,12 @@ export default function CargaScreen() {
       setError("");
       const response = await entregaService.getCarga(numericRutaId);
       setData(response);
-      const checks: Record<number, Set<string>> = {};
-      for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = new Set();
-      setCheckedItems(checks);
+      // Refreshes keep the items the driver already ticked; new stops start empty.
+      setCheckedItems((prev) => {
+        const checks: Record<number, Set<string>> = {};
+        for (const c of response.clientes ?? []) checks[c.rutaDetalleId] = prev[c.rutaDetalleId] ?? new Set();
+        return checks;
+      });
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorLoadingCarga"));
     } finally {
@@ -65,9 +73,21 @@ export default function CargaScreen() {
     }
   }, [numericRutaId, t]);
 
+  // Reload whenever the screen regains focus (e.g. back from another screen).
+  useFocusEffect(
+    useCallback(() => {
+      loadCarga();
+    }, [loadCarga])
+  );
+
+  // While stops wait for an invoice, the office may invoice them at any moment: poll so the new stops
+  // and "Salir a ruta" appear without the driver having to pull to refresh.
+  const pendientesFacturar = data?.pendientesFacturar ?? 0;
   useEffect(() => {
-    loadCarga();
-  }, [loadCarga]);
+    if (pendientesFacturar === 0) return;
+    const id = setInterval(loadCarga, PENDING_INVOICE_POLL_MS);
+    return () => clearInterval(id);
+  }, [pendientesFacturar, loadCarga]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -140,6 +160,7 @@ export default function CargaScreen() {
       await entregaService.rechazarCarga(numericRutaId, item.rutaDetalleId, note || undefined);
       // Keep the card visible, marked "Rechazado" with the reason (feedback), instead of removing it.
       setDeclined((prev) => ({ ...prev, [item.rutaDetalleId]: note }));
+      setDeclinedCards((prev) => ({ ...prev, [item.rutaDetalleId]: item }));
       setExpandedId(null);
       setDeclineNote("");
       setSuccess(t("entrega.invoiceDeclined"));
@@ -150,31 +171,31 @@ export default function CargaScreen() {
     }
   };
 
-  const sorted = [...(data?.clientes ?? [])].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
+  const serverIds = new Set((data?.clientes ?? []).map((c) => c.rutaDetalleId));
+  const sorted = [
+    ...(data?.clientes ?? []),
+    ...Object.values(declinedCards).filter((c) => !serverIds.has(c.rutaDetalleId)),
+  ].sort((a, b) => b.secuenciaEntrega - a.secuenciaEntrega);
   const activeCards = sorted.filter((c) => !declined[c.rutaDetalleId]);
   const totalC = activeCards.length;
   const loadedC = activeCards.filter((c) => c.confirmado).length;
-  const allLoaded = totalC > 0 && loadedC === totalC;
+  const allLoaded = puedeSalirARuta({ total: totalC, cargados: loadedC });
+  const canLeave = puedeSalirARuta({ total: totalC, cargados: loadedC, pendientesFacturar });
 
-  // Dispatch a fully-loaded route that didn't auto-transition (re-confirm is idempotent on the
-  // backend and re-evaluates dispatch). Recovers a route left in lista_despacho.
+  // Leave on the route: the server moves it to en_ruta when every stop is invoiced and loaded (or
+  // declined) and answers 409 with the stops still blocking — shown as is. Also recovers a fully
+  // loaded route that didn't auto-transition.
   const handleDispatch = async () => {
-    const firstLoaded = activeCards.find((c) => c.confirmado);
-    if (!firstLoaded) return;
     try {
       setDispatching(true);
       setError("");
-      const response = await entregaService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
-      if (response.rutaDespachada) {
-        setSuccess(t("entrega.routeDispatched"));
-        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
-        // delivery worklist (reloads via useFocusEffect).
-        router.replace(`/entrega/${numericRutaId}`);
-      } else {
-        setError(t("entrega.errorConfirmingLoad"));
-      }
+      await entregaService.despacharRuta(numericRutaId);
+      setSuccess(t("entrega.routeDispatched"));
+      // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+      // delivery worklist (reloads via useFocusEffect).
+      router.replace(`/entrega/${numericRutaId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
+      setError(err.response?.data?.message || t("entrega.errorDispatching"));
     } finally {
       setDispatching(false);
     }
@@ -323,6 +344,8 @@ export default function CargaScreen() {
         </View>
       )}
 
+      <PendientesFacturarBanner count={pendientesFacturar} />
+
       <View style={styles.progress}>
         <View style={styles.progressHeaderRow}>
           <Text style={styles.progressLabel}>{t("entrega.loadingProgressLabel")}</Text>
@@ -342,10 +365,10 @@ export default function CargaScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
 
-      {allLoaded && (
+      {canLeave && (
         <View style={styles.dispatchBar}>
           <Button mode="contained" buttonColor={status.positive.base} icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={styles.actionBtnLabel}>
-            {t("entrega.dispatchRoute")}
+            {t("entrega.leaveOnRoute")}
           </Button>
         </View>
       )}
@@ -387,6 +410,7 @@ export default function CargaScreen() {
 }
 
 const PROGRESS_BAR_HEIGHT = 8;
+const PENDING_INVOICE_POLL_MS = 30_000;
 
 const createStyles = (theme: CustomTheme) => {
   const { colors, radius, type, surface } = theme.custom;

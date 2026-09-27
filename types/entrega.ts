@@ -40,6 +40,8 @@ export interface EntregaRuta {
   totalFacturas: number;
   facturasEntregadas: number;
   facturasPendientes: number;
+  /** Active stops still waiting for an invoice: drivers work invoices only, so they are not listed. */
+  pendientesFacturar?: number;
   vehiculoTipo?: TipoVehiculo | null;
   vehiculoPlaca?: string | null;
   observacion?: string | null;
@@ -72,6 +74,8 @@ export interface EntregaRutaDetalle {
   esActiva: boolean;
   vehiculoTipo?: TipoVehiculo | null;
   vehiculoPlaca?: string | null;
+  /** Active stops still waiting for an invoice: drivers work invoices only, so they are not listed. */
+  pendientesFacturar?: number;
   facturas: EntregaFacturaResumen[];
 }
 
@@ -90,8 +94,23 @@ export interface ItemFaltanteResumen {
   codigoMotivoRechazo?: string | null;
 }
 
-/** Snapshot of a previously recorded delivery event. */
+/** One earlier delivery attempt for the document, on any route (newest first). */
+export interface IntentoEntregaResumen {
+  intento: number;
+  fecha: string;
+  noRuta?: string | null;
+  /** Driver of the route the attempt was made on. */
+  chofer?: string | null;
+  status: RutaDetalleStatus;
+  codigoMotivoRechazo?: string | null;
+  observacion?: string | null;
+}
+
+/** Snapshot of the latest delivery attempt recorded on this stop. */
 export interface RutaEntregaResumen {
+  /** Attempt number for the document across all routes. */
+  intento?: number;
+  noRuta?: string | null;
   status: RutaDetalleStatus;
   fechaEntrega: string;
   latitud?: number | null;
@@ -126,6 +145,8 @@ export interface EntregaFacturaDetalle {
   cargaConfirmada: boolean;
   lineas: EntregaFacturaLinea[];
   entrega?: RutaEntregaResumen | null;
+  /** Every other attempt for this document across routes, newest first. */
+  intentosPrevios?: IntentoEntregaResumen[];
   /** Shortage reported at truck-load time — pre-fills a partial delivery at the stop. */
   faltantesCarga: ItemFaltanteResumen[];
 }

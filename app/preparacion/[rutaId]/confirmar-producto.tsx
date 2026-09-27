@@ -13,6 +13,7 @@ function ConfirmarProductoScreen() {
   const theme = useTheme() as CustomTheme;
   const { status } = theme.custom;
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     rutaId: string;
     codigoProducto: string;
@@ -66,7 +67,7 @@ function ConfirmarProductoScreen() {
       });
     } catch (err: any) {
       console.error("Error confirming product:", err);
-      setError(err.response?.data?.message || "Error al confirmar producto");
+      setError(err.response?.data?.message || t("preparacion.errorConfirmingProduct"));
     } finally {
       setLoading(false);
     }
@@ -183,7 +184,7 @@ function ConfirmarProductoScreen() {
             loading={loading}
             icon="check"
           >
-            Confirmar
+            {t("preparacion.confirmProduct")}
           </Button>
         </View>
       </KeyboardAvoidingView>
