@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { gutterFor, type CustomTheme } from "../../../constants/Theme";
 import { useUser } from "../../../contexts/UserContext";
+import { useDocumentAccess } from "../../../hooks/useDocumentAccess";
 import { useDocumentCart } from "../../../hooks/useDocumentCart";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { createDocument } from "../../../services/documentService";
@@ -22,7 +23,7 @@ import {
   listPaymentConditions,
   type PaymentCondition,
 } from "../../../services/paymentConditionService";
-import { DOCUMENT_TYPES, type CustomerSummary, type DocumentType } from "../../../types/documents";
+import { type CustomerSummary, type DocumentType } from "../../../types/documents";
 import { formatMoney } from "../../../utils/documentFormat";
 import BrandGradient from "../../ui/BrandGradient";
 import { DOCUMENT_TYPE_META } from "../documentMeta";
@@ -59,10 +60,13 @@ const DocumentCreateScreen: React.FC = () => {
   const { t } = useTranslation();
   const router = useRouter();
   const { userProfile } = useUser();
+  // The types this user may create (per-user switches from the portal). DocumentAccessGate
+  // has already refused users with none, so the list is never empty here.
+  const { allowedDocumentTypes } = useDocumentAccess();
 
   const cart = useDocumentCart();
 
-  const [tipoDocumento, setTipoDocumento] = useState<DocumentType>("invoice");
+  const [tipoDocumento, setTipoDocumento] = useState<DocumentType>(allowedDocumentTypes[0] ?? "invoice");
   const [customer, setCustomer] = useState<CustomerSummary | null>(null);
   const [condicionPago, setCondicionPago] = useState<string | null>(null);
   const [nota, setNota] = useState("");
@@ -377,7 +381,7 @@ const DocumentCreateScreen: React.FC = () => {
                 </Pressable>
               }
             >
-              {DOCUMENT_TYPES.map((type) => (
+              {allowedDocumentTypes.map((type) => (
                 <Menu.Item
                   key={type}
                   title={t(DOCUMENT_TYPE_META[type].labelKey)}

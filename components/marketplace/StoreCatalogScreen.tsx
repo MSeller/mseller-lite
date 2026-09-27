@@ -152,7 +152,7 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
       <Appbar.Header mode="small" style={styles.appbar}>
         <Appbar.BackAction
           onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/(tabs)/marketplace")
+            router.canGoBack() ? router.back() : router.replace("/(tabs)/more/marketplace")
           }
         />
         <Appbar.Content title={tiendaNombre || t("marketplace.title")} />

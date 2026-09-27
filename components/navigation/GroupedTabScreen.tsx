@@ -14,6 +14,8 @@ interface GroupedTabScreenProps<T extends NavSection> {
   sections: SectionOption<T>[];
   /** Renders one module, with the switcher to place at the top of its own layout. */
   renderSection: (section: T, switcher: React.ReactNode) => React.ReactNode;
+  /** Shown above the switcher — the back header when the group is opened from Más. */
+  header?: React.ReactNode;
 }
 
 /**
@@ -28,6 +30,7 @@ interface GroupedTabScreenProps<T extends NavSection> {
 export default function GroupedTabScreen<T extends NavSection>({
   sections,
   renderSection,
+  header,
 }: GroupedTabScreenProps<T>) {
   const theme = useTheme();
   const router = useRouter();
@@ -48,6 +51,7 @@ export default function GroupedTabScreen<T extends NavSection>({
     // profile that is still loading.
     return (
       <SafeAreaView style={[styles.empty, { backgroundColor: theme.colors.background }]}>
+        {header}
         {loading ? (
           <ActivityIndicator size="large" />
         ) : (
@@ -58,11 +62,14 @@ export default function GroupedTabScreen<T extends NavSection>({
   }
 
   const switcher = (
-    <SectionSwitcher
-      sections={allowed}
-      value={current.value}
-      onChange={(next) => router.setParams({ section: next })}
-    />
+    <>
+      {header}
+      <SectionSwitcher
+        sections={allowed}
+        value={current.value}
+        onChange={(next) => router.setParams({ section: next })}
+      />
+    </>
   );
 
   return (

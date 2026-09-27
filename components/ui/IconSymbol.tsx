@@ -21,9 +21,11 @@ const MAPPING = {
   "line.3.horizontal": "menu",
   "books.vertical.fill": "library-books",
   "storefront.fill": "storefront",
+  "truck.box.fill": "local-shipping",
+  "shippingbox.and.arrow.backward.fill": "move-to-inbox",
 } as const;
 
-type IconSymbolName = keyof typeof MAPPING;
+export type IconSymbolName = keyof typeof MAPPING;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

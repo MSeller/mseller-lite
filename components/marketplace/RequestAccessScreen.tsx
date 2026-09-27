@@ -48,7 +48,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
   const goBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)/marketplace");
+    else router.replace("/(tabs)/more/marketplace");
   };
 
   const submit = async () => {
@@ -105,7 +105,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             title={t("marketplace.pickStoreTitle")}
             message={t("marketplace.pickStoreBody")}
           />
-          <Button mode="contained" onPress={() => router.replace("/(tabs)/marketplace")}>
+          <Button mode="contained" onPress={() => router.replace("/(tabs)/more/marketplace")}>
             {t("marketplace.browseStores")}
           </Button>
         </View>

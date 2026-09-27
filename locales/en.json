@@ -119,13 +119,21 @@
       "products": "Products",
       "catalogCustomers": "Customers",
       "catalogProducts": "Products",
-      "marketplace": "Marketplace"
+      "marketplace": "Marketplace",
+      "truckLoading": "Load"
     },
     "language": "Language",
     "developer": "Developer",
     "noSections": "There is nothing here for your user type.",
     "printers": "Printers",
-    "marketplace": "Marketplace"
+    "marketplace": "Marketplace",
+    "marketplaceDescription": "Buy from your suppliers",
+    "catalogDescription": "Customers and products",
+    "loading": "Load",
+    "loadingDescription": "Routes ready to load onto the truck",
+    "documentsDescription": "Invoices, orders and quotes",
+    "previewRole": "Preview as role",
+    "previewRoleOff": "Off (your real role)"
   },
   "api": {
     "testApi": "Test API",
@@ -309,7 +317,10 @@
     "issuePlaceholder": "Describe the issue (optional)…",
     "dispatchRoute": "Dispatch route",
     "productsPicked": "products picked",
-    "pickingNotAllowed": "Picking is done by the inventory team or the back office."
+    "pickingNotAllowed": "Picking is done by the inventory team or the back office.",
+    "loadingListTitle": "Truck loading",
+    "loadingListSubtitle": "Routes ready to load",
+    "noRoutesToLoad": "No routes ready to load"
   },
   "entrega": {
     "title": "Deliveries",
@@ -421,7 +432,8 @@
     "emptySearchTitle": "No results",
     "emptySearchBody": "No documents match your search.",
     "filter": {
-      "all": "All"
+      "all": "All",
+      "pendingApproval": "To approve"
     },
     "type": {
       "invoice": "Invoice",
@@ -587,7 +599,16 @@
     "quantity": "Quantity",
     "restoreListPrice": "Restore list price",
     "unsavedChanges": "Unsaved changes",
-    "saveRequirements": "To save, choose a customer, payment terms and at least one product."
+    "saveRequirements": "To save, choose a customer, payment terms and at least one product.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "rejectConfirmTitle": "Reject this order?",
+    "rejectConfirmBody": "The order will be marked as rejected. This follows your business's approval workflow.",
+    "approved": "Order approved",
+    "rejected": "Order rejected",
+    "statusFailed": "Could not update the order status",
+    "pendingApprovalTitle": "No orders awaiting approval",
+    "pendingApprovalBody": "Orders that need your approval will show up here."
   },
   "home": {
     "defaultName": "User",

@@ -1,26 +1,15 @@
+import { Redirect, useLocalSearchParams } from "expo-router";
 import React from "react";
 
-import GroupedTabScreen from "../../components/navigation/GroupedTabScreen";
-import DeliveryRoutesScreen from "../../components/routes/DeliveryRoutesScreen";
-import PickingRoutesScreen from "../../components/routes/PickingRoutesScreen";
-import { useTranslation } from "../../hooks/useTranslation";
+import RoutesModule from "../../components/modules/RoutesModule";
+import { useNavigationAccess } from "../../hooks/useNavigationAccess";
 
+/** Rutas as a tab. Roles that reach it from Más are sent to that copy instead. */
 export default function RoutesTab() {
-  const { t } = useTranslation();
-
-  return (
-    <GroupedTabScreen
-      sections={[
-        { value: "picking", label: t("navigation.sections.picking"), icon: "package-variant" },
-        { value: "deliveries", label: t("navigation.sections.deliveries"), icon: "truck-outline" },
-      ]}
-      renderSection={(section, switcher) =>
-        section === "picking" ? (
-          <PickingRoutesScreen headerAccessory={switcher} />
-        ) : (
-          <DeliveryRoutesScreen headerAccessory={switcher} />
-        )
-      }
-    />
-  );
+  const { isTab, loading } = useNavigationAccess();
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  if (!loading && !isTab("routes")) {
+    return <Redirect href={{ pathname: "/(tabs)/more/routes", params: section ? { section } : {} }} />;
+  }
+  return <RoutesModule />;
 }

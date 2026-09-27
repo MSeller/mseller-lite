@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useUser } from "../contexts/UserContext";
+import { DOCUMENT_TYPES, type DocumentType } from "../types/documents";
+import type { UserTypes } from "../types/user";
 
 /**
  * User types that may NOT capture documents.
@@ -11,9 +13,29 @@ import { useUser } from "../contexts/UserContext";
  */
 const BLOCKED_USER_TYPES = ["driver"] as const;
 
+/**
+ * The document types this user may create: the per-user switches from mseller-cloud
+ * (missing on older users, which means all), minus quotes when the business has them
+ * turned off. Pure so the rule is testable without the profile source.
+ */
+export const allowedDocumentTypesFor = (profile: UserTypes | null): DocumentType[] => {
+  if (!profile) return [];
+  const blocked = BLOCKED_USER_TYPES.includes(profile.type as (typeof BLOCKED_USER_TYPES)[number]);
+  if (blocked) return [];
+  const perUser = profile.documentTypes;
+  const quotesOff = profile.business?.config?.allowQuote === false;
+  return DOCUMENT_TYPES.filter((type) => {
+    if (perUser && perUser[type] === false) return false;
+    if (type === "quote" && quotesOff) return false;
+    return true;
+  });
+};
+
 export interface DocumentAccess {
   /** True when the signed-in user may see and capture documents. */
   canCreateDocuments: boolean;
+  /** The types the user may create, in the order the form offers them. */
+  allowedDocumentTypes: DocumentType[];
   /** True while the profile is still loading — don't decide anything yet. */
   loading: boolean;
   /** Seller code to attribute captured documents to, when the profile has one. */
@@ -24,14 +46,13 @@ export const useDocumentAccess = (): DocumentAccess => {
   const { userProfile, loading } = useUser();
 
   return useMemo(() => {
-    const userType = userProfile?.type;
-    const blocked =
-      !!userType && BLOCKED_USER_TYPES.includes(userType as (typeof BLOCKED_USER_TYPES)[number]);
+    // While the profile loads, assume no access: flashing the tab and then
+    // pulling it away is worse than showing it a moment later.
+    const allowedDocumentTypes = loading ? [] : allowedDocumentTypesFor(userProfile);
 
     return {
-      // While the profile loads, assume no access: flashing the tab and then
-      // pulling it away is worse than showing it a moment later.
-      canCreateDocuments: !loading && !!userProfile && !blocked,
+      canCreateDocuments: allowedDocumentTypes.length > 0,
+      allowedDocumentTypes,
       loading,
       sellerCode: userProfile?.sellerCode,
     };

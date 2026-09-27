@@ -1,35 +1,15 @@
+import { Redirect, useLocalSearchParams } from "expo-router";
 import React from "react";
 
-import CustomersCatalogScreen from "../../components/catalog/CustomersCatalogScreen";
-import ProductsCatalogScreen from "../../components/catalog/ProductsCatalogScreen";
-import GroupedTabScreen from "../../components/navigation/GroupedTabScreen";
-import { useTranslation } from "../../hooks/useTranslation";
+import CatalogModule from "../../components/modules/CatalogModule";
+import { useNavigationAccess } from "../../hooks/useNavigationAccess";
 
-/** Catálogo: administrators edit the customer and product master data. */
+/** Catálogo as a tab. Roles that reach it from Más are sent to that copy instead. */
 export default function CatalogTab() {
-  const { t } = useTranslation();
-
-  return (
-    <GroupedTabScreen
-      sections={[
-        {
-          value: "catalogCustomers",
-          label: t("navigation.sections.catalogCustomers"),
-          icon: "account-group-outline",
-        },
-        {
-          value: "catalogProducts",
-          label: t("navigation.sections.catalogProducts"),
-          icon: "package-variant-closed",
-        },
-      ]}
-      renderSection={(section, switcher) =>
-        section === "catalogCustomers" ? (
-          <CustomersCatalogScreen headerAccessory={switcher} />
-        ) : (
-          <ProductsCatalogScreen headerAccessory={switcher} />
-        )
-      }
-    />
-  );
+  const { isTab, loading } = useNavigationAccess();
+  const { section } = useLocalSearchParams<{ section?: string }>();
+  if (!loading && !isTab("catalog")) {
+    return <Redirect href={{ pathname: "/(tabs)/more/catalog", params: section ? { section } : {} }} />;
+  }
+  return <CatalogModule />;
 }
