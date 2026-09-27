@@ -172,6 +172,8 @@ export interface CreateDocumentRequest {
 
 export interface DocumentListFilters {
   tipoDocumento?: DocumentType | DocumentType[];
+  /** Processing status to confine the list to, e.g. `pendiente` for orders awaiting approval. */
+  procesado?: DocumentStatus;
   codigoCliente?: string;
   query?: string;
   /** `yyyy-MM-dd|yyyy-MM-dd`, the same format the portal list uses. */

@@ -4,6 +4,7 @@ import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Banner,
+  Chip,
   FAB,
   Icon,
   IconButton,
@@ -15,6 +16,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { useDocumentAccess } from "../../hooks/useDocumentAccess";
+import { useOrderApproval } from "../../hooks/useOrderApproval";
 import { useTranslation } from "../../hooks/useTranslation";
 import { listDocuments } from "../../services/documentService";
 import type { DocumentSummary, DocumentType } from "../../types/documents";
@@ -43,6 +46,14 @@ const DocumentsListScreen: React.FC = () => {
 
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  // "To approve": only orders still pending. Offered to approvers only, and it is a
+  // status filter on top of the type filter, so switching it on forces the type to orders.
+  const { canApprove } = useOrderApproval();
+  const [pendingChip, setPendingChip] = useState(false);
+  // The chip's state survives losing the permission (profile refresh, role preview);
+  // the filter must not, or the list stays confined with no control to clear it.
+  const pendingOnly = canApprove && pendingChip;
+  const { canCreateDocuments } = useDocumentAccess();
   const [search, setSearch] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -71,7 +82,8 @@ const DocumentsListScreen: React.FC = () => {
 
       try {
         const result = await listDocuments({
-          tipoDocumento: typeFilter === "all" ? undefined : typeFilter,
+          tipoDocumento: pendingOnly ? "order" : typeFilter === "all" ? undefined : typeFilter,
+          procesado: pendingOnly ? "pendiente" : undefined,
           query: appliedSearch || undefined,
           pageNumber,
           pageSize: PAGE_SIZE,
@@ -98,7 +110,7 @@ const DocumentsListScreen: React.FC = () => {
         );
       }
     },
-    [typeFilter, appliedSearch, t]
+    [typeFilter, pendingOnly, appliedSearch, t]
   );
 
   useEffect(() => {
@@ -205,14 +217,22 @@ const DocumentsListScreen: React.FC = () => {
       <View style={styles.emptyState}>
         <Icon source="file-document-outline" size={56} color={theme.colors.onSurfaceVariant} />
         <Text variant="titleMedium" style={styles.emptyTitle}>
-          {appliedSearch ? t("documents.emptySearchTitle") : t("documents.emptyTitle")}
+          {appliedSearch
+            ? t("documents.emptySearchTitle")
+            : pendingOnly
+              ? t("documents.pendingApprovalTitle")
+              : t("documents.emptyTitle")}
         </Text>
         <Text variant="bodyMedium" style={styles.emptyBody}>
-          {appliedSearch ? t("documents.emptySearchBody") : t("documents.emptyBody")}
+          {appliedSearch
+            ? t("documents.emptySearchBody")
+            : pendingOnly
+              ? t("documents.pendingApprovalBody")
+              : t("documents.emptyBody")}
         </Text>
       </View>
     );
-  }, [loading, error, appliedSearch, styles, theme, t]);
+  }, [loading, error, appliedSearch, pendingOnly, styles, theme, t]);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -234,8 +254,11 @@ const DocumentsListScreen: React.FC = () => {
         />
 
         <SegmentedButtons
-          value={typeFilter}
-          onValueChange={(value) => setTypeFilter(value as TypeFilter)}
+          value={pendingOnly ? "order" : typeFilter}
+          onValueChange={(value) => {
+            setTypeFilter(value as TypeFilter);
+            if (value !== "order") setPendingChip(false);
+          }}
           density="medium"
           style={styles.filters}
           // MD3 paints the selected segment with the secondary container. Point
@@ -254,6 +277,20 @@ const DocumentsListScreen: React.FC = () => {
             { value: "quote", label: t("documents.type.quote") },
           ]}
         />
+
+        {canApprove && (
+          <View style={styles.statusFilters}>
+            <Chip
+              mode={pendingOnly ? "flat" : "outlined"}
+              selected={pendingOnly}
+              icon="check-decagram-outline"
+              onPress={() => setPendingChip((value) => !value)}
+              accessibilityState={{ selected: pendingOnly }}
+            >
+              {t("documents.filter.pendingApproval")}
+            </Chip>
+          </View>
+        )}
       </View>
 
       {!!error && (
@@ -301,16 +338,18 @@ const DocumentsListScreen: React.FC = () => {
         emailCliente={compartir?.emailCliente}
       />
 
-      <FAB
-        icon="plus"
-        label={t("documents.newDocument")}
-        style={styles.fab}
-        // Paper reads the content colour from these props, not from `style` —
-        // tinting the background there alone leaves dark text on a dark FAB.
-        color={theme.colors.onPrimary}
-        customSize={56}
-        onPress={() => router.push("/documentos/nuevo")}
-      />
+      {canCreateDocuments && (
+        <FAB
+          icon="plus"
+          label={t("documents.newDocument")}
+          style={styles.fab}
+          // Paper reads the content colour from these props, not from `style` —
+          // tinting the background there alone leaves dark text on a dark FAB.
+          color={theme.colors.onPrimary}
+          customSize={56}
+          onPress={() => router.push("/documentos/nuevo")}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -342,6 +381,10 @@ const createStyles = (theme: CustomTheme) =>
     },
     filters: {
       marginTop: 2,
+    },
+    statusFilters: {
+      flexDirection: "row",
+      marginTop: theme.custom.spacing.sm,
     },
     loading: {
       flex: 1,

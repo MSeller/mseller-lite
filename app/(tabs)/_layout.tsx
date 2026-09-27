@@ -1,19 +1,21 @@
-import { Tabs } from "expo-router";
-import React from "react";
+import { Tabs, useRouter } from "expo-router";
+import React, { useEffect } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/HapticTab";
-import { IconSymbol } from "@/components/ui/IconSymbol";
+import { useModuleMeta } from "@/components/navigation/moduleMeta";
+import { IconSymbol, type IconSymbolName } from "@/components/ui/IconSymbol";
 import TabBarBackground from "@/components/ui/TabBarBackground";
 import { Colors } from "@/constants/Colors";
 import type { CustomTheme } from "@/constants/Theme";
 import { useColorScheme } from "@/hooks/useColorScheme";
-import { useNavigationAccess } from "@/hooks/useNavigationAccess";
+import { useNavigationAccess, type TabName } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 
-type IconName = React.ComponentProps<typeof IconSymbol>["name"];
+/** Every module that can be a tab. Those not in the role's list stay routable but hidden. */
+const MODULE_TABS: readonly TabName[] = ["documents", "loading", "routes", "stock", "catalog", "marketplace"];
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -21,24 +23,27 @@ export default function TabLayout() {
   const palette = Colors[colorScheme ?? "light"];
   const { custom } = useTheme() as CustomTheme;
   const insets = useSafeAreaInsets();
-  // Tabs are offered by user type (hooks/useNavigationAccess). `href: null` hides a
-  // tab and unregisters its route, so it cannot be reached by deep link either; the
-  // grouped screens and DocumentAccessGate still guard the modules themselves.
-  const { can } = useNavigationAccess();
-  const hideUnless = (allowed: boolean) => (allowed ? undefined : null);
+  // The bar is built per role (hooks/useNavigationAccess): Inicio, then the role's
+  // modules in its own order, then Más — five tabs at most, so every label fits.
+  // A module the role does not get as a tab is still registered (`href: null`
+  // hides the button) because Más rows and old links navigate to it, and its
+  // screen redirects to the copy under Más when it is not a tab for this role.
+  const { tabs, loading } = useNavigationAccess();
+  const meta = useModuleMeta();
+
+  // Development builds: `EXPO_PUBLIC_PREVIEW_ROUTE=/(tabs)/more` on the Metro command line
+  // lands on that screen once the profile is known — for screenshots taken by a script.
+  const router = useRouter();
+  const previewRoute = process.env.EXPO_PUBLIC_PREVIEW_ROUTE;
+  useEffect(() => {
+    if (__DEV__ && previewRoute && !loading) router.navigate(previewRoute as never);
+  }, [previewRoute, loading, router]);
 
   /**
-   * Five destinations at most for every operational role: related modules share a
-   * tab and switch at the top (Rutas: Preparación / Entregas; Inventario: Conteo /
-   * Productos), and account settings live under Más. That leaves room for labels
-   * again, which read far better than icons alone. Administrators and superusers are
-   * the one exception, with a sixth tab — Catálogo: Clientes / Productos — for editing
-   * master data; six labelled tabs still fit, and no other role is offered it.
-   *
    * The active destination is also marked with a tinted pill behind its icon — at
    * icon size a tint change alone is easy to miss.
    */
-  const icon = (name: IconName) =>
+  const icon = (name: IconSymbolName) =>
     function TabIcon({ color, focused }: { color: string; focused: boolean }) {
       return (
         <View
@@ -51,6 +56,21 @@ export default function TabLayout() {
         </View>
       );
     };
+
+  const moduleScreen = (name: TabName, visible: boolean) => (
+    <Tabs.Screen
+      key={name}
+      name={name}
+      options={{
+        title: meta[name].title,
+        tabBarAccessibilityLabel: meta[name].title,
+        tabBarIcon: icon(meta[name].icon),
+        href: visible ? undefined : null,
+      }}
+    />
+  );
+
+  const hidden = MODULE_TABS.filter((name) => !tabs.includes(name));
 
   return (
     <Tabs
@@ -95,51 +115,7 @@ export default function TabLayout() {
           tabBarIcon: icon("house.fill"),
         }}
       />
-      <Tabs.Screen
-        name="documents"
-        options={{
-          title: t("navigation.documents"),
-          tabBarAccessibilityLabel: t("navigation.documents"),
-          href: hideUnless(can("documents")),
-          tabBarIcon: icon("doc.text.fill"),
-        }}
-      />
-      <Tabs.Screen
-        name="routes"
-        options={{
-          title: t("navigation.routes"),
-          tabBarAccessibilityLabel: t("navigation.routes"),
-          href: hideUnless(can("picking") || can("deliveries")),
-          tabBarIcon: icon("map.fill"),
-        }}
-      />
-      <Tabs.Screen
-        name="stock"
-        options={{
-          title: t("navigation.stock"),
-          tabBarAccessibilityLabel: t("navigation.stock"),
-          href: hideUnless(can("stockCount") || can("products")),
-          tabBarIcon: icon("archivebox.fill"),
-        }}
-      />
-      <Tabs.Screen
-        name="catalog"
-        options={{
-          title: t("navigation.catalog"),
-          tabBarAccessibilityLabel: t("navigation.catalog"),
-          href: hideUnless(can("catalogCustomers") || can("catalogProducts")),
-          tabBarIcon: icon("books.vertical.fill"),
-        }}
-      />
-      <Tabs.Screen
-        name="marketplace"
-        options={{
-          title: t("navigation.marketplace"),
-          tabBarAccessibilityLabel: t("navigation.marketplace"),
-          href: hideUnless(can("marketplace")),
-          tabBarIcon: icon("storefront.fill"),
-        }}
-      />
+      {tabs.map((name) => moduleScreen(name, true))}
       <Tabs.Screen
         name="more"
         options={{
@@ -148,6 +124,7 @@ export default function TabLayout() {
           tabBarIcon: icon("line.3.horizontal"),
         }}
       />
+      {hidden.map((name) => moduleScreen(name, false))}
 
       {/* Old addresses of modules that moved into a grouped tab; they redirect. */}
       <Tabs.Screen name="preparacion" options={{ href: null }} />
@@ -170,6 +147,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   label: {
+    // 11, not the 12 of the overline token: at five tabs on a phone "Marketplace" is the
+    // longest label and 12 truncates it.
     fontSize: 11,
     fontWeight: "600",
     marginTop: 2,

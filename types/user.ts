@@ -1,5 +1,43 @@
 // ** Types
 export type Tiers = "basic" | "standard" | "enterprise";
+
+export type UserType =
+  | "seller"
+  | "administrator"
+  | "superuser"
+  | "driver"
+  | "office"
+  | "inventory"
+  | "accounting"
+  | "manager";
+
+/** Every user type, in the order the role preview lists them. */
+export const USER_TYPES: readonly UserType[] = [
+  "seller",
+  "driver",
+  "inventory",
+  "office",
+  "accounting",
+  "manager",
+  "administrator",
+  "superuser",
+];
+
+/**
+ * The role permissions the portal keeps in its database, as `/portal/usuarios/me`
+ * (and its Consumo twin) return them: `permisos[modulo][permiso]`.
+ */
+export interface UserPermissions {
+  usuario: { tipo?: UserType | string };
+  permisos: Record<string, Record<string, boolean>>;
+}
+
+/** Per-user switches for the document types the mobile apps let them create. */
+export interface DocumentTypePermissions {
+  invoice: boolean;
+  order: boolean;
+  quote: boolean;
+}
 export type ThemeColor =
   | "primary"
   | "secondary"
@@ -30,15 +68,12 @@ export interface UserTypes {
   restoreIpad: boolean;
   sellerCode: string;
   testMode: boolean;
-  type:
-    | "seller"
-    | "administrator"
-    | "superuser"
-    | "driver"
-    | "office"
-    | "inventory"
-    | "accounting"
-    | "manager";
+  type: UserType;
+  /**
+   * Which document types this user may capture (set per user in mseller-cloud). Missing on
+   * users created before the setting existed, which means every type is allowed.
+   */
+  documentTypes?: DocumentTypePermissions;
   userLevel: string;
   defaultClientByRoute: boolean;
   updateBankList: boolean;

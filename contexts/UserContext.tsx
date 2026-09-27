@@ -1,8 +1,8 @@
 import { User } from "firebase/auth";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { updateAxiosConfig } from "../services/api";
 import { initializeUserSession } from "../services/userService";
-import { UserTypes } from "../types/user";
+import { USER_TYPES, UserTypes } from "../types/user";
 import { isProfileNotFound } from "../utils/account";
 import { useAuth } from "./AuthContext";
 
@@ -14,6 +14,13 @@ interface UserContextType {
   /** Signed in (e.g. with Google) but without an MSeller account: offer to create a business. */
   profileMissing: boolean;
   refreshUserProfile: () => Promise<void>;
+  /**
+   * Development builds only: the user type the app pretends the signed-in user has, so
+   * every role's navigation can be checked from one account. The token is unchanged, so
+   * the API still answers for the real role. Always null in production builds.
+   */
+  previewUserType: UserTypes["type"] | null;
+  setPreviewUserType: (type: UserTypes["type"] | null) => void;
 }
 
 const UserContext = createContext<UserContextType>({
@@ -23,6 +30,8 @@ const UserContext = createContext<UserContextType>({
   error: null,
   profileMissing: false,
   refreshUserProfile: async () => {},
+  previewUserType: null,
+  setPreviewUserType: () => {},
 });
 
 export const useUser = () => {
@@ -43,6 +52,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileMissing, setProfileMissing] = useState(false);
+  const [previewUserType, setPreviewUserTypeState] = useState<UserTypes["type"] | null>(null);
+  // The setter is inert outside development builds, so the preview cannot be reached by
+  // any production code path and `previewUserType` stays null there.
+  const setPreviewUserType = useCallback((type: UserTypes["type"] | null) => {
+    if (__DEV__) setPreviewUserTypeState(type);
+  }, []);
+  // Development builds can be started with `EXPO_PUBLIC_PREVIEW_ROLE=<type>` on the Metro
+  // command line, so every role's navigation can be captured from a script without
+  // touching the menu under Más. Inlined at bundle time; absent in production builds.
+  useEffect(() => {
+    const type = process.env.EXPO_PUBLIC_PREVIEW_ROLE as UserTypes["type"] | undefined;
+    if (__DEV__ && type && USER_TYPES.includes(type)) setPreviewUserTypeState(type);
+  }, []);
+  const effectiveProfile = useMemo(
+    () => (previewUserType && userProfile ? { ...userProfile, type: previewUserType } : userProfile),
+    [userProfile, previewUserType],
+  );
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -110,11 +136,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   const value = {
     user,
-    userProfile,
+    userProfile: effectiveProfile,
     loading: authLoading || loading,
     error,
     profileMissing,
     refreshUserProfile,
+    previewUserType,
+    setPreviewUserType,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

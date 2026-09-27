@@ -40,9 +40,14 @@ const statusLabel: Record<RutaPreparacionStatus, string> = {
 interface PickingRoutesScreenProps {
   /** Rendered above the title, under the status bar — the Rutas section switcher. */
   headerAccessory?: React.ReactNode;
+  /**
+   * `picking` (default) lists every route being prepared. `loading` is the driver's
+   * Carga tab: only routes ready for dispatch, each opening straight on the truck load.
+   */
+  mode?: "picking" | "loading";
 }
 
-export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesScreenProps) {
+export default function PickingRoutesScreen({ headerAccessory, mode = "picking" }: PickingRoutesScreenProps) {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
@@ -58,7 +63,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
     try {
       setError("");
       const data = await preparacionService.getRutasPreparacion();
-      setRutas(data);
+      setRutas(mode === "loading" ? data.filter((ruta) => ruta.status === "lista_despacho") : data);
     } catch (err: any) {
       console.error("Error loading rutas:", err);
       setError(
@@ -68,7 +73,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, [t, mode]);
 
   useEffect(() => {
     loadRutas();
@@ -84,12 +89,25 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
     // not, stays on the picking list. While the profile is still loading nothing is
     // allowed yet, so the card waits rather than sending a loader to the wrong screen.
     if (accessLoading) return;
-    if (ruta.status === "lista_despacho" && can("truckLoading")) {
+    if (mode === "loading" || (ruta.status === "lista_despacho" && can("truckLoading"))) {
       router.push(`/preparacion/${ruta.rutaId}/loading` as any);
     } else {
       router.push(`/preparacion/${ruta.rutaId}/picking` as any);
     }
   };
+
+  const copy =
+    mode === "loading"
+      ? {
+          title: `🚚 ${t("preparacion.loadingListTitle")}`,
+          subtitle: t("preparacion.loadingListSubtitle"),
+          empty: t("preparacion.noRoutesToLoad"),
+        }
+      : {
+          title: `📦 ${t("preparacion.title")}`,
+          subtitle: t("preparacion.subtitle"),
+          empty: t("preparacion.noRoutes"),
+        };
 
   const getProgress = (ruta: RutaPreparacion) =>
     ruta.totalProductos > 0
@@ -182,7 +200,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
         {headerAccessory}
         <View style={styles.headerContainer}>
           <Text variant="headlineSmall" style={{ fontWeight: "bold" }}>
-            📦 {t("preparacion.title")}
+            {copy.title}
           </Text>
         </View>
         {[1, 2, 3].map((i) => (
@@ -216,13 +234,13 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
           variant="headlineSmall"
           style={{ fontWeight: "bold", color: theme.colors.onBackground }}
         >
-          📦 {t("preparacion.title")}
+          {copy.title}
         </Text>
         <Text
           variant="bodyMedium"
           style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
         >
-          {t("preparacion.subtitle")}
+          {copy.subtitle}
         </Text>
       </View>
 
@@ -247,7 +265,7 @@ export default function PickingRoutesScreen({ headerAccessory }: PickingRoutesSc
                 textAlign: "center",
               }}
             >
-              {t("preparacion.noRoutes")}
+              {copy.empty}
             </Text>
           </View>
         ) : (

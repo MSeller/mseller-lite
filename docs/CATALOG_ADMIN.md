@@ -1,6 +1,6 @@
 # Catálogo (admin master data)
 
-The **Catálogo** tab (en: "Catalog") lets administrators look up and edit the customer and
+**Catálogo** (en: "Catalog"), a tab for administrators and office users, lets administrators look up and edit the customer and
 product master records from the phone. Ticket: MSE-239.
 
 ## Who sees it
@@ -8,7 +8,8 @@ product master records from the phone. Ticket: MSE-239.
 | User type | Catálogo |
 |---|---|
 | `administrator`, `superuser` | Yes: Clientes and Productos |
-| `manager`, `office`, `seller`, `driver`, `inventory`, `accounting` | No, the tab is hidden |
+| `office` | Yes |
+| `manager`, `seller`, `driver`, `inventory`, `accounting` | No, the entry is hidden |
 
 The menu is shaped by `SECTIONS_BY_USER_TYPE` in `hooks/useNavigationAccess.ts` (sections
 `catalogCustomers` and `catalogProducts`). The mapping is pinned by
@@ -16,11 +17,11 @@ The menu is shaped by `SECTIONS_BY_USER_TYPE` in `hooks/useNavigationAccess.ts` 
 Consumo API enforces access and answers 403 to every other role. The app shows a lock
 message if that happens, for example when a role changes mid-session.
 
-Administrators get six tabs. Every other role still gets five at most.
+Every role gets five tabs at most; see `docs/NAVIGATION.md` for the bar per role.
 
 ## Screens
 
-`app/(tabs)/catalog.tsx` is a `GroupedTabScreen` with a section switcher (Clientes /
+`components/modules/CatalogModule.tsx` is a `GroupedTabScreen` with a section switcher (Clientes /
 Productos) in the list header, like Inventario.
 
 | Screen | Component |

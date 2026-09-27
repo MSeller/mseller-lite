@@ -5,7 +5,7 @@ import DocumentCreateScreen from "../../components/documents/create/DocumentCrea
 
 export default function NuevoDocumento() {
   return (
-    <DocumentAccessGate>
+    <DocumentAccessGate require="create">
       <DocumentCreateScreen />
     </DocumentAccessGate>
   );

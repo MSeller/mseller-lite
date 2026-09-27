@@ -122,13 +122,21 @@
       "products": "Productos",
       "catalogCustomers": "Clientes",
       "catalogProducts": "Productos",
-      "marketplace": "Marketplace"
+      "marketplace": "Marketplace",
+      "truckLoading": "Carga"
     },
     "language": "Idioma",
     "developer": "Desarrollo",
     "noSections": "No hay nada aquí para tu tipo de usuario.",
     "printers": "Impresoras",
-    "marketplace": "Marketplace"
+    "marketplace": "Marketplace",
+    "marketplaceDescription": "Compra a tus proveedores",
+    "catalogDescription": "Clientes y productos",
+    "loading": "Carga",
+    "loadingDescription": "Rutas listas para cargar al camión",
+    "documentsDescription": "Facturas, órdenes y cotizaciones",
+    "previewRole": "Ver como rol",
+    "previewRoleOff": "Apagado (tu rol real)"
   },
   "api": {
     "testApi": "Probar API",
@@ -335,6 +343,9 @@
     "dispatchRoute": "Despachar ruta",
     "productsPicked": "productos preparados",
     "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina.",
+    "loadingListTitle": "Carga del camión",
+    "loadingListSubtitle": "Rutas listas para cargar",
+    "noRoutesToLoad": "No hay rutas listas para cargar",
     "errorConfirmingProduct": "Error al confirmar producto"
   },
   "entrega": {
@@ -456,7 +467,8 @@
     "emptySearchTitle": "Sin resultados",
     "emptySearchBody": "No encontramos documentos que coincidan con tu búsqueda.",
     "filter": {
-      "all": "Todos"
+      "all": "Todos",
+      "pendingApproval": "Por aprobar"
     },
     "type": {
       "invoice": "Factura",
@@ -622,7 +634,16 @@
     "quantity": "Cantidad",
     "restoreListPrice": "Restaurar precio de lista",
     "unsavedChanges": "Cambios sin guardar",
-    "saveRequirements": "Para guardar, elige un cliente, una condición de pago y al menos un producto."
+    "saveRequirements": "Para guardar, elige un cliente, una condición de pago y al menos un producto.",
+    "approve": "Aprobar",
+    "reject": "Rechazar",
+    "rejectConfirmTitle": "¿Rechazar esta orden?",
+    "rejectConfirmBody": "La orden quedará marcada como rechazada, según el flujo de aprobación de tu negocio.",
+    "approved": "Orden aprobada",
+    "rejected": "Orden rechazada",
+    "statusFailed": "No se pudo actualizar el estado de la orden",
+    "pendingApprovalTitle": "No hay órdenes por aprobar",
+    "pendingApprovalBody": "Las órdenes que requieran tu aprobación aparecerán aquí."
   },
   "home": {
     "defaultName": "Usuario",

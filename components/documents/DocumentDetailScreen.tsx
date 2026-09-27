@@ -7,17 +7,22 @@ import {
   Banner,
   Button,
   Chip,
+  Dialog,
   Divider,
   Icon,
+  Portal,
+  Snackbar,
   Text,
   useTheme,
 } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
+import { useDocumentAccess } from "../../hooks/useDocumentAccess";
+import { isAwaitingApproval, useOrderApproval } from "../../hooks/useOrderApproval";
 import { useTranslation } from "../../hooks/useTranslation";
-import { getDocument } from "../../services/documentService";
-import type { DocumentDetail } from "../../types/documents";
+import { getDocument, updateDocumentStatus } from "../../services/documentService";
+import type { DocumentDetail, DocumentStatus } from "../../types/documents";
 import {
   formatDateShort,
   formatMoney,
@@ -39,7 +44,9 @@ interface Props {
  *
  * Deliberately read-only: editing a document that may already be in a route, on
  * an NCF, or in the ERP is a portal decision with its own rules, and a phone
- * screen is the wrong place to make it.
+ * screen is the wrong place to make it. The one write is approving or rejecting
+ * a pending order, for users the portal marks as approvers — the server resolves
+ * what "approved" means in this business's workflow.
  */
 const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   const theme = useTheme() as CustomTheme;
@@ -53,6 +60,11 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [shareVisible, setShareVisible] = useState(false);
+  const { canApprove } = useOrderApproval();
+  const { canCreateDocuments } = useDocumentAccess();
+  const [rejectConfirm, setRejectConfirm] = useState(false);
+  const [updating, setUpdating] = useState<DocumentStatus | null>(null);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -82,6 +94,24 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
   }, [router]);
 
   const meta = document ? getDocumentTypeMeta(document.tipoDocumento) : null;
+  const awaitingApproval = !!document && canApprove && isAwaitingApproval(document);
+
+  const changeStatus = useCallback(
+    async (status: DocumentStatus) => {
+      setUpdating(status);
+      try {
+        setDocument(await updateDocumentStatus(noPedidoStr, status));
+        setNotice(t(status === "procesado" ? "documents.approved" : "documents.rejected"));
+      } catch (e: any) {
+        // The server explains a refused transition (the workflow said no); anything
+        // else gets the generic wording.
+        setNotice(e?.response?.data?.message || t("documents.statusFailed"));
+      } finally {
+        setUpdating(null);
+      }
+    },
+    [noPedidoStr, t]
+  );
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -252,25 +282,54 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
             </View>
           </AppCard>
 
+          {awaitingApproval && (
+            <View style={styles.approvalRow}>
+              <Button
+                mode="outlined"
+                icon="close-circle-outline"
+                textColor={theme.colors.error}
+                onPress={() => setRejectConfirm(true)}
+                disabled={!!updating}
+                style={[styles.approvalButton, styles.rejectButton]}
+                contentStyle={styles.newButtonContent}
+              >
+                {t("documents.reject")}
+              </Button>
+              <Button
+                mode="contained"
+                icon="check-decagram-outline"
+                onPress={() => changeStatus("procesado")}
+                loading={updating === "procesado"}
+                disabled={!!updating}
+                style={styles.approvalButton}
+                contentStyle={styles.newButtonContent}
+              >
+                {t("documents.approve")}
+              </Button>
+            </View>
+          )}
+
           <Button
-            mode="contained"
+            mode={awaitingApproval ? "outlined" : "contained"}
             icon="printer"
             onPress={() => setShareVisible(true)}
-            style={styles.shareButton}
+            style={awaitingApproval ? styles.newButton : styles.shareButton}
             contentStyle={styles.newButtonContent}
           >
             {t("documents.share.action")}
           </Button>
 
-          <Button
-            mode="outlined"
-            icon="plus"
-            onPress={() => router.replace("/documentos/nuevo")}
-            style={styles.newButton}
-            contentStyle={styles.newButtonContent}
-          >
-            {t("documents.newDocument")}
-          </Button>
+          {canCreateDocuments && (
+            <Button
+              mode="outlined"
+              icon="plus"
+              onPress={() => router.replace("/documentos/nuevo")}
+              style={styles.newButton}
+              contentStyle={styles.newButtonContent}
+            >
+              {t("documents.newDocument")}
+            </Button>
+          )}
         </ScrollView>
       )}
 
@@ -280,6 +339,31 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
         noPedidoStr={document?.noPedidoStr ?? noPedidoStr}
         emailCliente={document?.emailCliente}
       />
+
+      <Portal>
+        <Dialog visible={rejectConfirm} onDismiss={() => setRejectConfirm(false)}>
+          <Dialog.Title>{t("documents.rejectConfirmTitle")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium">{t("documents.rejectConfirmBody")}</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setRejectConfirm(false)}>{t("common.cancel")}</Button>
+            <Button
+              textColor={theme.colors.error}
+              onPress={() => {
+                setRejectConfirm(false);
+                changeStatus("rechazado");
+              }}
+            >
+              {t("documents.reject")}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      <Snackbar visible={!!notice} onDismiss={() => setNotice("")} duration={4000}>
+        {notice}
+      </Snackbar>
     </SafeAreaView>
   );
 };
@@ -418,6 +502,18 @@ const createStyles = (theme: CustomTheme) =>
     shareButton: {
       borderRadius: theme.custom.radius.container,
       marginTop: 4,
+    },
+    approvalRow: {
+      flexDirection: "row",
+      gap: theme.custom.spacing.md,
+      marginTop: theme.custom.spacing.xs,
+    },
+    approvalButton: {
+      flex: 1,
+      borderRadius: theme.custom.radius.container,
+    },
+    rejectButton: {
+      borderColor: theme.colors.error,
     },
     newButton: {
       borderRadius: theme.custom.radius.container,

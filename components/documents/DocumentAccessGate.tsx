@@ -7,18 +7,30 @@ import type { CustomTheme } from "../../constants/Theme";
 import { useDocumentAccess } from "../../hooks/useDocumentAccess";
 import { useTranslation } from "../../hooks/useTranslation";
 
+interface Props {
+  children: React.ReactNode;
+  /**
+   * `view` (default) guards reading — the list and the detail. `create` guards the
+   * capture form as well by the user's document-type switches: someone who reads and
+   * approves but does not capture still opens Documentos.
+   */
+  require?: "view" | "create";
+}
+
 /**
- * Renders its children only for users who may capture documents.
+ * Renders its children only for users who may see (or, with `require="create"`,
+ * capture) documents.
  *
  * The tab itself is hidden for a driver, so this is the second line: a deep link
  * or a stale navigation state must not land them on a form the API will refuse.
  * It explains rather than 404s — "not for your role" is a different answer from
  * "broken", and the person deserves to know which.
  */
-const DocumentAccessGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const DocumentAccessGate: React.FC<Props> = ({ children, require = "view" }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
-  const { canCreateDocuments, loading } = useDocumentAccess();
+  const { canViewDocuments, canCreateDocuments, loading } = useDocumentAccess();
+  const allowed = require === "create" ? canCreateDocuments : canViewDocuments;
 
   if (loading) {
     return (
@@ -28,7 +40,7 @@ const DocumentAccessGate: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   }
 
-  if (!canCreateDocuments) {
+  if (!allowed) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <Icon source="lock-outline" size={56} color={theme.colors.onSurfaceVariant} />

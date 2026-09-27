@@ -5,6 +5,7 @@ import type {
   DocumentListFilters,
   DocumentShareHistory,
   DocumentSend,
+  DocumentStatus,
   DocumentSummary,
   DocumentTicket,
   PagedResult,
@@ -32,6 +33,7 @@ export class DocumentService {
   async list(filters: DocumentListFilters = {}): Promise<PagedResult<DocumentSummary>> {
     const {
       tipoDocumento,
+      procesado,
       codigoCliente,
       query,
       dates,
@@ -57,6 +59,7 @@ export class DocumentService {
         ? tipoDocumento.join(",")
         : tipoDocumento;
     }
+    if (procesado) params.procesado = procesado;
     if (codigoCliente) params.codigoCliente = codigoCliente;
     if (query) params.query = query;
     if (dates) params.dates = dates;
@@ -68,6 +71,20 @@ export class DocumentService {
   async get(noPedidoStr: string): Promise<DocumentDetail> {
     const response = await restClient.get<DocumentDetail>(
       `${BASE}/${encodeURIComponent(noPedidoStr)}`
+    );
+    return response.data;
+  }
+
+  /**
+   * Moves a document along the business's status workflow — approving an order is
+   * `procesado`, turning it down is `rechazado`. The server validates the transition
+   * against the configured flow and refuses anything the workflow does not allow, so
+   * the app never forces a status.
+   */
+  async updateStatus(noPedidoStr: string, status: DocumentStatus): Promise<DocumentDetail> {
+    const response = await restClient.put<DocumentDetail>(
+      `${BASE}/${encodeURIComponent(noPedidoStr)}/status`,
+      { status }
     );
     return response.data;
   }
@@ -150,6 +167,8 @@ export const documentService = new DocumentService();
 export const createDocument = (request: CreateDocumentRequest) => documentService.create(request);
 export const listDocuments = (filters?: DocumentListFilters) => documentService.list(filters);
 export const getDocument = (noPedidoStr: string) => documentService.get(noPedidoStr);
+export const updateDocumentStatus = (noPedidoStr: string, status: DocumentStatus) =>
+  documentService.updateStatus(noPedidoStr, status);
 export const getDocumentPdf = (noPedidoStr: string, options?: { preview?: boolean }) =>
   documentService.getPdf(noPedidoStr, options);
 export const getDocumentTicket = (
