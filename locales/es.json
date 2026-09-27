@@ -334,7 +334,8 @@
     "issuePlaceholder": "Describe la incidencia (opcional)…",
     "dispatchRoute": "Despachar ruta",
     "productsPicked": "productos preparados",
-    "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina."
+    "pickingNotAllowed": "La preparación la realiza el equipo de inventario o la oficina.",
+    "errorConfirmingProduct": "Error al confirmar producto"
   },
   "entrega": {
     "title": "Entregas",
@@ -431,8 +432,17 @@
     "declined": "Rechazado",
     "issueHint": "Confirma que la factura se cargó pero marca los artículos faltantes. Agrega una nota sobre la incidencia.",
     "issuePlaceholder": "Describe la incidencia (opcional)…",
-    "dispatchRoute": "Despachar ruta",
-    "deliveryNotAllowed": "La carga y entrega de la ruta la realiza el chofer asignado o la oficina."
+    "deliveryNotAllowed": "La carga y entrega de la ruta la realiza el chofer asignado o la oficina.",
+    "pendientesFacturar": "{{count}} pedido(s) pendiente(s) de facturar — la oficina debe generar la factura antes de cargarlos o entregarlos",
+    "intentosPrevios": "Intentos anteriores",
+    "intentoN": "Intento {{n}}",
+    "intentoRuta": "Ruta {{ruta}}",
+    "nuevoIntentoTitle": "¿Registrar un nuevo intento?",
+    "nuevoIntentoBody": "Esta parada ya tiene un resultado ({{status}}). Si continúas se registra como un intento nuevo; el anterior queda en el historial.",
+    "nuevoIntentoConfirm": "Registrar intento",
+    "leaveOnRoute": "Salir a ruta",
+    "errorDispatching": "No se pudo salir a ruta",
+    "pendingInvoicesHint": "Faltan pedidos por facturar: la oficina debe facturarlos antes de cerrar la ruta"
   },
   "documents": {
     "title": "Documentos",

@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, Linking, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -21,12 +21,15 @@ import {
 import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../../services/entregaService";
+import { inventoryService } from "../../../../services/inventoryService";
 import {
   EntregaFacturaDetalle,
   ItemFaltanteRequest,
   RegistrarEntregaRequest,
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
+import { formatDateTime } from "../../../../utils/documentFormat";
+import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
@@ -74,14 +77,21 @@ export default function FacturaEntregaScreen() {
   const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // A stop that already has an outcome: the next tap records a NEW attempt, so ask first.
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  // Idempotency key of the last submission: retrying the SAME submission (same outcome, payment, note,
+  // photo, items) after a failed request reuses it, so the server recognises the replay; a corrected
+  // submission or a new visit gets a new key and is recorded as a new attempt.
+  const claveRef = useRef<{ huella: string; key: string } | null>(null);
 
-  const load = useCallback(async () => {
+  // keepForm: refresh the stop (e.g. after a failed submit) without overwriting what the driver typed.
+  const load = useCallback(async (keepForm = false) => {
     try {
       setError("");
       const res = await entregaService.getFactura(numericRutaId, noPedidoStr ?? "");
       setData(res);
       // Pre-fill the partial delivery from the shortage reported when the truck was loaded.
-      if (res.faltantesCarga?.length) {
+      if (!keepForm && res.faltantesCarga?.length) {
         setFaltantes(
           Object.fromEntries(res.faltantesCarga.map((f) => [f.codigoProducto, f.cantidadFaltante]))
         );
@@ -102,20 +112,25 @@ export default function FacturaEntregaScreen() {
     try {
       setSubmitting(true);
       setError("");
-      const coords = await getCurrentCoords();
+      const [coords, device] = await Promise.all([getCurrentCoords(), inventoryService.getDeviceInfo()]);
+      const huella = huellaEnvio({ status, ...extra });
+      const key = claveRef.current?.huella === huella ? claveRef.current.key : nuevaClaveIntento(data.noPedidoStr);
+      claveRef.current = { huella, key };
       const payload: RegistrarEntregaRequest = {
         status,
         latitud: coords?.latitud,
         longitud: coords?.longitud,
-        // Stable per (document, outcome) so an offline retry of the same outcome is truly idempotent
-        // (the backend upserts one delivery record per line, keyed by the route line).
-        idempotencyKey: `${data.noPedidoStr}-${status}`,
+        idempotencyKey: key,
+        dispositivoId: device.id,
         ...extra,
       };
       await entregaService.registrarEntrega(numericRutaId, data.noPedidoStr, payload);
       router.back();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorDelivering"));
+      // The request may have been recorded even though it failed here (lost response): refresh so the
+      // next action sees the stop's real outcome and asks before recording another attempt.
+      load(true);
     } finally {
       setSubmitting(false);
     }
@@ -203,6 +218,11 @@ export default function FacturaEntregaScreen() {
 
   const canNavigate = hasCoords(data);
   const alreadyRecorded = data.entrega && data.statusDetalle !== "activo";
+  const intentosPrevios = data.intentosPrevios ?? [];
+  // Every outcome button goes through here: on a stop that already has an outcome it asks before
+  // recording a new attempt (append-only — the earlier attempt stays in the history).
+  const withNewAttemptCheck = (action: () => void) => () =>
+    alreadyRecorded ? setPendingAction(() => action) : action();
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
@@ -257,6 +277,45 @@ export default function FacturaEntregaScreen() {
           <Chip icon="information" style={styles.recordedChip} textStyle={{ fontSize: theme.custom.type.caption.fontSize }}>
             {t("entrega.alreadyRecorded", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
           </Chip>
+        )}
+
+        {intentosPrevios.length > 0 && (
+          <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
+                {t("entrega.intentosPrevios")} ({intentosPrevios.length})
+              </Text>
+              {intentosPrevios.map((i) => {
+                const titulo = `${t("entrega.intentoN", { n: i.intento })} · ${t(`entrega.detalle.${i.status}`)}`;
+                const detalle = [formatDateTime(i.fecha), i.noRuta ? t("entrega.intentoRuta", { ruta: i.noRuta }) : null, i.chofer]
+                  .filter(Boolean)
+                  .join(" · ");
+                const nota = i.observacion || i.codigoMotivoRechazo;
+                return (
+                  <View
+                    key={`${i.intento}-${i.fecha}`}
+                    style={styles.attemptRow}
+                    accessible
+                    accessibilityLabel={[titulo, detalle, nota].filter(Boolean).join(", ")}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
+                        {titulo}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        {detalle}
+                      </Text>
+                      {!!nota && (
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                          {nota}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </Card.Content>
+          </Card>
         )}
 
         {(data.faltantesCarga?.length ?? 0) > 0 && (
@@ -339,24 +398,24 @@ export default function FacturaEntregaScreen() {
               icon="check-circle"
               loading={submitting}
               disabled={submitting}
-              onPress={() => openDeliverDialog(false)}
+              onPress={withNewAttemptCheck(() => openDeliverDialog(false))}
               contentStyle={{ minHeight: 48 }}
             >
               {t("entrega.deliver")}
             </Button>
             <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={() => openDeliverDialog(true)}>
+              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => openDeliverDialog(true))}>
                 {t("entrega.deliverWithIssue")}
               </Button>
-              <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => setPartialMode(true)}>
+              <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => setPartialMode(true))}>
                 {t("entrega.partial")}
               </Button>
             </View>
             <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="outlined" textColor={theme.colors.tertiary} icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); }}>
+              <Button mode="outlined" textColor={theme.colors.tertiary} icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); })}>
                 {t("entrega.deliverLater")}
               </Button>
-              <Button mode="outlined" textColor={status.negative.base} icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); }}>
+              <Button mode="outlined" textColor={status.negative.base} icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); })}>
                 {t("entrega.notDelivered")}
               </Button>
             </View>
@@ -471,6 +530,29 @@ export default function FacturaEntregaScreen() {
           </Dialog.Content>
         </Dialog>
 
+        {/* A stop that already has an outcome: confirm before recording a new attempt */}
+        <Dialog visible={!!pendingAction} onDismiss={() => setPendingAction(null)}>
+          <Dialog.Title>{t("entrega.nuevoIntentoTitle")}</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              {t("entrega.nuevoIntentoBody", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setPendingAction(null)}>{t("common.cancel")}</Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                const action = pendingAction;
+                setPendingAction(null);
+                action?.();
+              }}
+            >
+              {t("entrega.nuevoIntentoConfirm")}
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
         {/* Reason for not-delivered / deliver-later */}
         <Dialog visible={showReason} onDismiss={() => setShowReason(false)}>
           <Dialog.Title>
@@ -519,6 +601,7 @@ const createStyles = (theme: CustomTheme) => {
     recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: colors.tintSoft },
     issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: status.warning.container },
     lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
+    attemptRow: { flexDirection: "row", paddingVertical: 8, minHeight: 44, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.fill },
     totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
     stepper: { flexDirection: "row", alignItems: "center" },
     stepBtn: { margin: 0, width: 30, height: 30 },

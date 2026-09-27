@@ -110,6 +110,17 @@ class EntregaService {
     return data;
   }
 
+  /**
+   * Leave on the route: lista_despacho → en_ruta once every active stop is invoiced and loaded
+   * (declined stops no longer count). 409 lists what still blocks. Idempotent once en_ruta.
+   */
+  async despacharRuta(rutaId: number): Promise<EntregaRuta> {
+    const { data } = await restClient.post<EntregaRuta>(
+      `${this.baseEndpoint}/rutas/${rutaId}/despachar`
+    );
+    return data;
+  }
+
   /** Close the transport → route completada (only when all stops are terminal, unless forced). */
   async completarRuta(rutaId: number, forzar = false): Promise<EntregaRuta> {
     const { data } = await restClient.post<EntregaRuta>(
