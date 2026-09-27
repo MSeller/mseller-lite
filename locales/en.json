@@ -407,7 +407,6 @@
     "declined": "Declined",
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
     "issuePlaceholder": "Describe the issue (optional)…",
-    "dispatchRoute": "Dispatch route",
     "deliveryNotAllowed": "Loading and delivering the route is done by the assigned driver or the back office.",
     "pendientesFacturar": "{{count}} order(s) waiting for an invoice — the office must invoice them before you can load or deliver them",
     "intentosPrevios": "Previous attempts",
@@ -417,7 +416,8 @@
     "nuevoIntentoBody": "This stop already has an outcome ({{status}}). Continuing records a new attempt; the earlier one stays in the history.",
     "nuevoIntentoConfirm": "Record attempt",
     "leaveOnRoute": "Leave on route",
-    "errorDispatching": "Could not leave on route"
+    "errorDispatching": "Could not leave on route",
+    "pendingInvoicesHint": "Some orders still need an invoice: the office must invoice them before you can close the route"
   },
   "documents": {
     "title": "Documents",

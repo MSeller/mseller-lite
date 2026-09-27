@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { nuevaClaveIntento, puedeSalirARuta } from "../entregaAttempts";
+import { huellaEnvio, nuevaClaveIntento, puedeSalirARuta } from "../entregaAttempts";
 
 describe("nuevaClaveIntento", () => {
   it("builds a per-tap key from the document, time and randomness", () => {
@@ -33,5 +33,22 @@ describe("puedeSalirARuta", () => {
 
   it("blocks an empty route", () => {
     expect(puedeSalirARuta({ total: 0, cargados: 0 })).toBe(false);
+  });
+});
+
+describe("huellaEnvio", () => {
+  const base = { status: "entregado", tipoPago: "efectivo", montoRecibido: 100 };
+
+  it("ignores GPS, device and key, and key order", () => {
+    expect(huellaEnvio({ ...base, latitud: 1, longitud: 2, dispositivoId: "a", idempotencyKey: "k" })).toBe(
+      huellaEnvio({ montoRecibido: 100, tipoPago: "efectivo", status: "entregado", latitud: 9 })
+    );
+  });
+
+  it("changes when the driver corrects what is recorded", () => {
+    expect(huellaEnvio({ ...base, tipoPago: "credito" })).not.toBe(huellaEnvio(base));
+    expect(
+      huellaEnvio({ status: "parcial", itemsFaltantes: [{ codigoProducto: "A", cantidadFaltante: 1 }] })
+    ).not.toBe(huellaEnvio({ status: "parcial", itemsFaltantes: [{ codigoProducto: "B", cantidadFaltante: 1 }] }));
   });
 });

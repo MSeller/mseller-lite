@@ -6,9 +6,9 @@
 const MAX_DOC_IN_KEY = 60;
 
 /**
- * Idempotency key for ONE delivery tap. The server treats a repeat of the stop's latest key as a
- * retry (nothing is written twice) and any other key as a new attempt. Mint it when the driver
- * opens an outcome dialog and reuse it while retrying that same submission.
+ * Idempotency key for ONE delivery submission. The server treats a repeat of the stop's latest key
+ * as a retry (nothing is written twice) and any other key as a new attempt. Reuse it only while
+ * retrying the exact same submission (same {@link huellaEnvio}); any change mints a new one.
  */
 export function nuevaClaveIntento(
   noPedidoStr: string,
@@ -26,4 +26,27 @@ export function nuevaClaveIntento(
  */
 export function puedeSalirARuta(p: { total: number; cargados: number; pendientesFacturar?: number }): boolean {
   return p.total > 0 && p.cargados === p.total && (p.pendientesFacturar ?? 0) === 0;
+}
+
+/** Fields that vary on every tap without changing what the driver recorded. */
+const CAMPOS_VOLATILES = new Set(["latitud", "longitud", "dispositivoId", "idempotencyKey"]);
+
+/**
+ * Stable fingerprint of what a delivery submission records (outcome, payment, note, photo, missing
+ * items), ignoring GPS and device fields. Two submissions with the same fingerprint are the same
+ * submission — a retry — so they may share an idempotency key; a corrected one must not.
+ */
+export function huellaEnvio(payload: object): string {
+  const orden = (v: unknown): unknown =>
+    Array.isArray(v)
+      ? v.map(orden)
+      : v && typeof v === "object"
+        ? Object.fromEntries(
+            Object.entries(v as Record<string, unknown>)
+              .filter(([k, x]) => x !== undefined && !CAMPOS_VOLATILES.has(k))
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([k, x]) => [k, orden(x)])
+          )
+        : v;
+  return JSON.stringify(orden(payload));
 }

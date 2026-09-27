@@ -29,7 +29,7 @@ import {
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
 import { formatDateTime } from "../../../../utils/documentFormat";
-import { nuevaClaveIntento } from "../../../../utils/entregaAttempts";
+import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
@@ -79,17 +79,19 @@ export default function FacturaEntregaScreen() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   // A stop that already has an outcome: the next tap records a NEW attempt, so ask first.
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  // One idempotency key per outcome within this visit: retrying the same outcome after a failed
-  // request reuses it (the server recognises the replay); another outcome or a new visit gets a new key.
-  const claveRef = useRef<{ status: Outcome; key: string } | null>(null);
+  // Idempotency key of the last submission: retrying the SAME submission (same outcome, payment, note,
+  // photo, items) after a failed request reuses it, so the server recognises the replay; a corrected
+  // submission or a new visit gets a new key and is recorded as a new attempt.
+  const claveRef = useRef<{ huella: string; key: string } | null>(null);
 
-  const load = useCallback(async () => {
+  // keepForm: refresh the stop (e.g. after a failed submit) without overwriting what the driver typed.
+  const load = useCallback(async (keepForm = false) => {
     try {
       setError("");
       const res = await entregaService.getFactura(numericRutaId, noPedidoStr ?? "");
       setData(res);
       // Pre-fill the partial delivery from the shortage reported when the truck was loaded.
-      if (res.faltantesCarga?.length) {
+      if (!keepForm && res.faltantesCarga?.length) {
         setFaltantes(
           Object.fromEntries(res.faltantesCarga.map((f) => [f.codigoProducto, f.cantidadFaltante]))
         );
@@ -110,11 +112,10 @@ export default function FacturaEntregaScreen() {
     try {
       setSubmitting(true);
       setError("");
-      const coords = await getCurrentCoords();
-      const key =
-        claveRef.current?.status === status ? claveRef.current.key : nuevaClaveIntento(data.noPedidoStr);
-      claveRef.current = { status, key };
-      const device = await inventoryService.getDeviceInfo();
+      const [coords, device] = await Promise.all([getCurrentCoords(), inventoryService.getDeviceInfo()]);
+      const huella = huellaEnvio({ status, ...extra });
+      const key = claveRef.current?.huella === huella ? claveRef.current.key : nuevaClaveIntento(data.noPedidoStr);
+      claveRef.current = { huella, key };
       const payload: RegistrarEntregaRequest = {
         status,
         latitud: coords?.latitud,
@@ -127,6 +128,9 @@ export default function FacturaEntregaScreen() {
       router.back();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || t("entrega.errorDelivering"));
+      // The request may have been recorded even though it failed here (lost response): refresh so the
+      // next action sees the stop's real outcome and asks before recording another attempt.
+      load(true);
     } finally {
       setSubmitting(false);
     }
@@ -281,35 +285,35 @@ export default function FacturaEntregaScreen() {
               <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
                 {t("entrega.intentosPrevios")} ({intentosPrevios.length})
               </Text>
-              {intentosPrevios.map((i) => (
-                <View
-                  key={`${i.intento}-${i.fecha}`}
-                  style={styles.attemptRow}
-                  accessible
-                  accessibilityLabel={[
-                    t("entrega.intentoN", { n: i.intento }),
-                    t(`entrega.detalle.${i.status}`),
-                    formatDateTime(i.fecha),
-                    i.observacion ?? "",
-                  ].join(", ")}
-                >
-                  <View style={{ flex: 1 }}>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
-                      {t("entrega.intentoN", { n: i.intento })} · {t(`entrega.detalle.${i.status}`)}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      {[formatDateTime(i.fecha), i.noRuta ? t("entrega.intentoRuta", { ruta: i.noRuta }) : null, i.chofer]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </Text>
-                    {!!(i.observacion || i.codigoMotivoRechazo) && (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                        {i.observacion || i.codigoMotivoRechazo}
+              {intentosPrevios.map((i) => {
+                const titulo = `${t("entrega.intentoN", { n: i.intento })} · ${t(`entrega.detalle.${i.status}`)}`;
+                const detalle = [formatDateTime(i.fecha), i.noRuta ? t("entrega.intentoRuta", { ruta: i.noRuta }) : null, i.chofer]
+                  .filter(Boolean)
+                  .join(" · ");
+                const nota = i.observacion || i.codigoMotivoRechazo;
+                return (
+                  <View
+                    key={`${i.intento}-${i.fecha}`}
+                    style={styles.attemptRow}
+                    accessible
+                    accessibilityLabel={[titulo, detalle, nota].filter(Boolean).join(", ")}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
+                        {titulo}
                       </Text>
-                    )}
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        {detalle}
+                      </Text>
+                      {!!nota && (
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                          {nota}
+                        </Text>
+                      )}
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </Card.Content>
           </Card>
         )}
