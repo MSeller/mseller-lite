@@ -19,6 +19,7 @@ import {
 } from "react-native-paper";
 import type { CustomTheme, StatusTokens } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import { PendientesFacturarBanner } from "../../../components/entrega/PendientesFacturarBanner";
 import { entregaService } from "../../../services/entregaService";
 import {
   EntregaFacturaResumen,
@@ -90,7 +91,9 @@ export default function RutaEntregaDetalleScreen() {
       f.statusDetalle === "parcial" ||
       f.statusDetalle === "entregado_con_novedad"
   ).length;
-  const hasPending = facturas.some((f) => f.statusDetalle === "activo");
+  // Stops waiting for an invoice are not listed but still have to be delivered before closing.
+  const pendientesFacturar = data?.pendientesFacturar ?? 0;
+  const hasPending = facturas.some((f) => f.statusDetalle === "activo") || pendientesFacturar > 0;
   const progress = total > 0 ? (total - facturas.filter((f) => f.statusDetalle === "activo").length) / total : 0;
 
   const isLoadPhase = data?.status === "lista_despacho";
@@ -206,6 +209,8 @@ export default function RutaEntregaDetalleScreen() {
           style={styles.progressBar}
         />
       </View>
+
+      <PendientesFacturarBanner count={pendientesFacturar} />
 
       {isLoadPhase && (
         <View style={styles.actionBar}>

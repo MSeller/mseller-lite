@@ -309,7 +309,8 @@
     "issuePlaceholder": "Describe the issue (optional)…",
     "dispatchRoute": "Dispatch route",
     "productsPicked": "products picked",
-    "pickingNotAllowed": "Picking is done by the inventory team or the back office."
+    "pickingNotAllowed": "Picking is done by the inventory team or the back office.",
+    "errorConfirmingProduct": "Error confirming product"
   },
   "entrega": {
     "title": "Deliveries",
@@ -407,7 +408,16 @@
     "issueHint": "Confirm the invoice is loaded but flag the missing items. Add a note about the issue.",
     "issuePlaceholder": "Describe the issue (optional)…",
     "dispatchRoute": "Dispatch route",
-    "deliveryNotAllowed": "Loading and delivering the route is done by the assigned driver or the back office."
+    "deliveryNotAllowed": "Loading and delivering the route is done by the assigned driver or the back office.",
+    "pendientesFacturar": "{{count}} order(s) waiting for an invoice — the office must invoice them before you can load or deliver them",
+    "intentosPrevios": "Previous attempts",
+    "intentoN": "Attempt {{n}}",
+    "intentoRuta": "Route {{ruta}}",
+    "nuevoIntentoTitle": "Record a new attempt?",
+    "nuevoIntentoBody": "This stop already has an outcome ({{status}}). Continuing records a new attempt; the earlier one stays in the history.",
+    "nuevoIntentoConfirm": "Record attempt",
+    "leaveOnRoute": "Leave on route",
+    "errorDispatching": "Could not leave on route"
   },
   "documents": {
     "title": "Documents",

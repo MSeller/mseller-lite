@@ -23,6 +23,8 @@ import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { PendientesFacturarBanner } from "../../../components/entrega/PendientesFacturarBanner";
+import { puedeSalirARuta } from "../../../utils/entregaAttempts";
 import { vehiculoLabel } from "../../../utils/mapLinks";
 
 export default function CargaScreen() {
@@ -155,26 +157,23 @@ export default function CargaScreen() {
   const totalC = activeCards.length;
   const loadedC = activeCards.filter((c) => c.confirmado).length;
   const allLoaded = totalC > 0 && loadedC === totalC;
+  const pendientesFacturar = data?.pendientesFacturar ?? 0;
+  const canLeave = puedeSalirARuta({ total: totalC, cargados: loadedC, pendientesFacturar });
 
-  // Dispatch a fully-loaded route that didn't auto-transition (re-confirm is idempotent on the
-  // backend and re-evaluates dispatch). Recovers a route left in lista_despacho.
+  // Leave on the route: the server moves it to en_ruta when every stop is invoiced and loaded (or
+  // declined) and answers 409 with the stops still blocking — shown as is. Also recovers a fully
+  // loaded route that didn't auto-transition.
   const handleDispatch = async () => {
-    const firstLoaded = activeCards.find((c) => c.confirmado);
-    if (!firstLoaded) return;
     try {
       setDispatching(true);
       setError("");
-      const response = await entregaService.confirmarCarga(numericRutaId, firstLoaded.rutaDetalleId);
-      if (response.rutaDespachada) {
-        setSuccess(t("entrega.routeDispatched"));
-        // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
-        // delivery worklist (reloads via useFocusEffect).
-        router.replace(`/entrega/${numericRutaId}`);
-      } else {
-        setError(t("entrega.errorConfirmingLoad"));
-      }
+      await entregaService.despacharRuta(numericRutaId);
+      setSuccess(t("entrega.routeDispatched"));
+      // Route is now en_ruta — land on the route detail, which lists the loaded orders as the
+      // delivery worklist (reloads via useFocusEffect).
+      router.replace(`/entrega/${numericRutaId}`);
     } catch (err: any) {
-      setError(err.response?.data?.message || t("entrega.errorConfirmingLoad"));
+      setError(err.response?.data?.message || t("entrega.errorDispatching"));
     } finally {
       setDispatching(false);
     }
@@ -323,6 +322,8 @@ export default function CargaScreen() {
         </View>
       )}
 
+      <PendientesFacturarBanner count={pendientesFacturar} />
+
       <View style={styles.progress}>
         <View style={styles.progressHeaderRow}>
           <Text style={styles.progressLabel}>{t("entrega.loadingProgressLabel")}</Text>
@@ -342,10 +343,10 @@ export default function CargaScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
       />
 
-      {allLoaded && (
+      {canLeave && (
         <View style={styles.dispatchBar}>
           <Button mode="contained" buttonColor={status.positive.base} icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={styles.actionBtnLabel}>
-            {t("entrega.dispatchRoute")}
+            {t("entrega.leaveOnRoute")}
           </Button>
         </View>
       )}

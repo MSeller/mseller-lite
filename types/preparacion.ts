@@ -141,6 +141,8 @@ export interface CargaResponse {
   codigoDistribuidor?: string | null;
   nombreDistribuidor?: string | null;
   clientes: CargaCliente[];
+  /** Driver load view only: active stops still waiting for an invoice (not listed). 0 on the warehouse view. */
+  pendientesFacturar?: number;
 }
 
 /** An item that could not be loaded (missing/short) — reported via confirm-with-issue. */
