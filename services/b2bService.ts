@@ -14,8 +14,26 @@ import type {
   VinculoB2B,
 } from "../types/b2b";
 import { restClient } from "./api";
+import {
+  MOCK_AREAS,
+  MOCK_PRODUCTOS,
+  MOCK_TIENDAS,
+  MOCK_VENDEDOR,
+  mockProductDetail,
+  paged,
+} from "./mocks/marketplaceFixtures";
 
 const BASE = "/consumo/b2b";
+
+/**
+ * Development builds started with `EXPO_PUBLIC_MOCK_MARKETPLACE=true` read the directory,
+ * catalogue and seller from fixtures instead of the API (store screenshots, design work).
+ * Writes — redeeming, requesting, ordering — still hit the API. Off in production builds.
+ */
+const MOCK = __DEV__ && process.env.EXPO_PUBLIC_MOCK_MARKETPLACE === "true";
+
+const contains = (text: string | undefined, query: string | undefined) =>
+  !query || (text ?? "").toLowerCase().includes(query.toLowerCase());
 
 /**
  * Marketplace B2B, buyer side.
@@ -36,6 +54,7 @@ export class B2BService {
     pageNumber = 1,
     pageSize = 20,
   }: TiendaFiltros = {}): Promise<PagedResult<TiendaMarketplace>> {
+    if (MOCK) return paged(MOCK_TIENDAS.filter((t) => contains(t.nombre, busqueda)), pageNumber, pageSize);
     const response = await restClient.get<PagedResult<TiendaMarketplace>>(`${BASE}/tiendas`, {
       params: { busqueda: busqueda || undefined, pageNumber, pageSize },
     });
@@ -74,6 +93,7 @@ export class B2BService {
 
   /** The store's product categories, in the order it publishes them — the catalogue tabs. */
   async listarAreas(tiendaId: string): Promise<string[]> {
+    if (MOCK) return MOCK_AREAS;
     const response = await restClient.get<string[]>(
       `${BASE}/tiendas/${encodeURIComponent(tiendaId)}/areas`
     );
@@ -84,6 +104,10 @@ export class B2BService {
     tiendaId: string,
     { area, busqueda, pageNumber = 1, pageSize = 20 }: CatalogoFiltros = {}
   ): Promise<PagedResult<ProductoCatalogo>> {
+    if (MOCK) {
+      const items = MOCK_PRODUCTOS.filter((p) => (!area || p.area === area) && contains(p.nombre, busqueda));
+      return paged(items, pageNumber, pageSize);
+    }
     const response = await restClient.get<PagedResult<ProductoCatalogo>>(
       `${BASE}/tiendas/${encodeURIComponent(tiendaId)}/catalogo`,
       { params: { area: area || undefined, busqueda: busqueda || undefined, pageNumber, pageSize } }
@@ -96,6 +120,10 @@ export class B2BService {
     tiendaId: string,
     codigoProducto: string
   ): Promise<ProductoCatalogoDetalle> {
+    if (MOCK) {
+      const found = mockProductDetail(codigoProducto);
+      if (found) return found;
+    }
     const response = await restClient.get<ProductoCatalogoDetalle>(
       `${BASE}/tiendas/${encodeURIComponent(tiendaId)}/catalogo/${encodeURIComponent(
         codigoProducto
@@ -112,6 +140,7 @@ export class B2BService {
    * caller simply renders nothing. Anything else (a 404, a network failure) still throws.
    */
   async obtenerVendedor(tiendaId: string): Promise<VendedorContacto | null> {
+    if (MOCK) return MOCK_VENDEDOR;
     const response = await restClient.get<VendedorContacto | "">(
       `${BASE}/tiendas/${encodeURIComponent(tiendaId)}/vendedor`
     );
