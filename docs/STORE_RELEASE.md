@@ -135,6 +135,14 @@ The OAuth client IDs live in `app.variants.js` (`googleWebClientId`, `googleIosC
 4. `supportsTablet` is `true`, so iPad screenshots (13") are required and iPad is reviewed.
 5. Review notes: explain that the app is the field companion of MSeller Cloud, give the demo
    account, and point at the printer/Bluetooth feature as optional hardware.
+6. The iOS app cannot create businesses (guideline 3.1.1, see `docs/REGISTRATION_PARITY.md`).
+   Keep sign up, plans, prices and links to register or pay out of the iOS build, the App Store
+   description and the screenshots. Review notes should say so:
+
+   > MSeller Lite is a B2B field tool for existing MSeller business customers (sales staff,
+   > warehouse and delivery drivers). Business accounts are set up by each company with MSeller
+   > outside the app; the iOS app has no account registration and no purchase flow, and users
+   > only sign in to access their company's account (guideline 3.1.3(c)). Demo account: …
 
 ### Reviewer demo account
 
