@@ -86,6 +86,8 @@ export default {
     },
     plugins: [
       "expo-router",
+      // Keeps the Xcode target's version fields equal to the app version (see plugin).
+      "./plugins/withXcodeVersion",
       [
         "expo-splash-screen",
         {
