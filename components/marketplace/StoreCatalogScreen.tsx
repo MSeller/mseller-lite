@@ -149,7 +149,7 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.BackAction
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/(tabs)/marketplace")

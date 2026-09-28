@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import {
@@ -20,7 +20,7 @@ import { useDocumentAccess } from "../../hooks/useDocumentAccess";
 import { useOrderApproval } from "../../hooks/useOrderApproval";
 import { useTranslation } from "../../hooks/useTranslation";
 import { listDocuments } from "../../services/documentService";
-import type { DocumentSummary, DocumentType } from "../../types/documents";
+import { DOCUMENT_TYPES, type DocumentSummary, type DocumentType } from "../../types/documents";
 import { formatDateShort, formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
 import DocumentShareSheet from "./DocumentShareSheet";
@@ -45,7 +45,12 @@ const DocumentsListScreen: React.FC = () => {
   const router = useRouter();
 
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  // `/(tabs)/documents?tipo=order` opens the list already filtered — deep links from
+  // Inicio and notifications.
+  const { tipo } = useLocalSearchParams<{ tipo?: string }>();
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(
+    DOCUMENT_TYPES.includes(tipo as DocumentType) ? (tipo as DocumentType) : "all",
+  );
   // "To approve": only orders still pending. Offered to approvers only, and it is a
   // status filter on top of the type filter, so switching it on forces the type to orders.
   const { canApprove } = useOrderApproval();

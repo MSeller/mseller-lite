@@ -445,7 +445,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                     },
                   ]}
                 >
-                  {isScanning ? "Scanning..." : "Scanner Ready"}
+                  {isScanning ? t("inventory.scanning") : t("inventory.scannerReady")}
                 </Chip>
               )}
             </View>

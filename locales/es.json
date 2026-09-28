@@ -228,7 +228,21 @@
     "zoneComplete": "¡Zona Completa!",
     "warehouse": "Almacén",
     "inventoryCount": "Conteo de Inventario",
-    "mobile": "Móvil"
+    "mobile": "Móvil",
+    "countInventory": "Contar inventario",
+    "activeCount": "Conteo activo",
+    "noActiveCount": "Sin conteo activo",
+    "countProduct": "Contar producto",
+    "enterManually": "Ingresar manual",
+    "productFound": "Producto encontrado",
+    "productNotFound": "Producto no encontrado",
+    "countedQuantity": "Cantidad contada",
+    "expectedQuantity": "Cantidad esperada",
+    "discrepancy": "Discrepancia",
+    "zone": "Zona",
+    "observations": "Observaciones",
+    "scannerReady": "Lector listo",
+    "scanning": "Escaneando…"
   },
   "errors": {
     "genericError": "Algo salió mal",

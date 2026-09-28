@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import { useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useUser } from "../../contexts/UserContext";
+import { inventoryService } from "../../services/inventoryService";
 import InventoryDemoScreen from "./InventoryDemoScreen";
 import InventoryMainScreen from "./InventoryMainScreen";
 import InventoryProgressScreen from "./InventoryProgressScreen";
@@ -25,6 +28,26 @@ export default function InventoryTabScreen({ headerAccessory }: InventoryTabScre
     setSelectedConteo(conteo);
     setCurrentScreen("counting");
   };
+
+  // `?conteo=<id>` opens that count straight on the counting screen — the link a
+  // notification or the portal can hand a warehouse user.
+  const { conteo: requested } = useLocalSearchParams<{ conteo?: string }>();
+  const { userProfile } = useUser();
+  useEffect(() => {
+    const id = Number(requested);
+    if (!id || !userProfile?.warehouse) return;
+    let active = true;
+    inventoryService
+      .getConteosActivos(inventoryService.getWarehouseId(userProfile.warehouse))
+      .then((counts) => {
+        const match = counts.find((c) => c.id === id);
+        if (active && match) handleNavigateToCount(match);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [requested, userProfile?.warehouse]);
 
   const handleNavigateToProgress = (conteo: InventarioConteo) => {
     setSelectedConteo(conteo);

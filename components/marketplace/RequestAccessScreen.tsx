@@ -87,7 +87,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
   };
 
   const header = (
-    <Appbar.Header mode="small" style={styles.appbar}>
+    <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
       <Appbar.BackAction onPress={goBack} />
       <Appbar.Content title={t("marketplace.requestTitle")} />
     </Appbar.Header>

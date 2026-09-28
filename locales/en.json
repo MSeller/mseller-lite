@@ -203,7 +203,9 @@
     "zoneComplete": "Zone Complete!",
     "warehouse": "Warehouse",
     "inventoryCount": "Inventory Count",
-    "mobile": "Mobile"
+    "mobile": "Mobile",
+    "scannerReady": "Scanner ready",
+    "scanning": "Scanning…"
   },
   "errors": {
     "genericError": "Something went wrong",

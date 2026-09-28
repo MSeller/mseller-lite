@@ -8,16 +8,21 @@ import {
   SummaryResponse,
 } from "../types/preparacion";
 import { restClient } from "./api";
+import { MOCK_RUTAS_PREPARACION } from "./mocks/routesFixtures";
 
 /**
  * Preparación Service — handles all O2D wave-picking API calls.
  * All endpoints target Consumo.Api (/consumo/preparacion).
  */
+/** Development builds started with `EXPO_PUBLIC_MOCK_ROUTES=true` list sample routes. */
+const MOCK_ROUTES = __DEV__ && process.env.EXPO_PUBLIC_MOCK_ROUTES === "true";
+
 class PreparacionService {
   private readonly baseEndpoint = "/consumo/preparacion";
 
   /** List routes available for picking (en_preparacion / lista_despacho) */
   async getRutasPreparacion(): Promise<RutaPreparacion[]> {
+    if (MOCK_ROUTES) return MOCK_RUTAS_PREPARACION;
     const response = await restClient.get<RutaPreparacion[]>(
       `${this.baseEndpoint}/rutas`
     );

@@ -112,7 +112,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
     const activa = link.estado === "activa";
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-        <Appbar.Header mode="small" style={styles.appbar}>
+        <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
           <Appbar.BackAction onPress={goBack} />
           <Appbar.Content title={t("marketplace.redeemTitle")} />
         </Appbar.Header>
@@ -150,7 +150,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.BackAction onPress={goBack} />
         <Appbar.Content title={t("marketplace.redeemTitle")} />
       </Appbar.Header>

@@ -12,6 +12,11 @@ import {
   RegistrarEntregaResponse,
 } from "../types/entrega";
 import { restClient } from "./api";
+import { paged } from "./mocks/marketplaceFixtures";
+import { MOCK_RUTAS_ENTREGA } from "./mocks/routesFixtures";
+
+/** Development builds started with `EXPO_PUBLIC_MOCK_ROUTES=true` list sample routes. */
+const MOCK_ROUTES = __DEV__ && process.env.EXPO_PUBLIC_MOCK_ROUTES === "true";
 
 export interface EntregaRutaFiltros {
   fecha?: string;
@@ -33,6 +38,7 @@ class EntregaService {
     pageNumber = 1,
     pageSize = 50
   ): Promise<PagedResult<EntregaRuta>> {
+    if (MOCK_ROUTES) return paged(MOCK_RUTAS_ENTREGA, pageNumber, pageSize);
     const { data } = await restClient.get<PagedResult<EntregaRuta>>(
       `${this.baseEndpoint}/rutas`,
       { params: { pageNumber, pageSize, ...filtros } }

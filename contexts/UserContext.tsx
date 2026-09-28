@@ -65,10 +65,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const type = process.env.EXPO_PUBLIC_PREVIEW_ROLE as UserTypes["type"] | undefined;
     if (__DEV__ && type && USER_TYPES.includes(type)) setPreviewUserTypeState(type);
   }, []);
-  const effectiveProfile = useMemo(
-    () => (previewUserType && userProfile ? { ...userProfile, type: previewUserType } : userProfile),
-    [userProfile, previewUserType],
-  );
+  // `EXPO_PUBLIC_PREVIEW_WAREHOUSE=<id>` pairs with the role preview for warehouse screens.
+  const previewWarehouse = __DEV__ ? process.env.EXPO_PUBLIC_PREVIEW_WAREHOUSE : undefined;
+  const effectiveProfile = useMemo(() => {
+    if (!userProfile || (!previewUserType && !previewWarehouse)) return userProfile;
+    return {
+      ...userProfile,
+      ...(previewUserType && { type: previewUserType }),
+      ...(previewWarehouse && { warehouse: previewWarehouse }),
+    };
+  }, [userProfile, previewUserType, previewWarehouse]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {

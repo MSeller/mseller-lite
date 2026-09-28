@@ -87,7 +87,7 @@ const MarketplaceDirectoryScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.Content title={t("marketplace.title")} />
         <Appbar.Action
           icon="ticket-confirmation-outline"

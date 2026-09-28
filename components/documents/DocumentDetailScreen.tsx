@@ -37,6 +37,8 @@ import { getDocumentTypeMeta } from "./documentMeta";
 
 interface Props {
   noPedidoStr: string;
+  /** Open the print/send sheet as soon as the document has loaded. */
+  shareOnOpen?: boolean;
 }
 
 /**
@@ -48,7 +50,7 @@ interface Props {
  * a pending order, for users the portal marks as approvers — the server resolves
  * what "approved" means in this business's workflow.
  */
-const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
+const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = false }) => {
   const theme = useTheme() as CustomTheme;
   // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
   const insets = useSafeAreaInsets();
@@ -86,6 +88,12 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (shareOnOpen && document) setShareVisible(true);
+    // Only on first load: closing the sheet must not reopen it on the next refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shareOnOpen, !!document]);
+
   const goBack = useCallback(() => {
     // A document reached by `replace` right after capture has nothing behind it,
     // so fall back to the list instead of leaving a dead back button.
@@ -115,7 +123,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr }) => {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.BackAction onPress={goBack} />
         {/* MD3 Appbar.Content ignores `subtitle`; the document type is shown on
             the card below, next to the status. */}

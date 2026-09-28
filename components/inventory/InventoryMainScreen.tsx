@@ -332,9 +332,8 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
                       variant="bodyMedium"
                       style={{ color: theme.colors.primary }}
                     >
-                      {countSummary.productosPendientes} /{" "}
-                      {countSummary.totalProductosContados +
-                        countSummary.productosPendientes}
+                      {/* Counted over the count's total, the same ratio as the bar below. */}
+                      {countSummary.productosContados} / {countSummary.totalProductosContados}
                     </Text>
                   </View>
                   <ProgressBar

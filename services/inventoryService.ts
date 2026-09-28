@@ -17,6 +17,10 @@ import {
   ValidarCodigoBarraResponse,
 } from "../types/inventory";
 import { restClient } from "./api";
+import { MOCK_CONTEO, MOCK_PRODUCTOS_CONTEO, MOCK_RESUMEN } from "./mocks/inventoryFixtures";
+
+/** Development builds started with `EXPO_PUBLIC_MOCK_INVENTORY=true` serve a sample count. */
+const MOCK_INVENTORY = __DEV__ && process.env.EXPO_PUBLIC_MOCK_INVENTORY === "true";
 
 /**
  * Inventory Mobile Service - Handles all mobile inventory operations
@@ -34,6 +38,7 @@ export class InventoryMobileService {
    * Get active counts for a warehouse
    */
   async getConteosActivos(localidadId: number): Promise<InventarioConteo[]> {
+    if (MOCK_INVENTORY) return [MOCK_CONTEO];
     const response = await restClient.get(
       `${this.baseEndpoint}/conteos-activos/${localidadId}`
     );
@@ -45,6 +50,7 @@ export class InventoryMobileService {
    * Get current active count for a warehouse
    */
   async getConteoActivo(localidadId: number): Promise<InventarioConteo | null> {
+    if (MOCK_INVENTORY) return MOCK_CONTEO;
     try {
       const response = await restClient.get(
         `${this.baseEndpoint}/conteo-activo/${localidadId}`
@@ -62,6 +68,7 @@ export class InventoryMobileService {
    * Get products for a specific count
    */
   async getProductosConteo(conteoId: number): Promise<ProductoConteo[]> {
+    if (MOCK_INVENTORY) return MOCK_PRODUCTOS_CONTEO;
     const response = await restClient.get(
       `${this.baseEndpoint}/conteo/${conteoId}/productos`
     );
@@ -72,6 +79,7 @@ export class InventoryMobileService {
    * Get count summary/progress
    */
   async getResumenConteo(conteoId: number): Promise<ResumenConteo> {
+    if (MOCK_INVENTORY) return MOCK_RESUMEN;
     const response = await restClient.get(
       `${this.baseEndpoint}/conteo/${conteoId}/resumen`
     );

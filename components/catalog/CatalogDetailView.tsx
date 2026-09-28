@@ -94,7 +94,7 @@ const CatalogDetailView: React.FC<Props> = ({
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.BackAction onPress={onBack} />
         <Appbar.Content title={title} />
         {ready && failure?.kind !== "forbidden" && (

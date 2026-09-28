@@ -97,7 +97,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <Appbar.Header mode="small" style={styles.appbar}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
         <Appbar.BackAction onPress={goBack} />
         <Appbar.Content title={producto?.nombre || codigoProducto} />
       </Appbar.Header>
