@@ -536,6 +536,14 @@
       "unassignedTitle": "No driver code",
       "unassignedBody": "Your user doesn't have a driver code assigned. Ask an administrator at your company to assign one.",
       "failedTitle": "Couldn't load routes"
+    },
+    "location": {
+      "servicesOff": "Location is turned off on this phone. Turn it on to record the delivery.",
+      "denied": "Allow location access to record the delivery.",
+      "blocked": "Location access is blocked. Turn it on in Settings to record the delivery.",
+      "unavailable": "We couldn't get your location. Move somewhere with signal and try again.",
+      "enable": "Allow location",
+      "openSettings": "Open Settings"
     }
   },
   "documents": {

@@ -31,7 +31,8 @@ import {
   ItemFaltanteRequest,
   RegistrarEntregaRequest,
 } from "../../../../types/entrega";
-import { getCurrentCoords } from "../../../../utils/deliveryLocation";
+import { requireCurrentCoords } from "../../../../utils/deliveryLocation";
+import { useDeliveryLocation } from "../../../../hooks/useDeliveryLocation";
 import { formatDateTime, formatMoney } from "../../../../utils/documentFormat";
 import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
@@ -115,19 +116,31 @@ export default function FacturaEntregaScreen() {
     load();
   }, [load]);
 
+  const { problem: locationProblem, resolve: enableLocation, recheck: recheckLocation } = useDeliveryLocation();
+  // Location off means no outcome can be recorded: every action stays disabled until it is on.
+  const actionsDisabled = submitting || !!locationProblem;
+
   const submit = async (status: Outcome, extra?: Partial<RegistrarEntregaRequest>) => {
     if (!data) return;
     try {
       setSubmitting(true);
       setError("");
-      const [coords, device] = await Promise.all([getCurrentCoords(), inventoryService.getDeviceInfo()]);
+      // No attempt goes out without the device's position: it is the proof of where it happened,
+      // and the API rejects one without it.
+      const [location, device] = await Promise.all([requireCurrentCoords(), inventoryService.getDeviceInfo()]);
+      if (!location.ok) {
+        setError(t(`entrega.location.${location.problem}`));
+        recheckLocation();
+        return;
+      }
+      const coords = location.coords;
       const huella = huellaEnvio({ status, ...extra });
       const key = claveRef.current?.huella === huella ? claveRef.current.key : nuevaClaveIntento(data.noPedidoStr);
       claveRef.current = { huella, key };
       const payload: RegistrarEntregaRequest = {
         status,
-        latitud: coords?.latitud,
-        longitud: coords?.longitud,
+        latitud: coords.latitud,
+        longitud: coords.longitud,
         idempotencyKey: key,
         dispositivoId: device.id,
         ...extra,
@@ -287,6 +300,22 @@ export default function FacturaEntregaScreen() {
           <StatusChip label={t(st.key)} tone={st.tone} />
         </View>
 
+        {!!locationProblem && (
+          <View style={[styles.strip, { backgroundColor: colors.warningBackground }]} accessibilityLiveRegion="polite">
+            <Icon source="map-marker-off-outline" size={20} color={colors.warningForeground} />
+            <View style={styles.flex}>
+              <Text style={[styles.stripText, { color: colors.warningForeground }]}>
+                {t(`entrega.location.${locationProblem}`)}
+              </Text>
+              {locationProblem !== "unavailable" && (
+                <AppButton compact icon="crosshairs-gps" onPress={enableLocation} style={styles.stripAction}>
+                  {locationProblem === "denied" ? t("entrega.location.enable") : t("entrega.location.openSettings")}
+                </AppButton>
+              )}
+            </View>
+          </View>
+        )}
+
         {alreadyRecorded && (
           <View style={[styles.strip, { backgroundColor: status.info.container }]}>
             <Icon source="information-outline" size={20} color={status.info.onContainer} />
@@ -431,13 +460,13 @@ export default function FacturaEntregaScreen() {
               <Pressable
                 key={o.key}
                 onPress={o.onPress}
-                disabled={submitting}
+                disabled={actionsDisabled}
                 style={({ pressed }) => [styles.outcomeRow, pressed && styles.pressed]}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: submitting }}
+                accessibilityState={{ disabled: actionsDisabled }}
               >
-                <Icon source={o.icon} size={22} color={submitting ? colors.inkTertiary : o.color} />
-                <Text style={[styles.outcomeLabel, { color: submitting ? colors.inkTertiary : o.color }]}>{o.label}</Text>
+                <Icon source={o.icon} size={22} color={actionsDisabled ? colors.inkTertiary : o.color} />
+                <Text style={[styles.outcomeLabel, { color: actionsDisabled ? colors.inkTertiary : o.color }]}>{o.label}</Text>
               </Pressable>
             ))}
           </>
@@ -462,6 +491,7 @@ export default function FacturaEntregaScreen() {
               icon="check"
               label={t("entrega.confirmPartial")}
               loading={submitting}
+              disabled={!!locationProblem}
               onPress={submitPartial}
               style={styles.flex}
             />
@@ -478,6 +508,7 @@ export default function FacturaEntregaScreen() {
               icon="check-circle-outline"
               label={t("entrega.deliver")}
               loading={submitting}
+              disabled={!!locationProblem}
               onPress={withNewAttemptCheck(() => openDeliverDialog(false))}
             />
           </>
@@ -668,6 +699,7 @@ const createStyles = (theme: CustomTheme, gutter: number) => {
       minHeight: touchTarget,
     },
     stripText: { ...type.bodySmall, flex: 1 },
+    stripAction: { alignSelf: "flex-start", marginTop: spacing.xs },
     sectionHeader: {
       paddingHorizontal: gutter,
       paddingTop: spacing.xl,
