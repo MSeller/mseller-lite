@@ -17,6 +17,7 @@ import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { StopHints } from "../../../components/entrega/StopHints";
 import { EntregaHeader } from "../../../components/entrega/EntregaHeader";
 import { useBackToRoute } from "../../../components/entrega/useBackToRoute";
 import EmptyState from "../../../components/ui/EmptyState";
@@ -271,6 +272,7 @@ export default function CargaScreen() {
                 {item.direccion}
               </Text>
             )}
+            <StopHints referencia={item.referenciaDireccion} />
             {!!reason && (
               <View style={[styles.reasonBox, { backgroundColor: tone.container }]}>
                 <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={16} color={tone.onContainer} />

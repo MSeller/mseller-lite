@@ -14,6 +14,7 @@ import {
 } from "react-native-paper";
 import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import { StopHints, stopHintsA11y } from "../../../components/entrega/StopHints";
 import { EntregaHeader } from "../../../components/entrega/EntregaHeader";
 import EmptyState from "../../../components/ui/EmptyState";
 import GradientButton from "../../../components/ui/GradientButton";
@@ -130,14 +131,19 @@ export default function RutaEntregaDetalleScreen() {
             )
           }
           accessibilityRole="button"
-          accessibilityLabel={t("entrega.ui.stopA11y", {
-            seq: item.secuenciaEntrega,
-            customer,
-            address: item.direccion ?? "",
-            status: t(st.key),
-            doc: docNo,
-            amount,
-          })}
+          accessibilityLabel={[
+            t("entrega.ui.stopA11y", {
+              seq: item.secuenciaEntrega,
+              customer,
+              address: item.direccion ?? "",
+              status: t(st.key),
+              doc: docNo,
+              amount,
+            }),
+            stopHintsA11y(t, { referencia: item.referenciaDireccion, ventanas: item.ventanasEntrega }),
+          ]
+            .filter(Boolean)
+            .join(", ")}
         >
           <View style={styles.seqBadge}>
             <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>
@@ -151,6 +157,7 @@ export default function RutaEntregaDetalleScreen() {
                 {item.direccion}
               </Text>
             )}
+            <StopHints referencia={item.referenciaDireccion} ventanas={item.ventanasEntrega} fechaRuta={data?.fecha} />
             <StatusChip label={t(st.key)} tone={st.tone} />
           </View>
           <View style={styles.rowValues}>
