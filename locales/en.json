@@ -73,7 +73,17 @@
     "continueWithGoogle": "Continue with Google",
     "googleUnavailable": "Google sign-in is not available on this device.",
     "googleFailed": "Couldn't sign in with Google. Please try again.",
-    "googleAccountExistsWithPassword": "This email already has a password account. Sign in with your email and password."
+    "googleAccountExistsWithPassword": "This email already has a password account. Sign in with your email and password.",
+    "signInErrors": {
+      "credentials": "The email or password isn't right. Check them and try again, or use “Forgot Password?”.",
+      "invalidEmail": "That email isn't valid. Check it's spelled correctly.",
+      "disabled": "This account is disabled. Contact your company administrator.",
+      "tooManyRequests": "Too many failed attempts. Wait a few minutes or reset your password.",
+      "network": "You're offline. Check your connection and try again.",
+      "unknown": "We couldn't sign you in. Please try again.",
+      "emailRequired": "Enter your email.",
+      "passwordRequired": "Enter your password."
+    }
   },
   "profile": {
     "profile": "Profile",
@@ -95,7 +105,12 @@
     "yes": "Yes",
     "no": "No",
     "unknown": "Unknown",
-    "role": "Role"
+    "role": "Role",
+    "changePhoto": "Change photo",
+    "photoUploading": "Uploading photo…",
+    "photoFailed": "We couldn't update your photo. Check your connection and try again.",
+    "photoPermission": "Allow camera access to take your photo.",
+    "photoUpdated": "Photo updated"
   },
   "navigation": {
     "home": "Home",
@@ -279,7 +294,7 @@
     "loaded": "Loaded",
     "pending": "Pending",
     "viewLoading": "View Loading",
-    "routeDispatched": "✅ Route dispatched — truck en route",
+    "routeDispatched": "Route dispatched — truck en route",
     "activeRoute": "ACTIVE ROUTE",
     "liveSession": "LIVE SESSION",
     "pickingProgress": "Picking Progress",
@@ -323,7 +338,58 @@
     "loadingListTitle": "Truck loading",
     "loadingListSubtitle": "Routes ready to load",
     "noRoutesToLoad": "No routes ready to load",
-    "errorConfirmingProduct": "Error confirming product"
+    "errorConfirmingProduct": "Error confirming product",
+    "ui": {
+      "confirmProductHint": "Opens the prepared quantity confirmation",
+      "productCount_one": "{{count}} product",
+      "productCount_other": "{{count}} products",
+      "noProductsBody": "This route has no products left to pick. Pull down to refresh.",
+      "confirmProductTitle": "Confirm product",
+      "requestedQty": "Requested quantity",
+      "preparedQty": "Prepared quantity",
+      "decrease": "Subtract one",
+      "increase": "Add one",
+      "autoDistributionHint": "The split between customers is calculated automatically",
+      "difference_one": "Difference: {{count}} unit",
+      "difference_other": "Difference: {{count}} units",
+      "cannotExceed": "Cannot exceed the requested quantity",
+      "observationRequired": "Note (required)",
+      "observationPlaceholder": "Reason for the difference…",
+      "distributionByCustomer": "Split by customer",
+      "distributionManual": "Manual adjustment: check the allocation",
+      "distributionAuto": "Calculated automatically, editable",
+      "requestedAmount": "Requested: {{qty}}",
+      "totalDistributed": "Total allocated {{distributed}} / {{total}}",
+      "noSummaryBody": "No products have been confirmed on this route yet.",
+      "vehicleType": {
+        "camion": "Truck",
+        "furgoneta": "Van",
+        "motocicleta": "Motorcycle",
+        "other": "Vehicle"
+      },
+      "itemCount_one": "{{count}} item",
+      "itemCount_other": "{{count}} items",
+      "customersLoaded": "customers loaded",
+      "customerCount_one": "{{count}} customer",
+      "customerCount_other": "{{count}} customers",
+      "noCustomersToLoad": "No invoices to load",
+      "noCustomersToLoadBody": "This route's invoices will show up here once they are ready."
+    },
+    "list": {
+      "count_one": "{{count}} route",
+      "count_other": "{{count}} routes",
+      "orderCount_one": "{{count}} order",
+      "orderCount_other": "{{count}} orders",
+      "productCount_one": "{{count}} product",
+      "productCount_other": "{{count}} products",
+      "a11yRoute": "Route {{ruta}}",
+      "a11yProgress": "{{done}} of {{total}} products picked",
+      "emptyBody": "Routes confirmed by the office show up here; pull down to refresh.",
+      "emptyLoadingBody": "A route shows up here once its picking is done; pull down to refresh.",
+      "disabledTitle": "Picking not enabled",
+      "disabledBody": "The picking module isn't turned on for your user. Ask an administrator at your company to enable it.",
+      "failedTitle": "Couldn't load routes"
+    }
   },
   "entrega": {
     "title": "Deliveries",
@@ -430,7 +496,47 @@
     "nuevoIntentoConfirm": "Record attempt",
     "leaveOnRoute": "Leave on route",
     "errorDispatching": "Could not leave on route",
-    "pendingInvoicesHint": "Some orders still need an invoice: the office must invoice them before you can close the route"
+    "pendingInvoicesHint": "Some orders still need an invoice: the office must invoice them before you can close the route",
+    "ui": {
+      "deliveredOverline": "Delivered",
+      "invoicesTotal": "Invoices total",
+      "summaryA11y": "{{done}} of {{total}} stops delivered, invoices total {{amount}}",
+      "stopsOverline": "Stops · {{count}}",
+      "stopA11y": "Stop {{seq}}, {{customer}}, {{address}}, {{status}}, document {{doc}}, {{amount}}",
+      "openMap": "Open in maps",
+      "openMapFor": "Open in maps: {{customer}}",
+      "noStopsBody": "Invoices the office assigns to this route will show up here.",
+      "errorTitle": "Could not load",
+      "clientsOverline": "Customers · {{count}}",
+      "itemsCount": "{{count}} items",
+      "loadStopA11y": "Stop {{seq}}, {{customer}}, invoice {{invoice}}, {{count}} items, {{status}}",
+      "loadItemA11y": "{{name}}, {{qty}} {{unit}}",
+      "noLoadStops": "No customers to load",
+      "noLoadStopsBody": "The route's invoices show up here as soon as the office issues them.",
+      "customerOverline": "Customer",
+      "customerCode": "Code",
+      "address": "Address",
+      "reference": "Reference",
+      "phone": "Phone",
+      "partialOverline": "Missing quantities",
+      "decreaseMissing": "Decrease missing",
+      "increaseMissing": "Increase missing",
+      "otherOutcomes": "Other outcome"
+    },
+    "list": {
+      "count_one": "{{count}} route",
+      "count_other": "{{count}} routes",
+      "invoiceCount_one": "{{count}} invoice",
+      "invoiceCount_other": "{{count}} invoices",
+      "a11yRoute": "Route {{ruta}}",
+      "a11yProgress": "{{delivered}} of {{total}} invoices delivered, {{pending}} pending",
+      "emptyBody": "When a delivery route is assigned to you it shows up here; pull down to refresh.",
+      "disabledTitle": "Deliveries not enabled",
+      "disabledBody": "The delivery module isn't turned on for your user. Ask an administrator at your company to enable it.",
+      "unassignedTitle": "No driver code",
+      "unassignedBody": "Your user doesn't have a driver code assigned. Ask an administrator at your company to assign one.",
+      "failedTitle": "Couldn't load routes"
+    }
   },
   "documents": {
     "title": "Documents",
@@ -644,7 +750,13 @@
       "manager": "Manager",
       "administrator": "Administrator",
       "superuser": "Superuser"
-    }
+    },
+    "notEnabled": "Not enabled",
+    "noDriverCode": "No driver code",
+    "readyToLoad": "routes ready to load",
+    "noDeliveriesTitle": "No pending deliveries",
+    "noDeliveriesBody": "When a route is assigned to you it will show up here. Pull down to refresh.",
+    "viewRoutes": "View routes"
   },
   "scan": {
     "scanProducts": "Scan products",
@@ -1110,5 +1222,66 @@
     },
     "removeLine": "Remove from cart",
     "accessNotAllowed": "You don't have access to the marketplace."
+  },
+  "products": {
+    "search": {
+      "title": "Products",
+      "subtitle": "Look up prices and stock by barcode, code or name.",
+      "modeLabel": "Search by",
+      "mode": {
+        "barcode": "Barcode",
+        "code": "Code",
+        "text": "Name"
+      },
+      "modeShort": {
+        "barcode": "Barcode",
+        "code": "Code",
+        "text": "Name"
+      },
+      "placeholder": {
+        "barcode": "Scan or type the barcode",
+        "code": "Product code",
+        "text": "Product name"
+      },
+      "clear": "Clear search",
+      "scannerReady": "Barcode reader ready",
+      "scannerReading": "Reading barcode…",
+      "autoSearching": "Searching…",
+      "results": "Results · {{count}}",
+      "idleTitle": "Find a product",
+      "idleBody": "Scan a barcode or type a code or a name to see prices and stock.",
+      "notFoundTitle": "No product matches",
+      "notFoundBody": "Check the code or the name and try again.",
+      "notFoundCreateBody": "Check the code or the name, or register it as a new product.",
+      "failedTitle": "We couldn't search"
+    },
+    "detail": {
+      "codeOverline": "Code {{code}}",
+      "price": "Price",
+      "priceLevel": "Price {{level}}",
+      "stock": "Stock by location",
+      "stockTotal": "Total {{value}}",
+      "mainWarehouse": "Main warehouse",
+      "updated": "Updated {{date}}",
+      "info": "Details",
+      "code": "Code",
+      "barcode": "Barcode",
+      "area": "Area",
+      "department": "Department",
+      "unit": "Unit",
+      "package": "Package",
+      "promotion": "On promotion",
+      "service": "Service",
+      "label": {
+        "noPrintersTitle": "No printers",
+        "noPrintersMessage": "No available printers were found. Make sure your Zebra printer is connected.",
+        "confirm": "Print the label for \"{{name}}\"?\n\nPrinter: {{printer}}",
+        "preview": "Preview",
+        "previewTitle": "ZPL preview",
+        "print": "Print",
+        "ok": "OK",
+        "failed": "The label could not be created"
+      }
+    }
   }
 }

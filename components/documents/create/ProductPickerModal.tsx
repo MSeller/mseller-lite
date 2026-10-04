@@ -1,45 +1,32 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Image, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
-  Button,
   Chip,
   Divider,
-  HelperText,
   Icon,
-  Modal,
   Portal,
   Searchbar,
   Text,
-  TextInput,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { useBarcodeScanner } from "../../../hooks/useBarcodeScanner";
 import { usePagedSearch, type SearchPage } from "../../../hooks/usePagedSearch";
-import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
-import {
-  createProduct,
-  getNextProductCode,
-  searchProducts,
-  searchProductsForDocument,
-} from "../../../services/ProductService";
-import type { NewProductRequest } from "../../../types/documents";
+import { searchProducts, searchProductsForDocument } from "../../../services/ProductService";
 import type { Product } from "../../../types/inventory";
-import {
-  formatMoney,
-  formatUnitWithFactor,
-  parseNumericInput,
-  productDisplayName,
-} from "../../../utils/documentFormat";
-import { productThumbnailUrl, type UploadedProductPhoto } from "../../../utils/productPhoto";
+import { formatMoney, formatUnitWithFactor, productDisplayName } from "../../../utils/documentFormat";
+import { productThumbnailUrl } from "../../../utils/productPhoto";
 import BarcodeScanSheet from "../../scan/BarcodeScanSheet";
-import ProductPhotoField from "./ProductPhotoField";
+import FullScreenModal from "../../ui/FullScreenModal";
+import NewProductForm from "./NewProductForm";
 import ProductPhotoSheet from "./ProductPhotoSheet";
+import AppButton from "../../ui/AppButton";
 
 interface Props {
   visible: boolean;
@@ -74,6 +61,7 @@ const ProductPickerModal: React.FC<Props> = ({
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<Mode>("search");
   const [search, setSearch] = useState("");
@@ -86,58 +74,30 @@ const ProductPickerModal: React.FC<Props> = ({
   const error = searchError ? t("documents.errors.productSearchFailed") : "";
   const [addedCount, setAddedCount] = useState(0);
 
-  // New-product form
-  const [nombre, setNombre] = useState("");
-  const [precio, setPrecio] = useState("");
-  const [impuesto, setImpuesto] = useState("");
-  const [unidad, setUnidad] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
-  const [foto, setFoto] = useState<UploadedProductPhoto | null>(null);
-  const [subiendoFoto, setSubiendoFoto] = useState(false);
-
-  const [codigoBarra, setCodigoBarra] = useState("");
+  // What the new-product form opens with: the search that found nothing, or a scanned
+  // barcode that matched no product.
+  const [nuevo, setNuevo] = useState<{ nombre: string; codigoBarra: string }>({ nombre: "", codigoBarra: "" });
+  const [ocupado, setOcupado] = useState(false);
 
   // The catalogue product whose photo sheet is open.
   const [fotoDe, setFotoDe] = useState<Product | null>(null);
 
-  // What the camera scanner is for while it is open: adding products to the document, or
-  // filling the new product's barcode field.
-  const [escanerPara, setEscanerPara] = useState<"agregar" | "campo" | null>(null);
+  // The camera scanner, adding products to the document while it is open.
+  const [escaneando, setEscaneando] = useState(false);
   const [avisoEscaneo, setAvisoEscaneo] = useState("");
-
-  // Pre-filled from the name with the code saving would produce; the seller can overwrite it.
-  const codigo = useSuggestedCode(
-    async () => (nombre.trim() ? getNextProductCode(nombre.trim()) : null),
-    [nombre.trim()],
-    { enabled: visible && mode === "create", debounceMs: 400 }
-  );
-  const resetCodigo = codigo.reset;
 
   const selected = useMemo(() => new Set(selectedCodes), [selectedCodes]);
 
-  const resetAll = useCallback(() => {
-    setMode("search");
-    setSearch("");
-    setAddedCount(0);
-    setNombre("");
-    setPrecio("");
-    setImpuesto("");
-    setUnidad("");
-    setFormError("");
-    setFoto(null);
-    // The field may have unmounted mid-upload and never reported that it finished.
-    setSubiendoFoto(false);
-    setFotoDe(null);
-    setCodigoBarra("");
-    setEscanerPara(null);
-    setAvisoEscaneo("");
-    resetCodigo();
-  }, [resetCodigo]);
-
   useEffect(() => {
-    if (!visible) resetAll();
-  }, [visible, resetAll]);
+    if (!visible) {
+      setMode("search");
+      setSearch("");
+      setAddedCount(0);
+      setFotoDe(null);
+      setEscaneando(false);
+      setAvisoEscaneo("");
+    }
+  }, [visible]);
 
   const handleAdd = useCallback(
     (product: Product) => {
@@ -147,62 +107,18 @@ const ProductPickerModal: React.FC<Props> = ({
     [onSelect]
   );
 
-  const handleCreate = useCallback(async () => {
-    const trimmed = nombre.trim();
-    const price = parseNumericInput(precio);
-
-    if (!trimmed) {
-      setFormError(t("documents.newProduct.nameRequired"));
-      return;
-    }
-    if (price <= 0) {
-      setFormError(t("documents.newProduct.priceRequired"));
-      return;
-    }
-
-    setSaving(true);
-    setFormError("");
-    try {
-      const payload: NewProductRequest = {
-        // Omitted while the suggestion is untouched, so the server derives it on save.
-        codigo: codigo.codeForRequest,
-        codigoBarra: codigoBarra.trim() || undefined,
-        nombre: trimmed,
-        precio1: price,
-        impuesto: impuesto ? parseNumericInput(impuesto) : undefined,
-        unidad: unidad.trim() || undefined,
-        imagenes: foto ? [foto.photo] : undefined,
-      };
-      const created = await createProduct(payload);
-
-      // Adapt the created record to the catalogue shape the cart consumes, so a
-      // just-created product behaves exactly like a searched one.
-      handleAdd({
-        codigo: created.codigo,
-        nombre: created.nombre,
-        descripcion: created.descripcion,
-        unidad: created.unidad ?? "",
-        precio1: created.precio,
-        impuesto: created.impuesto,
-        factor: created.factor,
-        existenciaAlmacen1: created.existencia,
-        codigoBarra: created.codigoBarra ?? "",
-      } as Product);
-
+  const handleCreated = useCallback(
+    (product: Product) => {
+      handleAdd(product);
       setMode("search");
-      setNombre("");
-      setPrecio("");
-      setImpuesto("");
-      setUnidad("");
-      setFoto(null);
-      setCodigoBarra("");
-      resetCodigo();
-    } catch (e: any) {
-      setFormError(e?.response?.data?.message || t("documents.errors.productCreateFailed"));
-    } finally {
-      setSaving(false);
-    }
-  }, [nombre, precio, impuesto, unidad, foto, codigo.codeForRequest, codigoBarra, resetCodigo, handleAdd, t]);
+    },
+    [handleAdd]
+  );
+
+  const abrirNuevo = useCallback((nombre: string, codigoBarra = "") => {
+    setNuevo({ nombre, codigoBarra });
+    setMode("create");
+  }, []);
 
   /**
    * A scan while picking products: an exact barcode match goes straight into the document; no
@@ -230,29 +146,20 @@ const ProductPickerModal: React.FC<Props> = ({
         return;
       }
 
-      setEscanerPara(null);
+      setEscaneando(false);
       setAvisoEscaneo("");
-      setNombre("");
-      setCodigoBarra(barcode);
-      setMode("create");
+      abrirNuevo("", barcode);
     },
-    [handleAdd, t]
-  );
-
-  const alEscanear = useCallback(
-    (barcode: string) => {
-      if (mode === "create") {
-        setCodigoBarra(barcode);
-        return;
-      }
-      return agregarPorCodigoBarra(barcode);
-    },
-    [mode, agregarPorCodigoBarra]
+    [handleAdd, abrirNuevo, t]
   );
 
   // A built-in hardware scanner feeds the same handler as the camera. Off while the camera
-  // sheet is open, so one read is not handled twice.
-  useBarcodeScanner({ onScan: alEscanear, enabled: visible && escanerPara === null && !fotoDe });
+  // sheet is open, so one read is not handled twice, and in New product, whose form fills
+  // its barcode field from the scanner itself.
+  useBarcodeScanner({
+    onScan: agregarPorCodigoBarra,
+    enabled: visible && mode === "search" && !escaneando && !fotoDe,
+  });
 
   const renderProduct = useCallback(
     ({ item }: { item: Product }) => {
@@ -313,15 +220,15 @@ const ProductPickerModal: React.FC<Props> = ({
 
   return (
     <Portal>
-      <Modal
+      <FullScreenModal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={styles.modal}
-        dismissable={!saving && !subiendoFoto}
+        style={styles.modal}
+        dismissable={!ocupado}
       >
         <Appbar.Header mode="small" style={styles.appbar}>
           {mode === "create" ? (
-            <Appbar.BackAction onPress={() => setMode("search")} disabled={saving || subiendoFoto} />
+            <Appbar.BackAction onPress={() => setMode("search")} disabled={ocupado} />
           ) : (
             <Appbar.Action icon="close" onPress={onDismiss} />
           )}
@@ -334,15 +241,20 @@ const ProductPickerModal: React.FC<Props> = ({
             </Chip>
           )}
           {mode === "search" && (
-            <Button mode="text" compact onPress={onDismiss} style={styles.doneButton}>
+            <AppButton mode="text" compact onPress={onDismiss} style={styles.doneButton}>
               {t("common.confirm")}
-            </Button>
+            </AppButton>
           )}
         </Appbar.Header>
         <Divider />
 
         {mode === "search" ? (
-          <>
+          // The search box opens the keyboard, which would otherwise cover the
+          // "new product" button pinned to the bottom.
+          <KeyboardAvoidingView
+            style={styles.formFlex}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
             <View style={styles.searchWrap}>
               <Searchbar
                 value={search}
@@ -355,7 +267,7 @@ const ProductPickerModal: React.FC<Props> = ({
                 traileringIconAccessibilityLabel={t("scan.scanProducts")}
                 onTraileringIconPress={() => {
                   setAvisoEscaneo("");
-                  setEscanerPara("agregar");
+                  setEscaneando(true);
                 }}
               />
             </View>
@@ -387,128 +299,34 @@ const ProductPickerModal: React.FC<Props> = ({
               />
             )}
 
-            <View style={styles.footer}>
-              <Button
+            <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+              <AppButton
                 mode="contained-tonal"
                 icon="plus-box"
-                onPress={() => {
-                  setNombre(search.trim());
-                  setMode("create");
-                }}
+                onPress={() => abrirNuevo(search.trim())}
                 contentStyle={styles.footerButtonContent}
                 style={styles.footerButton}
               >
                 {t("documents.newProduct.action")}
-              </Button>
+              </AppButton>
             </View>
-          </>
-        ) : (
-          // A fixed container puts the last fields and the save button under the
-          // on-screen keyboard on a short phone, with no way to scroll to them.
-          <KeyboardAvoidingView
-            style={styles.formFlex}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
-            <ScrollView
-              contentContainerStyle={styles.form}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-            <ProductPhotoField
-              value={foto}
-              onChange={setFoto}
-              onBusyChange={setSubiendoFoto}
-              disabled={saving}
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newProduct.name")}
-              value={nombre}
-              onChangeText={setNombre}
-              style={styles.input}
-              autoFocus
-              autoCapitalize="words"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.code.label")}
-              value={codigo.value}
-              onChangeText={codigo.onChangeText}
-              style={styles.input}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              placeholder={t("documents.code.assignedOnSave")}
-              right={codigo.loading ? <TextInput.Icon icon="progress-clock" /> : null}
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newProduct.barcode")}
-              value={codigoBarra}
-              onChangeText={setCodigoBarra}
-              style={styles.input}
-              autoCorrect={false}
-              inputMode="numeric"
-              right={
-                <TextInput.Icon
-                  icon="barcode-scan"
-                  onPress={() => setEscanerPara("campo")}
-                  accessibilityLabel={t("scan.scanBarcode")}
-                />
-              }
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newProduct.price")}
-              value={precio}
-              onChangeText={setPrecio}
-              style={styles.input}
-              keyboardType="decimal-pad"
-              inputMode="decimal"
-              right={precio ? <TextInput.Icon icon="close" onPress={() => setPrecio("")} /> : null}
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newProduct.tax")}
-              value={impuesto}
-              onChangeText={setImpuesto}
-              style={styles.input}
-              keyboardType="decimal-pad"
-              inputMode="decimal"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newProduct.unit")}
-              value={unidad}
-              onChangeText={setUnidad}
-              style={styles.input}
-              autoCapitalize="characters"
-            />
-
-            <HelperText type={formError ? "error" : "info"} visible>
-              {formError || t("documents.newProduct.hint")}
-            </HelperText>
-
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={saving}
-              disabled={saving || subiendoFoto || !nombre.trim() || parseNumericInput(precio) <= 0}
-              contentStyle={styles.footerButtonContent}
-              style={styles.footerButton}
-            >
-              {t("documents.newProduct.save")}
-            </Button>
-            </ScrollView>
           </KeyboardAvoidingView>
+        ) : (
+          <NewProductForm
+            initialName={nuevo.nombre}
+            initialBarcode={nuevo.codigoBarra}
+            onCreated={handleCreated}
+            onBusyChange={setOcupado}
+          />
         )}
-      </Modal>
+      </FullScreenModal>
 
       <BarcodeScanSheet
-        visible={escanerPara !== null}
-        onDismiss={() => setEscanerPara(null)}
-        onScan={escanerPara === "campo" ? setCodigoBarra : agregarPorCodigoBarra}
-        title={escanerPara === "campo" ? t("scan.scanBarcode") : t("scan.scanProducts")}
-        continuous={escanerPara === "agregar"}
+        visible={escaneando}
+        onDismiss={() => setEscaneando(false)}
+        onScan={agregarPorCodigoBarra}
+        title={t("scan.scanProducts")}
+        continuous
         feedback={avisoEscaneo}
       />
 
@@ -530,8 +348,6 @@ const createStyles = (theme: CustomTheme) =>
       // than the paper page tone — the rows read crisper on white, and the sheet
       // reads as something that came up over the screen.
       backgroundColor: theme.colors.surface,
-      margin: 0,
-      flex: 1,
     },
     appbar: {
       backgroundColor: theme.colors.surface,
@@ -651,14 +467,6 @@ const createStyles = (theme: CustomTheme) =>
     },
     formFlex: {
       flex: 1,
-    },
-    form: {
-      padding: 16,
-      paddingBottom: 32,
-      gap: 12,
-    },
-    input: {
-      backgroundColor: theme.colors.surface,
     },
   });
 

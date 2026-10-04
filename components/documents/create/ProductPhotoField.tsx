@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Button, HelperText, Icon, useTheme } from "react-native-paper";
+import { ActivityIndicator, HelperText, Icon, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { ImageTooLargeError } from "../../../services/mediaService";
 import { PhotoPermissionError, type PhotoSource } from "../../../utils/photoCapture";
 import { pickAndUploadProductPhoto, type UploadedProductPhoto } from "../../../utils/productPhoto";
+import AppButton from "../../ui/AppButton";
 
 interface Props {
   /** The photo picked in this session, if any. */
@@ -88,7 +89,7 @@ const ProductPhotoField: React.FC<Props> = ({ value, onChange, currentUrl, onBus
         </View>
 
         <View style={styles.actions}>
-          <Button
+          <AppButton
             mode="contained-tonal"
             icon="camera"
             onPress={() => elegir("camera")}
@@ -96,8 +97,8 @@ const ProductPhotoField: React.FC<Props> = ({ value, onChange, currentUrl, onBus
             contentStyle={styles.buttonContent}
           >
             {t("documents.productPhoto.takePhoto")}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             mode="outlined"
             icon="image-outline"
             onPress={() => elegir("library")}
@@ -105,14 +106,14 @@ const ProductPhotoField: React.FC<Props> = ({ value, onChange, currentUrl, onBus
             contentStyle={styles.buttonContent}
           >
             {t("documents.productPhoto.choosePhoto")}
-          </Button>
+          </AppButton>
         </View>
       </View>
 
       {!!value && !subiendo && (
-        <Button mode="text" icon="close" compact onPress={() => onChange(null)} disabled={disabled}>
+        <AppButton mode="text" icon="close" compact onPress={() => onChange(null)} disabled={disabled}>
           {t("documents.productPhoto.remove")}
-        </Button>
+        </AppButton>
       )}
 
       <HelperText type={error ? "error" : "info"} visible={!!error || subiendo}>

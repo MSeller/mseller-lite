@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, HelperText, Snackbar, useTheme } from "react-native-paper";
+import { Appbar, HelperText, Snackbar, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -8,6 +8,7 @@ import { useTranslation } from "../../hooks/useTranslation";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import { CatalogFormLocked } from "./CatalogFields";
 import { useHardwareBack } from "./useCatalogRecord";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   title: string;
@@ -110,7 +111,7 @@ const CatalogEditScaffold: React.FC<Props> = ({
         </ScrollView>
 
         <View style={[styles.footer, { paddingBottom: 12 + tabOverflow }]}>
-          <Button
+          <AppButton
             mode="contained"
             icon="content-save"
             onPress={handleSave}
@@ -120,7 +121,7 @@ const CatalogEditScaffold: React.FC<Props> = ({
             contentStyle={styles.buttonContent}
           >
             {t("common.save")}
-          </Button>
+          </AppButton>
         </View>
       </KeyboardAvoidingView>
 
@@ -165,7 +166,6 @@ const createStyles = (theme: CustomTheme) =>
       backgroundColor: theme.colors.surface,
     },
     button: {
-      borderRadius: 12,
     },
     buttonContent: {
       height: 52,

@@ -1,27 +1,26 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
-  Button,
   Divider,
-  HelperText,
   Icon,
-  Modal,
   Portal,
   Searchbar,
   Text,
-  TextInput,
   TouchableRipple,
   useTheme,
 } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { usePagedSearch, type SearchPage } from "../../../hooks/usePagedSearch";
-import { useSuggestedCode } from "../../../hooks/useSuggestedCode";
-import { createCustomer, getNextCustomerCode, searchCustomers } from "../../../services/customerService";
-import type { CustomerSummary, NewCustomerRequest } from "../../../types/documents";
+import { searchCustomers } from "../../../services/customerService";
+import type { CustomerSummary } from "../../../types/documents";
+import FullScreenModal from "../../ui/FullScreenModal";
+import NewCustomerForm from "./NewCustomerForm";
+import AppButton from "../../ui/AppButton";
 
 interface Props {
   visible: boolean;
@@ -49,6 +48,7 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const [mode, setMode] = useState<Mode>("search");
   const [search, setSearch] = useState("");
@@ -60,70 +60,22 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
     error: searchError,
   } = usePagedSearch({ query: search, fetchPage: searchCustomerPage, enabled: visible && mode === "search" });
   const error = searchError ? t("documents.errors.customerSearchFailed") : "";
-
-  // New-customer form
-  const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [rnc, setRnc] = useState("");
-  const [direccion, setDireccion] = useState("");
-  const [email, setEmail] = useState("");
-  const [contacto, setContacto] = useState("");
   const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
-
-  // Pre-filled with the code the server would assign; the seller can overwrite it.
-  const codigo = useSuggestedCode(getNextCustomerCode, [], { enabled: visible && mode === "create" });
-  const resetCodigo = codigo.reset;
-
-  const resetAll = useCallback(() => {
-    setMode("search");
-    setSearch("");
-    setNombre("");
-    setTelefono("");
-    setRnc("");
-    setDireccion("");
-    setEmail("");
-    setContacto("");
-    setFormError("");
-    resetCodigo();
-  }, [resetCodigo]);
 
   useEffect(() => {
-    if (!visible) resetAll();
-  }, [visible, resetAll]);
-
-  const handleCreate = useCallback(async () => {
-    const trimmed = nombre.trim();
-    if (!trimmed) {
-      setFormError(t("documents.newCustomer.nameRequired"));
-      return;
+    if (!visible) {
+      setMode("search");
+      setSearch("");
     }
+  }, [visible]);
 
-    setSaving(true);
-    setFormError("");
-    try {
-      const payload: NewCustomerRequest = {
-        // Omitted while the suggestion is untouched, so the sequence assigns it on save.
-        codigo: codigo.codeForRequest,
-        nombre: trimmed,
-        telefono: telefono.trim() || undefined,
-        rnc: rnc.trim() || undefined,
-        direccion: direccion.trim() || undefined,
-        // Worth the two extra fields at capture time: a customer registered without an
-        // address cannot be emailed an invoice later without someone going back to the
-        // portal to fill it in, and by then nobody remembers who to ask for.
-        email: email.trim() || undefined,
-        contacto: contacto.trim() || undefined,
-      };
-      const created = await createCustomer(payload);
+  const handleCreated = useCallback(
+    (created: CustomerSummary) => {
       onSelect(created);
       onDismiss();
-    } catch (e: any) {
-      setFormError(e?.response?.data?.message || t("documents.errors.customerCreateFailed"));
-    } finally {
-      setSaving(false);
-    }
-  }, [nombre, telefono, rnc, direccion, email, contacto, codigo.codeForRequest, onSelect, onDismiss, t]);
+    },
+    [onSelect, onDismiss]
+  );
 
   const renderCustomer = useCallback(
     ({ item }: { item: CustomerSummary }) => (
@@ -157,10 +109,10 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
 
   return (
     <Portal>
-      <Modal
+      <FullScreenModal
         visible={visible}
         onDismiss={onDismiss}
-        contentContainerStyle={styles.modal}
+        style={styles.modal}
         dismissable={!saving}
       >
         <Appbar.Header mode="small" style={styles.appbar}>
@@ -178,7 +130,12 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
         <Divider />
 
         {mode === "search" ? (
-          <>
+          // The search box opens the keyboard, which would otherwise cover the
+          // "new customer" button pinned to the bottom.
+          <KeyboardAvoidingView
+            style={styles.formFlex}
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+          >
             <View style={styles.searchWrap}>
               <Searchbar
                 value={search}
@@ -217,117 +174,28 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
               />
             )}
 
-            <View style={styles.footer}>
-              <Button
+            <View style={[styles.footer, { paddingBottom: 16 + insets.bottom }]}>
+              <AppButton
                 mode="contained-tonal"
                 icon="account-plus"
-                onPress={() => {
-                  // Carry what was typed into the name — the search that found
-                  // nothing is usually the customer's name.
-                  setNombre(search.trim());
-                  setMode("create");
-                }}
+                onPress={() => setMode("create")}
                 contentStyle={styles.footerButtonContent}
                 style={styles.footerButton}
               >
                 {t("documents.newCustomer.action")}
-              </Button>
+              </AppButton>
             </View>
-          </>
-        ) : (
-          // A fixed container puts the last fields and the save button under the
-          // on-screen keyboard on a short phone, with no way to scroll to them.
-          <KeyboardAvoidingView
-            style={styles.formFlex}
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-          >
-            <ScrollView
-              contentContainerStyle={styles.form}
-              keyboardShouldPersistTaps="handled"
-              keyboardDismissMode="on-drag"
-            >
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.name")}
-              value={nombre}
-              onChangeText={setNombre}
-              style={styles.input}
-              autoFocus
-              autoCapitalize="words"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.code.label")}
-              value={codigo.value}
-              onChangeText={codigo.onChangeText}
-              style={styles.input}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              placeholder={t("documents.code.assignedOnSave")}
-              right={codigo.loading ? <TextInput.Icon icon="progress-clock" /> : null}
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.phone")}
-              value={telefono}
-              onChangeText={setTelefono}
-              style={styles.input}
-              keyboardType="phone-pad"
-              inputMode="tel"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.rnc")}
-              value={rnc}
-              onChangeText={setRnc}
-              style={styles.input}
-              inputMode="numeric"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.contact")}
-              value={contacto}
-              onChangeText={setContacto}
-              style={styles.input}
-              autoCapitalize="words"
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.email")}
-              value={email}
-              onChangeText={setEmail}
-              style={styles.input}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              inputMode="email"
-              right={email ? <TextInput.Icon icon="close" onPress={() => setEmail("")} /> : null}
-            />
-            <TextInput
-              mode="outlined"
-              label={t("documents.newCustomer.address")}
-              value={direccion}
-              onChangeText={setDireccion}
-              style={styles.input}
-            />
-
-            <HelperText type={formError ? "error" : "info"} visible>
-              {formError || t("documents.newCustomer.hint")}
-            </HelperText>
-
-            <Button
-              mode="contained"
-              onPress={handleCreate}
-              loading={saving}
-              disabled={saving || !nombre.trim()}
-              contentStyle={styles.footerButtonContent}
-              style={styles.footerButton}
-            >
-              {t("documents.newCustomer.save")}
-            </Button>
-            </ScrollView>
           </KeyboardAvoidingView>
+        ) : (
+          // Carries what was typed into the name — the search that found nothing is
+          // usually the customer's name.
+          <NewCustomerForm
+            initialName={search.trim()}
+            onCreated={handleCreated}
+            onBusyChange={setSaving}
+          />
         )}
-      </Modal>
+      </FullScreenModal>
     </Portal>
   );
 };
@@ -339,8 +207,6 @@ const createStyles = (theme: CustomTheme) =>
       // than the paper page tone — the rows read crisper on white, and the sheet
       // reads as something that came up over the screen.
       backgroundColor: theme.colors.surface,
-      margin: 0,
-      flex: 1,
     },
     appbar: {
       backgroundColor: theme.colors.surface,
@@ -421,14 +287,6 @@ const createStyles = (theme: CustomTheme) =>
     },
     formFlex: {
       flex: 1,
-    },
-    form: {
-      padding: 16,
-      paddingBottom: 32,
-      gap: 12,
-    },
-    input: {
-      backgroundColor: theme.colors.surface,
     },
   });
 

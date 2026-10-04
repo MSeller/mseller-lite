@@ -73,7 +73,17 @@
     "continueWithGoogle": "Continuar con Google",
     "googleUnavailable": "Google no está disponible en este dispositivo.",
     "googleFailed": "No se pudo iniciar sesión con Google. Inténtalo de nuevo.",
-    "googleAccountExistsWithPassword": "Este correo ya tiene una cuenta con contraseña. Inicia sesión con tu correo y contraseña."
+    "googleAccountExistsWithPassword": "Este correo ya tiene una cuenta con contraseña. Inicia sesión con tu correo y contraseña.",
+    "signInErrors": {
+      "credentials": "El correo o la contraseña no son correctos. Revísalos e inténtalo de nuevo, o usa «¿Olvidaste tu contraseña?».",
+      "invalidEmail": "Ese correo no es válido. Revisa que esté bien escrito.",
+      "disabled": "Esta cuenta está desactivada. Contacta al administrador de tu empresa.",
+      "tooManyRequests": "Demasiados intentos fallidos. Espera unos minutos o restablece tu contraseña.",
+      "network": "No hay conexión. Revisa tu internet e inténtalo de nuevo.",
+      "unknown": "No pudimos iniciar sesión. Inténtalo de nuevo.",
+      "emailRequired": "Escribe tu correo.",
+      "passwordRequired": "Escribe tu contraseña."
+    }
   },
   "profile": {
     "profile": "Perfil",
@@ -98,7 +108,12 @@
     "emailVerified": "Correo verificado",
     "yes": "Sí",
     "no": "No",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "changePhoto": "Cambiar foto",
+    "photoUploading": "Subiendo foto…",
+    "photoFailed": "No pudimos actualizar tu foto. Revisa tu conexión e inténtalo de nuevo.",
+    "photoPermission": "Permite el acceso a la cámara para tomar tu foto.",
+    "photoUpdated": "Foto actualizada"
   },
   "navigation": {
     "home": "Inicio",
@@ -316,7 +331,7 @@
     "pending": "Pendiente",
     "viewLoading": "Ver Carga",
     "zone": "Zona",
-    "routeDispatched": "✅ Ruta despachada — camión en ruta",
+    "routeDispatched": "Ruta despachada — camión en ruta",
     "activeRoute": "RUTA ACTIVA",
     "liveSession": "EN VIVO",
     "pickingProgress": "Progreso de Preparación",
@@ -360,7 +375,58 @@
     "loadingListTitle": "Carga del camión",
     "loadingListSubtitle": "Rutas listas para cargar",
     "noRoutesToLoad": "No hay rutas listas para cargar",
-    "errorConfirmingProduct": "Error al confirmar producto"
+    "errorConfirmingProduct": "Error al confirmar producto",
+    "ui": {
+      "confirmProductHint": "Abre la confirmación de la cantidad preparada",
+      "productCount_one": "{{count}} producto",
+      "productCount_other": "{{count}} productos",
+      "noProductsBody": "Esta ruta no tiene productos pendientes. Desliza hacia abajo para actualizar.",
+      "confirmProductTitle": "Confirmar producto",
+      "requestedQty": "Cantidad solicitada",
+      "preparedQty": "Cantidad preparada",
+      "decrease": "Restar uno",
+      "increase": "Sumar uno",
+      "autoDistributionHint": "La distribución entre clientes se calcula automáticamente",
+      "difference_one": "Diferencia: {{count}} unidad",
+      "difference_other": "Diferencia: {{count}} unidades",
+      "cannotExceed": "No puede exceder la cantidad solicitada",
+      "observationRequired": "Observación (requerida)",
+      "observationPlaceholder": "Razón de la diferencia…",
+      "distributionByCustomer": "Distribución por cliente",
+      "distributionManual": "Ajuste manual: verifique la asignación",
+      "distributionAuto": "Calculada automáticamente, editable",
+      "requestedAmount": "Solicitado: {{qty}}",
+      "totalDistributed": "Total distribuido {{distributed}} / {{total}}",
+      "noSummaryBody": "Aún no hay productos confirmados en esta ruta.",
+      "vehicleType": {
+        "camion": "Camión",
+        "furgoneta": "Furgoneta",
+        "motocicleta": "Motocicleta",
+        "other": "Vehículo"
+      },
+      "itemCount_one": "{{count}} artículo",
+      "itemCount_other": "{{count}} artículos",
+      "customersLoaded": "clientes cargados",
+      "customerCount_one": "{{count}} cliente",
+      "customerCount_other": "{{count}} clientes",
+      "noCustomersToLoad": "No hay facturas para cargar",
+      "noCustomersToLoadBody": "Las facturas de esta ruta aparecerán aquí cuando estén listas."
+    },
+    "list": {
+      "count_one": "{{count}} ruta",
+      "count_other": "{{count}} rutas",
+      "orderCount_one": "{{count}} pedido",
+      "orderCount_other": "{{count}} pedidos",
+      "productCount_one": "{{count}} producto",
+      "productCount_other": "{{count}} productos",
+      "a11yRoute": "Ruta {{ruta}}",
+      "a11yProgress": "{{done}} de {{total}} productos preparados",
+      "emptyBody": "Las rutas confirmadas por la oficina aparecen aquí; desliza hacia abajo para actualizar.",
+      "emptyLoadingBody": "Una ruta aparece aquí cuando termina su preparación; desliza hacia abajo para actualizar.",
+      "disabledTitle": "Preparación no habilitada",
+      "disabledBody": "El módulo de preparación no está activado para tu usuario. Pídele a un administrador de tu empresa que lo active.",
+      "failedTitle": "No se pudieron cargar las rutas"
+    }
   },
   "entrega": {
     "title": "Entregas",
@@ -467,7 +533,47 @@
     "nuevoIntentoConfirm": "Registrar intento",
     "leaveOnRoute": "Salir a ruta",
     "errorDispatching": "No se pudo salir a ruta",
-    "pendingInvoicesHint": "Faltan pedidos por facturar: la oficina debe facturarlos antes de cerrar la ruta"
+    "pendingInvoicesHint": "Faltan pedidos por facturar: la oficina debe facturarlos antes de cerrar la ruta",
+    "ui": {
+      "deliveredOverline": "Entregadas",
+      "invoicesTotal": "Total en facturas",
+      "summaryA11y": "{{done}} de {{total}} paradas entregadas, total en facturas {{amount}}",
+      "stopsOverline": "Paradas · {{count}}",
+      "stopA11y": "Parada {{seq}}, {{customer}}, {{address}}, {{status}}, documento {{doc}}, {{amount}}",
+      "openMap": "Abrir en mapas",
+      "openMapFor": "Abrir en mapas: {{customer}}",
+      "noStopsBody": "Cuando la oficina asigne facturas a esta ruta aparecerán aquí.",
+      "errorTitle": "No se pudo cargar",
+      "clientsOverline": "Clientes · {{count}}",
+      "itemsCount": "{{count}} artículos",
+      "loadStopA11y": "Parada {{seq}}, {{customer}}, factura {{invoice}}, {{count}} artículos, {{status}}",
+      "loadItemA11y": "{{name}}, {{qty}} {{unit}}",
+      "noLoadStops": "No hay clientes por cargar",
+      "noLoadStopsBody": "Las facturas de la ruta aparecen aquí en cuanto la oficina las genera.",
+      "customerOverline": "Cliente",
+      "customerCode": "Código",
+      "address": "Dirección",
+      "reference": "Referencia",
+      "phone": "Teléfono",
+      "partialOverline": "Cantidades faltantes",
+      "decreaseMissing": "Restar faltante",
+      "increaseMissing": "Sumar faltante",
+      "otherOutcomes": "Otro resultado"
+    },
+    "list": {
+      "count_one": "{{count}} ruta",
+      "count_other": "{{count}} rutas",
+      "invoiceCount_one": "{{count}} factura",
+      "invoiceCount_other": "{{count}} facturas",
+      "a11yRoute": "Ruta {{ruta}}",
+      "a11yProgress": "{{delivered}} de {{total}} facturas entregadas, {{pending}} pendientes",
+      "emptyBody": "Cuando te asignen una ruta de entrega aparecerá aquí; desliza hacia abajo para actualizar.",
+      "disabledTitle": "Entregas no habilitadas",
+      "disabledBody": "El módulo de entregas no está activado para tu usuario. Pídele a un administrador de tu empresa que lo active.",
+      "unassignedTitle": "Sin código de chofer",
+      "unassignedBody": "Tu usuario no tiene un código de distribuidor asignado. Pídele a un administrador de tu empresa que te lo asigne.",
+      "failedTitle": "No se pudieron cargar las rutas"
+    }
   },
   "documents": {
     "title": "Documentos",
@@ -681,7 +787,13 @@
       "manager": "Gerente",
       "administrator": "Administrador",
       "superuser": "Superusuario"
-    }
+    },
+    "notEnabled": "No habilitado",
+    "noDriverCode": "Sin código de chofer",
+    "readyToLoad": "rutas listas para cargar",
+    "noDeliveriesTitle": "Sin entregas pendientes",
+    "noDeliveriesBody": "Cuando te asignen una ruta aparecerá aquí. Desliza hacia abajo para actualizar.",
+    "viewRoutes": "Ver rutas"
   },
   "scan": {
     "scanProducts": "Escanear productos",
@@ -1147,5 +1259,66 @@
     },
     "removeLine": "Quitar del carrito",
     "accessNotAllowed": "No tienes acceso al marketplace."
+  },
+  "products": {
+    "search": {
+      "title": "Productos",
+      "subtitle": "Consulta precios y existencias por código de barras, código o nombre.",
+      "modeLabel": "Buscar por",
+      "mode": {
+        "barcode": "Código de barras",
+        "code": "Código",
+        "text": "Nombre"
+      },
+      "modeShort": {
+        "barcode": "Barras",
+        "code": "Código",
+        "text": "Nombre"
+      },
+      "placeholder": {
+        "barcode": "Escanea o escribe el código",
+        "code": "Código del producto",
+        "text": "Nombre del producto"
+      },
+      "clear": "Borrar búsqueda",
+      "scannerReady": "Lector de códigos listo",
+      "scannerReading": "Leyendo código…",
+      "autoSearching": "Buscando…",
+      "results": "Resultados · {{count}}",
+      "idleTitle": "Busca un producto",
+      "idleBody": "Escanea un código de barras o escribe un código o un nombre para ver precios y existencias.",
+      "notFoundTitle": "Ningún producto coincide",
+      "notFoundBody": "Revisa el código o el nombre e inténtalo de nuevo.",
+      "notFoundCreateBody": "Revisa el código o el nombre, o regístralo como un producto nuevo.",
+      "failedTitle": "No pudimos buscar"
+    },
+    "detail": {
+      "codeOverline": "Código {{code}}",
+      "price": "Precio",
+      "priceLevel": "Precio {{level}}",
+      "stock": "Existencias por localidad",
+      "stockTotal": "Total {{value}}",
+      "mainWarehouse": "Almacén principal",
+      "updated": "Actualizado {{date}}",
+      "info": "Información",
+      "code": "Código",
+      "barcode": "Código de barras",
+      "area": "Área",
+      "department": "Departamento",
+      "unit": "Unidad",
+      "package": "Empaque",
+      "promotion": "En promoción",
+      "service": "Servicio",
+      "label": {
+        "noPrintersTitle": "Sin impresoras",
+        "noPrintersMessage": "No se encontraron impresoras disponibles. Asegúrate de que tu impresora Zebra esté conectada.",
+        "confirm": "¿Deseas imprimir la etiqueta de \"{{name}}\"?\n\nImpresora: {{printer}}",
+        "preview": "Vista previa",
+        "previewTitle": "Vista previa ZPL",
+        "print": "Imprimir",
+        "ok": "OK",
+        "failed": "No se pudo crear la etiqueta"
+      }
+    }
   }
 }

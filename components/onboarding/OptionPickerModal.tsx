@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { FlatList, StyleSheet } from "react-native";
-import { Appbar, Divider, List, Modal, Portal, Searchbar, useTheme } from "react-native-paper";
+import { Appbar, Divider, List, Portal, Searchbar, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
+import FullScreenModal from "../ui/FullScreenModal";
 
 export interface PickerOption {
   value: string;
@@ -45,11 +46,7 @@ const OptionPickerModal: React.FC<Props> = ({
 
   return (
     <Portal>
-      <Modal
-        visible={visible}
-        onDismiss={close}
-        contentContainerStyle={[styles.modal, { backgroundColor: theme.colors.surface }]}
-      >
+      <FullScreenModal visible={visible} onDismiss={close} style={{ backgroundColor: theme.colors.surface }}>
         <Appbar.Header mode="small" style={{ backgroundColor: theme.colors.surface }}>
           <Appbar.Action icon="close" onPress={close} />
           <Appbar.Content title={title} />
@@ -83,16 +80,12 @@ const OptionPickerModal: React.FC<Props> = ({
             />
           )}
         />
-      </Modal>
+      </FullScreenModal>
     </Portal>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: {
-    margin: 0,
-    flex: 1,
-  },
   search: {
     marginHorizontal: 16,
     marginBottom: 8,

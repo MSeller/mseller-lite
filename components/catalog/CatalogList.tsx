@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Banner, Button, Searchbar, useTheme } from "react-native-paper";
+import { ActivityIndicator, Banner, FAB, Searchbar, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -10,6 +10,7 @@ import { describeCatalogError } from "../../utils/catalogValidation";
 import EmptyState from "../ui/EmptyState";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import CatalogLockedState from "./CatalogLockedState";
+import AppButton from "../ui/AppButton";
 
 export const CATALOG_PAGE_SIZE = 20;
 
@@ -27,6 +28,9 @@ interface Props<T> {
   emptySearchTitle: string;
   emptySearchBody: string;
   headerAccessory?: React.ReactNode;
+  /** Shows the create button; the screen opens its new-record form. */
+  onAdd?: () => void;
+  addLabel?: string;
 }
 
 /**
@@ -47,6 +51,8 @@ export default function CatalogList<T>({
   emptySearchTitle,
   emptySearchBody,
   headerAccessory,
+  onAdd,
+  addLabel,
 }: Props<T>) {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -106,7 +112,8 @@ export default function CatalogList<T>({
           data={items}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
-          contentContainerStyle={[styles.listContent, { paddingBottom: 32 + tabOverflow }]}
+          // Room for the create button, so it never covers the last row.
+          contentContainerStyle={[styles.listContent, { paddingBottom: (onAdd ? 96 : 32) + tabOverflow }]}
           ItemSeparatorComponent={Separator}
           ListEmptyComponent={
             failure ? null : (
@@ -130,12 +137,25 @@ export default function CatalogList<T>({
               </View>
             ) : hasMore && failure ? (
               <View style={styles.footer}>
-                <Button mode="text" onPress={retry}>
+                <AppButton mode="text" onPress={retry}>
                   {t("common.retry")}
-                </Button>
+                </AppButton>
               </View>
             ) : null
           }
+        />
+      )}
+
+      {!!onAdd && (
+        <FAB
+          icon="plus"
+          label={addLabel}
+          style={[styles.fab, { bottom: 16 + tabOverflow }]}
+          // Paper reads the content colour from these props, not from `style` —
+          // tinting the background there alone leaves dark text on a dark FAB.
+          color={theme.colors.onPrimary}
+          customSize={56}
+          onPress={onAdd}
         />
       )}
     </SafeAreaView>
@@ -180,5 +200,13 @@ const createStyles = (theme: CustomTheme) =>
     footer: {
       paddingVertical: 20,
       alignItems: "center",
+    },
+    fab: {
+      position: "absolute",
+      right: 16,
+      ...theme.custom.surface.gradientShadow,
+      borderRadius: theme.custom.radius.control,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 8,
     },
   });

@@ -7,10 +7,12 @@ import { usePagedSearch, type SearchPage } from "../../hooks/usePagedSearch";
 import { useTranslation } from "../../hooks/useTranslation";
 import { searchCustomers } from "../../services/customerService";
 import type { ClienteEditable } from "../../types/catalog";
-import type { CustomerSummary } from "../../types/documents";
+import type { CreatedCustomer, CustomerSummary } from "../../types/documents";
 import { formatMoney } from "../../utils/documentFormat";
+import NewCustomerForm from "../documents/create/NewCustomerForm";
 import AppCard from "../ui/AppCard";
 import StatusChip from "../ui/StatusChip";
+import CatalogCreateModal from "./CatalogCreateModal";
 import CatalogList, { CATALOG_PAGE_SIZE } from "./CatalogList";
 import CustomerDetail from "./CustomerDetail";
 
@@ -50,7 +52,7 @@ const applyToSummary =
   });
 
 /**
- * Catálogo › Clientes: search the customer book, open one, edit it.
+ * Catálogo › Clientes: search the customer book, open one, edit it, or register a new one.
  *
  * The list stays mounted (hidden) while a customer is open, so coming back keeps the
  * search and scroll position — and a save patches the row in place instead of
@@ -64,6 +66,8 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
   const [search, setSearch] = useState("");
   const results = usePagedSearch({ query: search, fetchPage: fetchCustomers });
   const { setItems } = results;
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const renderRow = useCallback(
     (item: CustomerSummary) => {
@@ -107,6 +111,17 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
 
   const handleBack = useCallback(() => setSelected(null), []);
 
+  // The new customer goes to the top of the list and opens, so the rest of the record
+  // (credit, payment condition, notes) can be completed right away with Editar.
+  const handleCreated = useCallback(
+    (cliente: CreatedCustomer) => {
+      setItems((rows) => [cliente, ...rows.filter((row) => row.codigo !== cliente.codigo)]);
+      setCreating(false);
+      setSelected(cliente);
+    },
+    [setItems]
+  );
+
   return (
     <>
       <View style={selected ? styles.hidden : styles.fill}>
@@ -123,6 +138,8 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
           emptyBody={t("catalog.customers.emptyBody")}
           emptySearchTitle={t("catalog.customers.emptySearchTitle")}
           emptySearchBody={t("catalog.customers.emptySearchBody")}
+          onAdd={() => setCreating(true)}
+          addLabel={t("documents.newCustomer.title")}
         />
       </View>
       {selected && (
@@ -136,6 +153,14 @@ const CustomersCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
           />
         </View>
       )}
+      <CatalogCreateModal
+        visible={creating}
+        title={t("documents.newCustomer.title")}
+        busy={saving}
+        onDismiss={() => setCreating(false)}
+      >
+        <NewCustomerForm initialName={search.trim()} onCreated={handleCreated} onBusyChange={setSaving} />
+      </CatalogCreateModal>
     </>
   );
 };
