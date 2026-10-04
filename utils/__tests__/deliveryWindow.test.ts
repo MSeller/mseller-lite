@@ -27,6 +27,12 @@ describe("estadoVentanas", () => {
     expect(estadoVentanas(ventanas, fechaRuta, at(17, 30))).toBe("closed");
   });
 
+  it("compares a date-only route date as a calendar date", () => {
+    // Read as UTC midnight this would be the previous local day west of UTC.
+    expect(estadoVentanas(ventanas, "2026-10-05", at(9))).toBe("open");
+    expect(estadoVentanas(ventanas, "2026-10-06", at(9))).toBeNull();
+  });
+
   it("says nothing on another day or without windows", () => {
     expect(estadoVentanas(ventanas, fechaRuta, new Date(2026, 9, 6, 9))).toBeNull();
     expect(estadoVentanas([], fechaRuta, at(9))).toBeNull();

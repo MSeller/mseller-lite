@@ -12,8 +12,16 @@ const minutos = (hhmm: string): number => {
   return h * 60 + (m || 0);
 };
 
-const mismoDia = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const fechaLocal = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * Whether the route runs on `ahora`'s local day. A date-only value ("2026-10-05") is a calendar
+ * date and is compared as one: `new Date()` would read it as UTC midnight, which west of UTC is
+ * still the previous local day. A timestamp is converted to the device's local day.
+ */
+const esDiaDeRuta = (fechaRuta: string, ahora: Date) =>
+  (/^\d{4}-\d{2}-\d{2}$/.test(fechaRuta) ? fechaRuta : fechaLocal(new Date(fechaRuta))) === fechaLocal(ahora);
 
 /**
  * Only meaningful on the route's own day — on any other day the driver is not at the door yet,
@@ -24,7 +32,7 @@ export const estadoVentanas = (
   fechaRuta: string | null | undefined,
   ahora: Date = new Date()
 ): EstadoVentana | null => {
-  if (ventanas.length === 0 || !fechaRuta || !mismoDia(new Date(fechaRuta), ahora)) return null;
+  if (ventanas.length === 0 || !fechaRuta || !esDiaDeRuta(fechaRuta, ahora)) return null;
   const m = ahora.getHours() * 60 + ahora.getMinutes();
   if (ventanas.some((v) => m >= minutos(v.horaInicio) && m < minutos(v.horaFin))) return "open";
   if (ventanas.some((v) => m < minutos(v.horaInicio))) return "later";
