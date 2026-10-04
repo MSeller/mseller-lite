@@ -573,6 +573,14 @@
       "unassignedTitle": "Sin código de chofer",
       "unassignedBody": "Tu usuario no tiene un código de distribuidor asignado. Pídele a un administrador de tu empresa que te lo asigne.",
       "failedTitle": "No se pudieron cargar las rutas"
+    },
+    "location": {
+      "servicesOff": "La ubicación del teléfono está apagada. Actívala para registrar la entrega.",
+      "denied": "Permite el acceso a la ubicación para registrar la entrega.",
+      "blocked": "El acceso a la ubicación está bloqueado. Actívalo en Ajustes para registrar la entrega.",
+      "unavailable": "No pudimos obtener tu ubicación. Sal a un lugar con señal e inténtalo de nuevo.",
+      "enable": "Permitir ubicación",
+      "openSettings": "Abrir ajustes"
     }
   },
   "documents": {
