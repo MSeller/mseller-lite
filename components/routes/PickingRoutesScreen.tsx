@@ -53,7 +53,11 @@ export default function PickingRoutesScreen({ headerAccessory, mode = "picking" 
       setFailure(null);
     } catch (err: any) {
       console.error("Error loading rutas:", err);
-      setFailure(describeRouteListError(err, t("preparacion.errorLoading")));
+      const next = describeRouteListError(err, t("preparacion.errorLoading"));
+      // A module that is off (or a driver without a code) must not keep showing routes that
+      // can no longer be opened; only a transient failure keeps the last rows.
+      if (next.kind !== "failed") setRutas([]);
+      setFailure(next);
     } finally {
       setLoading(false);
       setRefreshing(false);

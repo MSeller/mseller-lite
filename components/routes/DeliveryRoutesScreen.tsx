@@ -51,7 +51,11 @@ export default function DeliveryRoutesScreen({ headerAccessory }: DeliveryRoutes
       // Cleared only once a load answers, so retrying a failed list never flashes "no routes".
       setFailure(null);
     } catch (err: any) {
-      setFailure(describeRouteListError(err, t("entrega.errorLoading"), { unassignedOn400: true }));
+      const next = describeRouteListError(err, t("entrega.errorLoading"), { unassignedOn400: true });
+      // A module that is off (or a driver without a code) must not keep showing routes that
+      // can no longer be opened; only a transient failure keeps the last rows.
+      if (next.kind !== "failed") setRutas([]);
+      setFailure(next);
     } finally {
       setLoading(false);
       setRefreshing(false);

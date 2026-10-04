@@ -111,7 +111,7 @@ export const useHomeSummary = (): HomeSummary => {
         if (isLatest()) {
           setState((prev) =>
             kind === "failed"
-              ? { ...prev, loading: false, failed: true }
+              ? { ...prev, loading: false, failed: true, unavailable: null }
               : { loading: false, failed: false, unavailable: kind, data: null }
           );
         }

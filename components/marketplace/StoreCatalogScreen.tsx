@@ -296,7 +296,7 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
               {t("marketplace.switchStoreBody", { tienda: cart.tiendaNombre })}
             </Text>
           </Dialog.Content>
-          <Dialog.Actions>
+          <Dialog.Actions style={styles.dialogActions}>
             <AppButton onPress={() => setPendingProduct(null)}>{t("common.cancel")}</AppButton>
             <AppButton
               mode="contained"
@@ -320,7 +320,7 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
           <Dialog.Content>
             <Text variant="bodyMedium">{t("marketplace.linkRequiredBody")}</Text>
           </Dialog.Content>
-          <Dialog.Actions>
+          <Dialog.Actions style={styles.dialogActions}>
             <AppButton onPress={() => setAccessPromptVisible(false)}>{t("common.cancel")}</AppButton>
             <AppButton
               onPress={() => {
@@ -354,6 +354,8 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
 const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
+    // Three actions do not fit one row on a narrow phone; they wrap instead of overflowing.
+    dialogActions: { flexWrap: "wrap" },
     safeArea: {
       flex: 1,
       backgroundColor: theme.colors.background,

@@ -105,9 +105,9 @@ const AppButton: React.FC<Props> = ({
       ) : null}
       <Text
         style={[variant === "plain" ? styles.plainLabel : styles.label, { color: foreground }, labelStyle]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.85}
+        // Wraps to a second line rather than cutting off: some labels carry a total, and the
+        // guide forbids truncating prices.
+        numberOfLines={2}
       >
         {children}
       </Text>
@@ -181,6 +181,7 @@ const createStyles = (theme: CustomTheme) => {
     label: {
       ...type.rowTitle,
       flexShrink: 1,
+      textAlign: "center",
     },
     plainLabel: {
       ...type.body,

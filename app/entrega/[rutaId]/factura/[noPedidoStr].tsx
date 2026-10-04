@@ -19,6 +19,7 @@ import {
 import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { EntregaHeader } from "../../../../components/entrega/EntregaHeader";
+import { useBackToRoute } from "../../../../components/entrega/useBackToRoute";
 import EmptyState from "../../../../components/ui/EmptyState";
 import GradientButton from "../../../../components/ui/GradientButton";
 import { detalleStatusOf } from "../../../../components/entrega/detalleStatus";
@@ -59,6 +60,7 @@ export default function FacturaEntregaScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId, noPedidoStr } = useLocalSearchParams<{ rutaId: string; noPedidoStr: string }>();
+  const backToRoute = useBackToRoute(rutaId);
   const numericRutaId = parseInt(rutaId ?? "0", 10);
 
   const [data, setData] = useState<EntregaFacturaDetalle | null>(null);
@@ -208,7 +210,7 @@ export default function FacturaEntregaScreen() {
 
 
   const header = (
-    <EntregaHeader title={t("entrega.deliveryDetailTitle")} onBack={() => router.back()}>
+    <EntregaHeader title={t("entrega.deliveryDetailTitle")} onBack={backToRoute}>
       {!!data && (
         <Appbar.Action
           icon="map-marker-outline"

@@ -18,6 +18,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
 import { EntregaHeader } from "../../../components/entrega/EntregaHeader";
+import { useBackToRoute } from "../../../components/entrega/useBackToRoute";
 import EmptyState from "../../../components/ui/EmptyState";
 import GradientButton from "../../../components/ui/GradientButton";
 import { PendientesFacturarBanner } from "../../../components/entrega/PendientesFacturarBanner";
@@ -38,6 +39,7 @@ export default function CargaScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
+  const backToRoute = useBackToRoute(rutaId);
   const numericRutaId = parseInt(rutaId ?? "0", 10);
 
   const [data, setData] = useState<CargaResponse | null>(null);
@@ -359,7 +361,7 @@ export default function CargaScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
+        <EntregaHeader title={t("entrega.loadTruck")} onBack={backToRoute} />
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={colors.tint} />
         </View>
@@ -370,7 +372,7 @@ export default function CargaScreen() {
   if (!data) {
     return (
       <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-        <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
+        <EntregaHeader title={t("entrega.loadTruck")} onBack={backToRoute} />
         <EmptyState
             style={styles.stateView}
           icon="cloud-off-outline"
@@ -435,7 +437,7 @@ export default function CargaScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
+      <EntregaHeader title={t("entrega.loadTruck")} onBack={backToRoute} />
 
       <FlatList
         data={sorted}

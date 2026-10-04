@@ -187,6 +187,8 @@ export const changeProfilePhoto = async (source: PhotoSource): Promise<string | 
 
   const [media] = await uploadImages([toImageDataUri(foto.base64)], "profile");
   await httpsCallable(functions, "updateUserProfile")({ userId: user.uid, photoURL: media.originalUrl });
-  await user.reload();
+  // The photo is saved at this point; a failed refresh of the local user must not report it
+  // as a failed change and invite a second upload.
+  await user.reload().catch((e) => console.warn("Could not refresh the signed-in user:", e));
   return media.originalUrl;
 };

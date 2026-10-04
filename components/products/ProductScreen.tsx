@@ -306,7 +306,12 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
           icon="cloud-alert-outline"
           title={t("products.search.failedTitle")}
           message={problem.message}
-          action={{ label: t("common.retry"), icon: "refresh", onPress: () => performSearch() }}
+          action={{
+            label: t("common.retry"),
+            icon: "refresh",
+            // The query that failed, not whatever the box and mode say now.
+            onPress: () => (lastQuery ? performSearch(lastQuery.value, lastQuery.type) : performSearch()),
+          }}
         />
       );
     }
