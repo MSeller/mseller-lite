@@ -2,7 +2,6 @@ import { isAxiosError } from "axios";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import {
-  Button,
   Card,
   Chip,
   Divider,
@@ -26,6 +25,7 @@ import {
   InventarioConteo,
   ResumenConteo,
 } from "../../types/inventory";
+import AppButton from "../ui/AppButton";
 
 interface InventoryMainScreenProps {
   onNavigateToCount: (conteo: InventarioConteo) => void;
@@ -264,14 +264,14 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
                     {offlineOperationsCount} operations pending sync
                   </Text>
                 </View>
-                <Button
+                <AppButton
                   mode="contained"
                   onPress={handleSyncOfflineData}
                   loading={loading}
                   disabled={loading}
                 >
                   {t("inventory.syncOfflineData")}
-                </Button>
+                </AppButton>
               </View>
             </Card.Content>
           </Card>
@@ -351,7 +351,7 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
               <Divider style={styles.divider} />
 
               <View style={styles.actionButtons}>
-                <Button
+                <AppButton
                   mode="contained"
                   icon="barcode-scan"
                   onPress={() => onNavigateToCount(activeCount)}
@@ -359,15 +359,15 @@ const InventoryMainScreen: React.FC<InventoryMainScreenProps> = ({
                   disabled={activeCount.estado === EstadoConteo.Completado}
                 >
                   {t("inventory.startCounting")}
-                </Button>
-                <Button
+                </AppButton>
+                <AppButton
                   mode="outlined"
                   icon="chart-line"
                   onPress={() => onNavigateToProgress(activeCount)}
                   style={styles.actionButton}
                 >
                   {t("inventory.countProgress")}
-                </Button>
+                </AppButton>
               </View>
             </Card.Content>
           </Card>

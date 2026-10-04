@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Linking } from "react-native";
-import { Button, Dialog, List, Portal, Text } from "react-native-paper";
+import { Dialog, List, Portal, Text } from "react-native-paper";
 
 import { useTranslation } from "../../hooks/useTranslation";
 import { getStoreSeller } from "../../services/b2bService";
 import type { VendedorContacto } from "../../types/b2b";
+import AppButton from "../ui/AppButton";
 
 /**
  * The store's sales rep, when the store shares one.
@@ -90,12 +91,12 @@ const SellerContactDialog: React.FC<Props> = ({ visible, onDismiss, contact }) =
           )}
         </Dialog.Content>
         <Dialog.Actions>
-          <Button onPress={onDismiss}>{t("common.close")}</Button>
-          {!!contact.telefono && <Button onPress={whatsapp}>{t("marketplace.sellerWhatsapp")}</Button>}
+          <AppButton onPress={onDismiss}>{t("common.close")}</AppButton>
+          {!!contact.telefono && <AppButton onPress={whatsapp}>{t("marketplace.sellerWhatsapp")}</AppButton>}
           {!!contact.telefono && (
-            <Button mode="contained" onPress={call}>
+            <AppButton mode="contained" onPress={call}>
               {t("marketplace.sellerCall")}
-            </Button>
+            </AppButton>
           )}
         </Dialog.Actions>
       </Dialog>

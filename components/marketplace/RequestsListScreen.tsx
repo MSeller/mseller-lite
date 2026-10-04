@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Appbar,
   Banner,
-  Button,
   Chip,
   Icon,
   Text,
@@ -23,6 +22,7 @@ import { formatDateTime, formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import StatusChip from "../ui/StatusChip";
+import AppButton from "../ui/AppButton";
 
 const PAGE_SIZE = 20;
 const STATES: EstadoSolicitud[] = ["enviada", "aceptada", "rechazada", "cancelada"];
@@ -207,9 +207,9 @@ const RequestsListScreen: React.FC = () => {
               </View>
             ) : hasMore && failure ? (
               <View style={styles.footer}>
-                <Button mode="text" onPress={retry}>
+                <AppButton mode="text" onPress={retry}>
                   {t("common.retry")}
-                </Button>
+                </AppButton>
               </View>
             ) : null
           }

@@ -6,7 +6,8 @@ import {
 import type { CustomTheme } from "@/constants/Theme";
 import React, { useMemo } from "react";
 import { StyleSheet } from "react-native";
-import { Button, Divider, Menu, useTheme } from "react-native-paper";
+import { Divider, Menu, useTheme } from "react-native-paper";
+import AppButton from "../ui/AppButton";
 
 interface LanguageSelectorProps {
   visible: boolean;
@@ -71,7 +72,7 @@ export const LanguageButton: React.FC<LanguageButtonProps> = ({ onPress }) => {
   );
 
   return (
-    <Button
+    <AppButton
       mode="outlined"
       onPress={onPress}
       icon="translate"
@@ -79,7 +80,7 @@ export const LanguageButton: React.FC<LanguageButtonProps> = ({ onPress }) => {
       style={buttonStyles.languageButton}
     >
       {currentLang?.code.toUpperCase() || "EN"}
-    </Button>
+    </AppButton>
   );
 };
 

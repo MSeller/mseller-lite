@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useMemo, useState } from "react";
 import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Appbar, Banner, Button, Searchbar, useTheme } from "react-native-paper";
+import { ActivityIndicator, Appbar, Banner, Searchbar, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -13,6 +13,7 @@ import { describeB2BError } from "../../utils/b2b";
 import EmptyState from "../ui/EmptyState";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import StoreRow from "./StoreRow";
+import AppButton from "../ui/AppButton";
 
 const PAGE_SIZE = 20;
 
@@ -152,9 +153,9 @@ const MarketplaceDirectoryScreen: React.FC = () => {
               </View>
             ) : hasMore && failure ? (
               <View style={styles.footer}>
-                <Button mode="text" onPress={retry}>
+                <AppButton mode="text" onPress={retry}>
                   {t("common.retry")}
-                </Button>
+                </AppButton>
               </View>
             ) : null
           }

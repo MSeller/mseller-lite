@@ -4,7 +4,6 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
   Appbar,
-  Button,
   Chip,
   Icon,
   RadioButton,
@@ -35,6 +34,7 @@ import {
 import AppCard from "../ui/AppCard";
 import SectionHeader from "../ui/SectionHeader";
 import { describePrinterError } from "./printerErrors";
+import AppButton from "../ui/AppButton";
 
 const SCAN_TIMEOUT_MS = 12000;
 
@@ -282,7 +282,7 @@ const PrintersScreen: React.FC = () => {
                   </Chip>
                 </View>
                 <View style={styles.buttonRow}>
-                  <Button
+                  <AppButton
                     mode="contained"
                     icon="printer"
                     onPress={() => run("test", printTestPage, t("printers.testSent"))}
@@ -291,9 +291,9 @@ const PrintersScreen: React.FC = () => {
                     style={styles.flexButton}
                   >
                     {t("printers.test")}
-                  </Button>
+                  </AppButton>
                   {connection === "connected" ? (
-                    <Button
+                    <AppButton
                       mode="outlined"
                       icon="link-off"
                       onPress={() => run("disconnect", disconnect)}
@@ -302,9 +302,9 @@ const PrintersScreen: React.FC = () => {
                       style={styles.flexButton}
                     >
                       {t("printers.disconnect")}
-                    </Button>
+                    </AppButton>
                   ) : (
-                    <Button
+                    <AppButton
                       mode="outlined"
                       icon="link"
                       onPress={() => run("connect", connect)}
@@ -313,10 +313,10 @@ const PrintersScreen: React.FC = () => {
                       style={styles.flexButton}
                     >
                       {t("printers.connect")}
-                    </Button>
+                    </AppButton>
                   )}
                 </View>
-                <Button
+                <AppButton
                   mode="text"
                   icon="delete-outline"
                   onPress={() => run("forget", forgetPrinter)}
@@ -324,7 +324,7 @@ const PrintersScreen: React.FC = () => {
                   textColor={theme.colors.error}
                 >
                   {t("printers.forget")}
-                </Button>
+                </AppButton>
               </View>
             </AppCard>
           </>
@@ -365,14 +365,14 @@ const PrintersScreen: React.FC = () => {
           trailing={
             transport === "ble" ? (
               scanning ? (
-                <Button compact mode="text" onPress={stopScan}>
+                <AppButton compact mode="text" onPress={stopScan}>
                   {t("printers.stopScan")}
-                </Button>
+                </AppButton>
               ) : null
             ) : transport === "bt-classic" ? (
-              <Button compact mode="text" icon="refresh" onPress={loadBonded} disabled={loadingBonded}>
+              <AppButton compact mode="text" icon="refresh" onPress={loadBonded} disabled={loadingBonded}>
                 {t("printers.refresh")}
-              </Button>
+              </AppButton>
             ) : null
           }
         />
@@ -394,7 +394,7 @@ const PrintersScreen: React.FC = () => {
             <View style={styles.cardContent}>
               {transport === "ble" && (
                 <>
-                  <Button
+                  <AppButton
                     mode="contained-tonal"
                     icon={scanning ? undefined : "bluetooth-connect"}
                     onPress={startScan}
@@ -402,7 +402,7 @@ const PrintersScreen: React.FC = () => {
                     disabled={scanning || ocupado}
                   >
                     {scanning ? t("printers.scanning") : t("printers.scan")}
-                  </Button>
+                  </AppButton>
                   <View style={styles.switchRow}>
                     <Text variant="bodySmall" style={styles.muted}>
                       {t("printers.showUnnamed")}
@@ -476,7 +476,7 @@ const PrintersScreen: React.FC = () => {
           </View>
         )}
 
-        <Button
+        <AppButton
           mode="contained"
           icon="content-save-outline"
           onPress={handleSave}
@@ -486,7 +486,7 @@ const PrintersScreen: React.FC = () => {
           style={styles.saveButton}
         >
           {t("printers.save")}
-        </Button>
+        </AppButton>
       </ScrollView>
     </SafeAreaView>
   );

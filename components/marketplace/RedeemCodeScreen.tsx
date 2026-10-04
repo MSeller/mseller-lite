@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Text, TextInput, useTheme } from "react-native-paper";
+import { Appbar, Text, TextInput, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -18,6 +18,7 @@ import {
 import { hasNativeModules } from "../../utils/nativeModules";
 import BarcodeScanSheet from "../scan/BarcodeScanSheet";
 import AppCard from "../ui/AppCard";
+import AppButton from "../ui/AppButton";
 
 /**
  * Whether this binary can open the camera at all. Checked here as well as inside the sheet
@@ -127,7 +128,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
               <Text variant="bodyMedium" style={styles.help}>
                 {activa ? t("marketplace.redeemSuccessBody") : t("marketplace.redeemPendingBody")}
               </Text>
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={() =>
                   activa
@@ -140,7 +141,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
                 style={styles.successButton}
               >
                 {activa ? t("marketplace.openCatalog") : t("common.back")}
-              </Button>
+              </AppButton>
             </View>
           </AppCard>
         </View>
@@ -179,7 +180,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
           </Text>
 
           {CAMARA_DISPONIBLE && (
-            <Button
+            <AppButton
               mode="contained-tonal"
               icon="qrcode-scan"
               onPress={() => setScanning(true)}
@@ -188,7 +189,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
               contentStyle={styles.submitContent}
             >
               {t("marketplace.scanAction")}
-            </Button>
+            </AppButton>
           )}
 
           <TextInput
@@ -226,7 +227,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
             </Text>
           )}
 
-          <Button
+          <AppButton
             mode="contained"
             onPress={submit}
             disabled={!complete || submitting}
@@ -235,15 +236,15 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
             contentStyle={styles.submitContent}
           >
             {t("marketplace.redeemAction")}
-          </Button>
+          </AppButton>
 
-          <Button
+          <AppButton
             mode="text"
             onPress={() => router.replace("/marketplace/solicitar")}
             style={styles.alternative}
           >
             {t("marketplace.noCodeAction")}
-          </Button>
+          </AppButton>
         </ScrollView>
       </KeyboardAvoidingView>
 

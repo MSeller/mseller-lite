@@ -1,7 +1,7 @@
 import { openBrowserAsync } from "expo-web-browser";
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Button, Card, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
+import { Card, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
 
 import { LEGAL_URLS } from "../../constants/legal";
 import { CustomTheme } from "../../constants/Theme";
@@ -14,6 +14,7 @@ import {
   type RegistrationError,
   type RegistrationForm,
 } from "../../utils/account";
+import AppButton from "../ui/AppButton";
 
 interface SignUpScreenProps {
   onNavigateToLogin?: () => void;
@@ -196,7 +197,7 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 .
               </Text>
 
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={handleSignUp}
                 loading={loading}
@@ -205,16 +206,16 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({ onNavigateToLogin }) => {
                 contentStyle={styles.buttonContent}
               >
                 {t("auth.createAccount")}
-              </Button>
+              </AppButton>
 
               <View style={styles.googleButton}>
                 <GoogleSignInButton disabled={loading} onError={setError} />
               </View>
 
               {onNavigateToLogin && (
-                <Button mode="text" onPress={onNavigateToLogin} disabled={loading}>
+                <AppButton mode="text" onPress={onNavigateToLogin} disabled={loading}>
                   {t("auth.alreadyHaveAccount")} {t("auth.signIn")}
-                </Button>
+                </AppButton>
               )}
             </Card.Content>
           </Card>
@@ -273,7 +274,6 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     marginBottom: 8,
-    borderRadius: 8,
   },
   buttonContent: {
     paddingVertical: 12,

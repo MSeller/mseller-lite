@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, Icon, Text, useTheme } from "react-native-paper";
+import { Icon, Text, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
@@ -10,6 +10,7 @@ import { formatMoney } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
 import StatusChip from "../ui/StatusChip";
 import StoreLogo from "./StoreLogo";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   tienda: TiendaMarketplace;
@@ -95,16 +96,16 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
           {estado && <StatusChip label={t(`marketplace.linkState.${estado}`)} tone={vinculoTone(estado)} />}
 
           {active ? (
-            <Button mode="text" compact onPress={onOpen}>
+            <AppButton mode="text" compact onPress={onOpen}>
               {t("marketplace.openCatalog")}
-            </Button>
+            </AppButton>
           ) : estado === "pendiente" ? (
             canBrowse ? (
               // Nothing for the buyer to do until the supplier's rep approves, but
               // browsing is still open — the button just cannot start an order.
-              <Button mode="text" compact onPress={onOpen}>
+              <AppButton mode="text" compact onPress={onOpen}>
                 {t("marketplace.awaitingApproval")}
-              </Button>
+              </AppButton>
             ) : (
               // Restricted store: nothing to do but wait, and nothing to browse either.
               <Text variant="bodySmall" style={styles.subtitle}>
@@ -113,20 +114,20 @@ const StoreRow: React.FC<Props> = ({ tienda, onOpen, onRedeem, onRequest }) => {
             )
           ) : estado === "bloqueada" ? (
             canBrowse ? (
-              <Button mode="text" compact onPress={onOpen}>
+              <AppButton mode="text" compact onPress={onOpen}>
                 {t("marketplace.openCatalog")}
-              </Button>
+              </AppButton>
             ) : null
           ) : (
             <View style={styles.buttonRow}>
-              <Button mode="text" compact onPress={onRedeem}>
+              <AppButton mode="text" compact onPress={onRedeem}>
                 {t("marketplace.redeemCode")}
-              </Button>
+              </AppButton>
               {/* A rejected request is not re-sent from here — the code is the way back in. */}
               {estado !== "rechazada" && (
-                <Button mode="text" compact onPress={onRequest}>
+                <AppButton mode="text" compact onPress={onRequest}>
                   {t("marketplace.requestAccess")}
-                </Button>
+                </AppButton>
               )}
             </View>
           )}

@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Appbar,
   Banner,
-  Button,
   Dialog,
   Divider,
   Portal,
@@ -26,6 +25,7 @@ import EmptyState from "../ui/EmptyState";
 import StatusChip from "../ui/StatusChip";
 import ProductGallery from "./ProductGallery";
 import QuantityStepper from "./QuantityStepper";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   tiendaId: string;
@@ -207,7 +207,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
 
           <View style={[styles.bottomBar, { paddingBottom: 12 + insets.bottom }]}>
             <QuantityStepper value={cantidad} onChange={setCantidad} min={1} />
-            <Button
+            <AppButton
               mode="contained"
               icon={producto.tieneVinculoActivo ? "cart-plus" : "lock-outline"}
               onPress={addToCart}
@@ -221,7 +221,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
                       total: formatMoney(cantidad * (producto.precio ?? 0)),
                     })
                 : t("marketplace.linkRequiredTitle")}
-            </Button>
+            </AppButton>
           </View>
         </>
       )}
@@ -235,8 +235,8 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setSwitchStoreVisible(false)}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setSwitchStoreVisible(false)}>{t("common.cancel")}</AppButton>
+            <AppButton
               mode="contained"
               onPress={() => {
                 if (producto) cart.add(tiendaId, tiendaNombre, producto, cantidad);
@@ -245,7 +245,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
               }}
             >
               {t("marketplace.switchStoreConfirm")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
 
@@ -255,16 +255,16 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
             <Text variant="bodyMedium">{t("marketplace.linkRequiredBody")}</Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setAccessPromptVisible(false)}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setAccessPromptVisible(false)}>{t("common.cancel")}</AppButton>
+            <AppButton
               onPress={() => {
                 setAccessPromptVisible(false);
                 router.push({ pathname: "/marketplace/solicitar", params: { tiendaId, nombre: tiendaNombre } });
               }}
             >
               {t("marketplace.requestAccess")}
-            </Button>
-            <Button
+            </AppButton>
+            <AppButton
               mode="contained"
               onPress={() => {
                 setAccessPromptVisible(false);
@@ -272,7 +272,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
               }}
             >
               {t("marketplace.redeemCode")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
       </Portal>

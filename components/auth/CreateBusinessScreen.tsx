@@ -1,7 +1,7 @@
 import { openBrowserAsync } from "expo-web-browser";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
-import { Avatar, Button, Card, Snackbar, Text, useTheme } from "react-native-paper";
+import { Avatar, Card, Snackbar, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { LEGAL_URLS } from "../../constants/legal";
@@ -10,6 +10,7 @@ import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
 import { createBusinessForSignedInUser, signOutCompletely } from "../../services/accountService";
 import { isEmailAlreadyRegistered } from "../../utils/account";
+import AppButton from "../ui/AppButton";
 
 /**
  * Shown when someone signs in with Google and that login has no MSeller account. Creating the
@@ -93,7 +94,7 @@ const CreateBusinessScreen: React.FC = () => {
             </Text>
 
             <View style={styles.actions}>
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={handleCreate}
                 loading={creating}
@@ -101,10 +102,10 @@ const CreateBusinessScreen: React.FC = () => {
                 contentStyle={styles.buttonContent}
               >
                 {t("createBusiness.create")}
-              </Button>
-              <Button mode="text" onPress={signOutCompletely} disabled={creating}>
+              </AppButton>
+              <AppButton mode="text" onPress={signOutCompletely} disabled={creating}>
                 {t("createBusiness.useAnotherAccount")}
-              </Button>
+              </AppButton>
             </View>
           </Card.Content>
         </Card>

@@ -3,7 +3,6 @@ import React, { useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import {
   Appbar,
-  Button,
   Divider,
   Icon,
   IconButton,
@@ -22,6 +21,7 @@ import { formatMoney, formatQuantity } from "../../utils/documentFormat";
 import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import QuantityStepper from "./QuantityStepper";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   tiendaId: string;
@@ -143,9 +143,9 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             title={t("marketplace.emptyCartTitle")}
             message={t("marketplace.emptyCartBody")}
           />
-          <Button mode="contained" onPress={goBack}>
+          <AppButton mode="contained" onPress={goBack}>
             {t("marketplace.backToCatalog")}
-          </Button>
+          </AppButton>
         </View>
       </SafeAreaView>
     );
@@ -260,7 +260,7 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
           <Text variant="bodySmall" style={styles.disclaimer}>
             {cart.hidePrices ? t("marketplace.priceHiddenNote") : t("marketplace.totalsDisclaimer")}
           </Text>
-          <Button
+          <AppButton
             mode="contained"
             onPress={submit}
             loading={submitting}
@@ -269,7 +269,7 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             contentStyle={styles.submitContent}
           >
             {t("marketplace.sendRequest")}
-          </Button>
+          </AppButton>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

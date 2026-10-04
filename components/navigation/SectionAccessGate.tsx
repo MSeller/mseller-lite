@@ -1,12 +1,13 @@
 import { useRouter } from "expo-router";
 import React from "react";
 import { StyleSheet } from "react-native";
-import { ActivityIndicator, Button, useTheme } from "react-native-paper";
+import { ActivityIndicator, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useNavigationAccess, type NavSection } from "../../hooks/useNavigationAccess";
 import { useTranslation } from "../../hooks/useTranslation";
 import EmptyState from "../ui/EmptyState";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   section: NavSection;
@@ -42,9 +43,9 @@ const SectionAccessGate: React.FC<Props> = ({ section, message, children }) => {
             title={t("documents.accessDeniedTitle")}
             message={message}
           />
-          <Button mode="outlined" icon="home-outline" onPress={() => router.replace("/(tabs)")}>
+          <AppButton mode="outlined" icon="home-outline" onPress={() => router.replace("/(tabs)")}>
             {t("navigation.home")}
-          </Button>
+          </AppButton>
         </>
       )}
     </SafeAreaView>
