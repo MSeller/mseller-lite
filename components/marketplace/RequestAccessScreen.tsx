@@ -14,6 +14,7 @@ import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import FormField from "../ui/FormField";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   tiendaId?: string;
@@ -89,7 +90,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
   const header = (
     <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-      <Appbar.BackAction onPress={goBack} />
+      <HeaderBackAction onPress={goBack} />
       <Appbar.Content title={t("marketplace.requestTitle")} />
     </Appbar.Header>
   );

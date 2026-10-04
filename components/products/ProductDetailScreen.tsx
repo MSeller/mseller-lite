@@ -16,6 +16,7 @@ import {
 import StatusChip from "../ui/StatusChip";
 import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import { stockOf, stockTone } from "../../utils/productStock";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface ProductDetailScreenProps {
   product: Product;
@@ -155,7 +156,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={onBack} color={colors.tint} accessibilityLabel={t("common.back")} />
+        <HeaderBackAction onPress={onBack} accessibilityLabel={t("common.back")} />
         <Appbar.Content title="" />
       </Appbar.Header>
 

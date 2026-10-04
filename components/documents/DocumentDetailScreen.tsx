@@ -34,6 +34,7 @@ import DocumentShareSheet from "./DocumentShareSheet";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   noPedidoStr: string;
@@ -124,7 +125,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={goBack} />
+        <HeaderBackAction onPress={goBack} />
         {/* MD3 Appbar.Content ignores `subtitle`; the document type is shown on
             the card below, next to the status. */}
         <Appbar.Content title={document?.noPedidoStr ?? noPedidoStr} />

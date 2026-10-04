@@ -12,6 +12,7 @@ import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import SectionHeader from "../ui/SectionHeader";
 import CatalogLockedState from "./CatalogLockedState";
 import { useHardwareBack } from "./useCatalogRecord";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 export interface DetailRow {
   label: string;
@@ -95,7 +96,7 @@ const CatalogDetailView: React.FC<Props> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={onBack} />
+        <HeaderBackAction onPress={onBack} />
         <Appbar.Content title={title} />
         {ready && failure?.kind !== "forbidden" && (
           <Appbar.Action icon="pencil" accessibilityLabel={t("common.edit")} onPress={onEdit} />

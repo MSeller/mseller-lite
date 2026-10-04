@@ -27,6 +27,7 @@ import FullScreenModal from "../../ui/FullScreenModal";
 import NewProductForm from "./NewProductForm";
 import ProductPhotoSheet from "./ProductPhotoSheet";
 import AppButton from "../../ui/AppButton";
+import HeaderBackAction from "../../ui/HeaderBackAction";
 
 interface Props {
   visible: boolean;
@@ -228,7 +229,7 @@ const ProductPickerModal: React.FC<Props> = ({
       >
         <Appbar.Header mode="small" style={styles.appbar}>
           {mode === "create" ? (
-            <Appbar.BackAction onPress={() => setMode("search")} disabled={ocupado} />
+            <HeaderBackAction onPress={() => setMode("search")} disabled={ocupado} />
           ) : (
             <Appbar.Action icon="close" onPress={onDismiss} />
           )}

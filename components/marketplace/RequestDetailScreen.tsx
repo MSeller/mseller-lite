@@ -14,6 +14,7 @@ import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import SectionHeader from "../ui/SectionHeader";
 import StatusChip from "../ui/StatusChip";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   noSolicitud: string;
@@ -80,7 +81,7 @@ const RequestDetailScreen: React.FC<Props> = ({ noSolicitud, justCreated = false
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={goBack} />
+        <HeaderBackAction onPress={goBack} />
         <Appbar.Content title={solicitud?.noSolicitud ?? noSolicitud} />
       </Appbar.Header>
 

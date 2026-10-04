@@ -21,6 +21,7 @@ import type { CustomerSummary } from "../../../types/documents";
 import FullScreenModal from "../../ui/FullScreenModal";
 import NewCustomerForm from "./NewCustomerForm";
 import AppButton from "../../ui/AppButton";
+import HeaderBackAction from "../../ui/HeaderBackAction";
 
 interface Props {
   visible: boolean;
@@ -117,7 +118,7 @@ const CustomerPickerModal: React.FC<Props> = ({ visible, onDismiss, onSelect }) 
       >
         <Appbar.Header mode="small" style={styles.appbar}>
           {mode === "create" ? (
-            <Appbar.BackAction onPress={() => setMode("search")} disabled={saving} />
+            <HeaderBackAction onPress={() => setMode("search")} disabled={saving} />
           ) : (
             <Appbar.Action icon="close" onPress={onDismiss} />
           )}

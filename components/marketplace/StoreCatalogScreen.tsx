@@ -26,6 +26,7 @@ import EmptyState from "../ui/EmptyState";
 import CatalogProductCard from "./CatalogProductCard";
 import SellerContactDialog, { useSellerContact } from "./SellerContactDialog";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 const PAGE_SIZE = 20;
 
@@ -150,7 +151,7 @@ const StoreCatalogScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction
+        <HeaderBackAction
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/(tabs)/marketplace")
           }

@@ -9,6 +9,7 @@ import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import { CatalogFormLocked } from "./CatalogFields";
 import { useHardwareBack } from "./useCatalogRecord";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   title: string;
@@ -88,7 +89,7 @@ const CatalogEditScaffold: React.FC<Props> = ({
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={requestClose} disabled={saving} />
+        <HeaderBackAction onPress={requestClose} disabled={saving} />
         <Appbar.Content title={title} />
       </Appbar.Header>
 
