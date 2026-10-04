@@ -57,6 +57,7 @@ import { capturePhoto } from "../../utils/photoCapture";
 import SelectField from "../ui/SelectField";
 import OptionPickerModal, { type PickerOption } from "./OptionPickerModal";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 const RNC_LOOKUP_DEBOUNCE_MS = 800;
 
@@ -492,7 +493,7 @@ const OnboardingScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={["top", "left", "right", "bottom"]}>
       <Appbar.Header mode="small" style={styles.appbar} statusBarHeight={0}>
         {stepIndex > 0 ? (
-          <Appbar.BackAction onPress={() => setStepIndex((index) => index - 1)} />
+          <HeaderBackAction onPress={() => setStepIndex((index) => index - 1)} />
         ) : null}
         <Appbar.Content title={t("onboarding.pageTitle")} />
         <AppButton onPress={signOutCompletely} compact>

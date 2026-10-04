@@ -22,6 +22,7 @@ import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import QuantityStepper from "./QuantityStepper";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   tiendaId: string;
@@ -126,7 +127,7 @@ const CartScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
 
   const header = (
     <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-      <Appbar.BackAction onPress={goBack} />
+      <HeaderBackAction onPress={goBack} />
       {/* MD3 Appbar.Content ignores `subtitle`; the store is named on the empty state
           and on the request once it is sent. */}
       <Appbar.Content title={t("marketplace.cartTitle")} />

@@ -19,6 +19,7 @@ import { hasNativeModules } from "../../utils/nativeModules";
 import BarcodeScanSheet from "../scan/BarcodeScanSheet";
 import AppCard from "../ui/AppCard";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 /**
  * Whether this binary can open the camera at all. Checked here as well as inside the sheet
@@ -114,7 +115,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-          <Appbar.BackAction onPress={goBack} />
+          <HeaderBackAction onPress={goBack} />
           <Appbar.Content title={t("marketplace.redeemTitle")} />
         </Appbar.Header>
         <View style={styles.successContent}>
@@ -152,7 +153,7 @@ const RedeemCodeScreen: React.FC<Props> = ({ tiendaNombre }) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={goBack} />
+        <HeaderBackAction onPress={goBack} />
         <Appbar.Content title={t("marketplace.redeemTitle")} />
       </Appbar.Header>
 

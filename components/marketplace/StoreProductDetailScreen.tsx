@@ -26,6 +26,7 @@ import StatusChip from "../ui/StatusChip";
 import ProductGallery from "./ProductGallery";
 import QuantityStepper from "./QuantityStepper";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   tiendaId: string;
@@ -98,7 +99,7 @@ const StoreProductDetailScreen: React.FC<Props> = ({ tiendaId, tiendaNombre, cod
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={goBack} />
+        <HeaderBackAction onPress={goBack} />
         <Appbar.Content title={producto?.nombre || codigoProducto} />
       </Appbar.Header>
 

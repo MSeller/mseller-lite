@@ -23,6 +23,7 @@ import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import StatusChip from "../ui/StatusChip";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 const PAGE_SIZE = 20;
 const STATES: EstadoSolicitud[] = ["enviada", "aceptada", "rechazada", "cancelada"];
@@ -122,7 +123,7 @@ const RequestsListScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction
+        <HeaderBackAction
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/(tabs)/marketplace")
           }

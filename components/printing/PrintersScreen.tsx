@@ -35,6 +35,7 @@ import AppCard from "../ui/AppCard";
 import SectionHeader from "../ui/SectionHeader";
 import { describePrinterError } from "./printerErrors";
 import AppButton from "../ui/AppButton";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 const SCAN_TIMEOUT_MS = 12000;
 
@@ -229,7 +230,7 @@ const PrintersScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-          <Appbar.BackAction onPress={goBack} />
+          <HeaderBackAction onPress={goBack} />
           <Appbar.Content title={t("printers.title")} />
         </Appbar.Header>
         <View style={styles.center}>
@@ -250,7 +251,7 @@ const PrintersScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
-        <Appbar.BackAction onPress={goBack} />
+        <HeaderBackAction onPress={goBack} />
         <Appbar.Content title={t("printers.title")} />
       </Appbar.Header>
 

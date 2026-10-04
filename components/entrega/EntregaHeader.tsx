@@ -4,6 +4,7 @@ import { Appbar, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import HeaderBackAction from "../ui/HeaderBackAction";
 
 interface Props {
   title: string;
@@ -22,7 +23,7 @@ export function EntregaHeader({ title, onBack, children }: Props) {
   const { t } = useTranslation();
   return (
     <Appbar.Header statusBarHeight={0} mode="small" style={{ backgroundColor: colors.background }}>
-      <Appbar.BackAction onPress={onBack} color={colors.tint} accessibilityLabel={t("common.back")} />
+      <HeaderBackAction onPress={onBack} accessibilityLabel={t("common.back")} />
       <Appbar.Content title={title} titleStyle={[styles.title, type.rowTitle]} />
       {children}
     </Appbar.Header>
