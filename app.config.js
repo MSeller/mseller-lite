@@ -29,7 +29,7 @@ export default {
   expo: {
     name: variant.name,
     slug: "mseller-lite",
-    version: "1.1.0",
+    version: "1.2.0",
     orientation: "portrait",
     icon: "./assets/icons/Icon.png",
     scheme: variant.scheme,
