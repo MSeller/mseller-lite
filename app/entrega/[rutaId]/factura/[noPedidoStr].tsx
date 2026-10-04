@@ -1,6 +1,16 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -21,6 +31,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { EntregaHeader } from "../../../../components/entrega/EntregaHeader";
 import { useBackToRoute } from "../../../../components/entrega/useBackToRoute";
 import EmptyState from "../../../../components/ui/EmptyState";
+import FullScreenModal from "../../../../components/ui/FullScreenModal";
 import GradientButton from "../../../../components/ui/GradientButton";
 import { detalleStatusOf } from "../../../../components/entrega/detalleStatus";
 import StatusChip from "../../../../components/ui/StatusChip";
@@ -524,10 +535,32 @@ export default function FacturaEntregaScreen() {
 
       {/* Delivery confirmation: payment + proof photo */}
       <Portal>
-        <Dialog visible={deliverOpen} onDismiss={() => !submitting && setDeliverOpen(false)}>
-          <Dialog.Title>{issueMode ? t("entrega.deliverWithIssueTitle") : t("entrega.deliverTitle")}</Dialog.Title>
-          <Dialog.ScrollArea>
-            <ScrollView contentContainerStyle={styles.dialogScroll}>
+        {/* A full-screen sheet rather than a Dialog: a Dialog stays centred under the number pad,
+            which has no return key, so the driver could not reach Confirm. Here the footer rides
+            above the keyboard. */}
+        <FullScreenModal
+          visible={deliverOpen}
+          onDismiss={() => !submitting && setDeliverOpen(false)}
+          dismissable={!submitting}
+          style={styles.sheet}
+        >
+          <Appbar.Header mode="small" style={styles.sheetHeader}>
+            <Appbar.Action
+              icon="close"
+              onPress={() => setDeliverOpen(false)}
+              disabled={submitting}
+              accessibilityLabel={t("common.close")}
+            />
+            <Appbar.Content
+              title={issueMode ? t("entrega.deliverWithIssueTitle") : t("entrega.deliverTitle")}
+            />
+          </Appbar.Header>
+          <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+            <ScrollView
+              contentContainerStyle={styles.sheetScroll}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+            >
               {issueMode && (
                 <TextInput
                   mode="outlined"
@@ -617,19 +650,28 @@ export default function FacturaEntregaScreen() {
                 {fotoUri ? t("entrega.retakePhoto") : t("entrega.takePhoto")}
               </AppButton>
             </ScrollView>
-          </Dialog.ScrollArea>
-          <Dialog.Actions>
-            <AppButton onPress={() => setDeliverOpen(false)} disabled={submitting}>{t("common.cancel")}</AppButton>
-            <AppButton
-              mode="contained"
-              loading={submitting}
-              disabled={submitting || uploadingPhoto || !cobroValido}
-              onPress={confirmDelivery}
-            >
-              {partialPayment ? t("entrega.confirmPartial") : t("entrega.confirmDelivery")}
-            </AppButton>
-          </Dialog.Actions>
-        </Dialog>
+            <View style={[styles.footer, { paddingBottom: theme.custom.spacing.md + insets.bottom }]}>
+              <Pressable
+                onPress={() => setDeliverOpen(false)}
+                disabled={submitting}
+                style={styles.footerCancel}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.outcomeLabel, { color: submitting ? colors.inkTertiary : colors.tint }]}>
+                  {t("common.cancel")}
+                </Text>
+              </Pressable>
+              <GradientButton
+                icon="check-circle-outline"
+                label={partialPayment ? t("entrega.confirmPartial") : t("entrega.confirmDelivery")}
+                loading={submitting}
+                disabled={submitting || uploadingPhoto || !cobroValido}
+                onPress={confirmDelivery}
+                style={styles.flex}
+              />
+            </View>
+          </KeyboardAvoidingView>
+        </FullScreenModal>
 
         <Dialog visible={showMap} onDismiss={() => setShowMap(false)}>
           <Dialog.Title>{t("entrega.openIn")}</Dialog.Title>
@@ -816,7 +858,9 @@ const createStyles = (theme: CustomTheme, gutter: number) => {
     },
     footerTotal: { ...type.figure(28) },
     footerCancel: { minHeight: touchTarget, justifyContent: "center" },
-    dialogScroll: { paddingVertical: spacing.sm, paddingHorizontal: spacing.xs },
+    sheet: { backgroundColor: colors.background },
+    sheetHeader: { backgroundColor: colors.background },
+    sheetScroll: { paddingHorizontal: gutter, paddingVertical: spacing.lg },
     dialogField: { marginBottom: spacing.md },
     dialogOverline: { ...type.overline, marginBottom: spacing.sm },
     dialogBody: { ...type.body },
