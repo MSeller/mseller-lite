@@ -1,13 +1,15 @@
 import { router } from "expo-router";
 import React, { useMemo } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
-import { ActivityIndicator, Avatar, Button, Chip, Icon, Text, TouchableRipple, useTheme } from "react-native-paper";
+import { ActivityIndicator, Chip, Icon, Text, TouchableRipple, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getDocumentTypeMeta } from "@/components/documents/documentMeta";
 import WorkCard from "@/components/home/WorkCard";
 import AppCard from "@/components/ui/AppCard";
+import EmptyState from "@/components/ui/EmptyState";
 import SectionHeader from "@/components/ui/SectionHeader";
+import UserAvatar from "@/components/ui/UserAvatar";
 import type { CustomTheme } from "@/constants/Theme";
 import { useUser } from "@/contexts/UserContext";
 import { useDocumentAccess } from "@/hooks/useDocumentAccess";
@@ -15,6 +17,7 @@ import { useHomeSummary } from "@/hooks/useHomeSummary";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 import { formatDateShort, formatMoney } from "@/utils/documentFormat";
+import AppButton from "../../components/ui/AppButton";
 
 /**
  * Home is the user's day: what is waiting in each module they work in, the one or
@@ -40,11 +43,6 @@ export default function HomeScreen() {
   })();
 
   const userName = userProfile?.firstName || user?.displayName || t("home.defaultName");
-  const initials = userName
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase())
-    .join("")
-    .slice(0, 2);
 
   if (loading) {
     return (
@@ -71,6 +69,17 @@ export default function HomeScreen() {
           ]
         }
         onPress={() => openSection("routes", "picking")}
+        onRetry={() => summary.retry("picking")}
+      />
+    ),
+    can("truckLoading") && !can("picking") && (
+      <WorkCard
+        key="truckLoading"
+        title={t("navigation.loading")}
+        icon="truck-cargo-container"
+        {...summary.picking}
+        lines={summary.picking.data && [{ value: summary.picking.data.readyToDispatch, label: t("home.readyToLoad"), attention: true }]}
+        onPress={() => router.navigate("/(tabs)/loading")}
         onRetry={() => summary.retry("picking")}
       />
     ),
@@ -121,6 +130,36 @@ export default function HomeScreen() {
 
   const recent = summary.documents.data?.recent ?? [];
 
+  // Deliveries are a driver's whole day, so when there are none, or the module is not theirs
+  // yet, Home says why in words instead of leaving a "0" or a lock on a small card. Other
+  // roles have more modules than this one, so for them the card's own lock is enough.
+  const isDriver = userProfile?.type === "driver";
+  const deliveries = summary.deliveries;
+  const deliveryNotice = !isDriver || !can("deliveries")
+    ? null
+    : deliveries.unavailable === "disabled"
+      ? {
+          icon: "lock-outline",
+          title: t("entrega.list.disabledTitle"),
+          message: t("entrega.list.disabledBody"),
+          action: { label: t("common.refresh"), onPress: () => summary.retry("deliveries") },
+        }
+      : deliveries.unavailable === "unassigned"
+        ? {
+            icon: "account-alert-outline",
+            title: t("entrega.list.unassignedTitle"),
+            message: t("entrega.list.unassignedBody"),
+            action: { label: t("common.refresh"), onPress: () => summary.retry("deliveries") },
+          }
+        : deliveries.data && deliveries.data.activeRoutes === 0 && deliveries.data.pendingStops === 0
+          ? {
+              icon: "truck-check-outline",
+              title: t("home.noDeliveriesTitle"),
+              message: t("home.noDeliveriesBody"),
+              action: { label: t("home.viewRoutes"), icon: "chevron-right", onPress: () => openSection("routes", "deliveries") },
+            }
+          : null;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView
@@ -149,11 +188,11 @@ export default function HomeScreen() {
             style={styles.avatarTouch}
             accessibilityLabel={t("navigation.more")}
           >
-            {user?.photoURL ? (
-              <Avatar.Image size={48} source={{ uri: user.photoURL }} />
-            ) : (
-              <Avatar.Text size={48} label={initials} style={styles.avatar} labelStyle={styles.avatarLabel} />
-            )}
+            <UserAvatar
+              size={48}
+              photoURL={userProfile?.photoURL || user?.photoURL}
+              name={[userProfile?.firstName, userProfile?.lastName].filter(Boolean).join(" ") || userName}
+            />
           </TouchableRipple>
         </View>
 
@@ -171,7 +210,7 @@ export default function HomeScreen() {
         {(canCreateDocuments || can("products")) && (
           <View style={styles.actions}>
             {canCreateDocuments && (
-              <Button
+              <AppButton
                 mode="contained"
                 icon="plus"
                 style={styles.action}
@@ -179,10 +218,10 @@ export default function HomeScreen() {
                 onPress={() => router.push("/documentos/nuevo")}
               >
                 {t("documents.newDocument")}
-              </Button>
+              </AppButton>
             )}
             {can("products") && (
-              <Button
+              <AppButton
                 mode="outlined"
                 icon="magnify"
                 style={styles.action}
@@ -190,9 +229,21 @@ export default function HomeScreen() {
                 onPress={() => openSection("stock", "products")}
               >
                 {t("home.findProduct")}
-              </Button>
+              </AppButton>
             )}
           </View>
+        )}
+
+        {!!deliveryNotice && (
+          <AppCard style={styles.notice}>
+            <EmptyState
+              icon={deliveryNotice.icon}
+              title={deliveryNotice.title}
+              message={deliveryNotice.message}
+              action={deliveryNotice.action}
+              style={styles.noticeBody}
+            />
+          </AppCard>
         )}
 
         {cards.length > 0 && (
@@ -285,12 +336,12 @@ const createStyles = (theme: CustomTheme) => {
     avatarTouch: {
       borderRadius: radius.pill,
     },
-    avatar: {
-      backgroundColor: theme.colors.primaryContainer,
+    notice: {
+      marginBottom: spacing.lg,
     },
-    avatarLabel: {
-      color: theme.colors.onPrimaryContainer,
-      fontWeight: "700",
+    noticeBody: {
+      paddingVertical: spacing.xl,
+      paddingHorizontal: spacing.lg,
     },
     testChip: {
       alignSelf: "flex-start",

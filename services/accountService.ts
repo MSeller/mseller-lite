@@ -17,7 +17,9 @@ import {
   type OnboardingForm,
   type RegistrationForm,
 } from "../utils/account";
+import { capturePhoto, type PhotoSource } from "../utils/photoCapture";
 import { restClient } from "./api";
+import { toImageDataUri, uploadImages } from "./mediaService";
 import { getGoogleCredential, signOutOfGoogle } from "./googleSignIn";
 
 /**
@@ -167,4 +169,24 @@ export const lookupRnc = async (digits: string): Promise<RncInfo | null> => {
   } finally {
     clearTimeout(timeout);
   }
+};
+
+/**
+ * Takes or chooses a profile photo, stores it in the media library and makes it the user's
+ * photo — the same two calls cloud.mseller.app's account settings make (`uploadImages` with
+ * type `profile`, then `updateUserProfile`), which also updates the Firebase Auth photo.
+ * Square and compressed on the device: an avatar is a circle a few dozen points wide.
+ * Returns the new photo URL, or `null` if the user backed out.
+ */
+export const changeProfilePhoto = async (source: PhotoSource): Promise<string | null> => {
+  const user = auth.currentUser;
+  if (!user) throw new Error("NOT_SIGNED_IN");
+
+  const foto = await capturePhoto(source, { allowsEditing: true, aspect: [1, 1], quality: 0.6, base64: true });
+  if (!foto?.base64) return null;
+
+  const [media] = await uploadImages([toImageDataUri(foto.base64)], "profile");
+  await httpsCallable(functions, "updateUserProfile")({ userId: user.uid, photoURL: media.originalUrl });
+  await user.reload();
+  return media.originalUrl;
 };

@@ -8,8 +8,8 @@ import {
   View,
 } from "react-native";
 import {
-  Button,
   Card,
+  HelperText,
   Snackbar,
   Surface,
   Text,
@@ -19,8 +19,10 @@ import {
 import { auth } from "../../config/firebase";
 import { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
+import { signInFailureOf, type SignInFailure } from "../../utils/authErrors";
 import MSellerLogo from "../common/MSellerLogo";
 import GoogleSignInButton from "./GoogleSignInButton";
+import AppButton from "../ui/AppButton";
 
 interface LoginScreenProps {
   onNavigateToSignUp: () => void;
@@ -34,47 +36,45 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  // Sign-in problems sit under the fields they are about; the snackbar is left for the Google
+  // button, which reports its own errors as text.
+  const [failure, setFailure] = useState<SignInFailure | "emailRequired" | "passwordRequired" | null>(null);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      setError(t("auth.invalidCredentials"));
+    if (!email.trim()) {
+      setFailure("emailRequired");
+      return;
+    }
+    if (!password) {
+      setFailure("passwordRequired");
       return;
     }
 
     setLoading(true);
+    setFailure(null);
     setError("");
 
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (error: any) {
-      console.error("Login error:", error);
-      setError(getErrorMessage(error.code));
+      const kind = signInFailureOf(error?.code);
+      // A mistyped password is an everyday outcome, not a bug: logging it with console.error
+      // put React Native's red development overlay over the message meant for the user.
+      if (kind === "unknown") console.warn("Unexpected sign-in error:", error?.code);
+      setFailure(kind);
     } finally {
       setLoading(false);
     }
   };
 
-  const getErrorMessage = (errorCode: string): string => {
-    switch (errorCode) {
-      case "auth/invalid-email":
-        return t("auth.invalidCredentials");
-      case "auth/user-disabled":
-        return t("errors.authorizationError");
-      case "auth/user-not-found":
-        return t("auth.invalidCredentials");
-      case "auth/wrong-password":
-      case "auth/invalid-credential":
-        return t("auth.invalidCredentials");
-      case "auth/too-many-requests":
-        return t("errors.timeoutError");
-      default:
-        return t("errors.authenticationError");
-    }
-  };
+  const failureMessage = failure ? t(`auth.signInErrors.${failure}`) : "";
+  const emailInError = failure === "emailRequired" || failure === "invalidEmail" || failure === "credentials";
+  const passwordInError = failure === "passwordRequired" || failure === "credentials";
+  const clearFailure = () => failure && setFailure(null);
 
   return (
     <View style={styles.container}>
@@ -114,7 +114,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                   <TextInput
                     label={t("common.email")}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      clearFailure();
+                    }}
+                    error={emailInError}
                     mode="outlined"
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -127,7 +131,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                   <TextInput
                     label={t("common.password")}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      clearFailure();
+                    }}
+                    error={passwordInError}
                     mode="outlined"
                     secureTextEntry={!showPassword}
                     autoCapitalize="none"
@@ -143,7 +151,18 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     }
                   />
 
-                  <Button
+                  {!!failure && (
+                    <HelperText
+                      type="error"
+                      visible
+                      style={styles.failure}
+                      accessibilityLiveRegion="polite"
+                    >
+                      {failureMessage}
+                    </HelperText>
+                  )}
+
+                  <AppButton
                     mode="contained"
                     onPress={handleLogin}
                     loading={loading}
@@ -152,10 +171,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     contentStyle={styles.buttonContent}
                   >
                     {t("auth.signIn")}
-                  </Button>
+                  </AppButton>
 
                   {onNavigateToPasswordReset && (
-                    <Button
+                    <AppButton
                       mode="text"
                       onPress={onNavigateToPasswordReset}
                       disabled={loading}
@@ -163,7 +182,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                       textColor={theme.colors.primary}
                     >
                       {t("auth.forgotPassword")}
-                    </Button>
+                    </AppButton>
                   )}
 
                   <View style={styles.dividerContainer}>
@@ -191,7 +210,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
 
                   <GoogleSignInButton disabled={loading} onError={setError} />
 
-                  <Button
+                  <AppButton
                     mode="outlined"
                     onPress={onNavigateToSignUp}
                     disabled={loading}
@@ -200,7 +219,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
                     icon="account-plus"
                   >
                     {t("auth.dontHaveAccount")}
-                  </Button>
+                  </AppButton>
                 </Card.Content>
               </Card>
             </View>
@@ -232,6 +251,10 @@ const styles = StyleSheet.create({
   },
   keyboardContainer: {
     flex: 1,
+  },
+  failure: {
+    marginTop: -8,
+    marginBottom: 8,
   },
   scrollContainer: {
     flexGrow: 1,
@@ -283,7 +306,6 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     marginBottom: 16,
-    borderRadius: 8,
   },
   buttonContent: {
     paddingVertical: 12,
@@ -306,8 +328,6 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     marginTop: 12,
-    borderRadius: 8,
-    borderWidth: 1.5,
   },
 });
 
