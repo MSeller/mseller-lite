@@ -1,19 +1,21 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
   RefreshControlProps,
   SectionList,
   StyleSheet,
-  TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { Button, Icon, Text, useTheme } from "react-native-paper";
-import type { CustomTheme } from "@/constants/Theme";
+import { Icon, Text, useTheme } from "react-native-paper";
+import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   ConsolidadoProducto,
   ConsolidadoZona,
 } from "../../types/preparacion";
-import StatusChip from "../ui/StatusChip";
+import EmptyState from "../ui/EmptyState";
 import ProductCard from "./ProductCard";
 
 interface ZoneProductListProps {
@@ -26,6 +28,8 @@ interface ZoneProductListProps {
   onConfirmZone?: (zonaNombre: string) => void;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   ListHeaderComponent?: React.ReactElement;
+  /** Replaces the default "no products" state (the screen's load error, with its retry). */
+  ListEmptyComponent?: React.ReactElement;
 }
 
 interface SectionData {
@@ -44,9 +48,12 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
   onConfirmZone,
   refreshControl,
   ListHeaderComponent,
+  ListEmptyComponent,
 }) => {
   const theme = useTheme() as CustomTheme;
-  const { status } = theme.custom;
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(theme, gutterFor(width)), [theme, width]);
+  const { colors, status } = theme.custom;
   const { t } = useTranslation();
   const [collapsedZones, setCollapsedZones] = useState<Set<string>>(new Set());
 
@@ -67,57 +74,38 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
 
   const renderSectionHeader = ({ section }: { section: SectionData }) => {
     const isCollapsed = collapsedZones.has(section.title);
+    const total = section.allProducts.length;
     const confirmedCount = section.allProducts.filter((p) =>
       confirmedProducts.has(p.codigoProducto)
     ).length;
-    const isComplete = confirmedCount === section.allProducts.length && section.allProducts.length > 0;
+    const isComplete = confirmedCount === total && total > 0;
+    const label = `${section.title} · ${t("preparacion.ui.productCount", { count: total })}`;
 
     return (
-      <TouchableOpacity
+      <Pressable
         onPress={() => toggleZone(section.title)}
-        activeOpacity={0.7}
-        style={[styles.sectionHeader, { backgroundColor: theme.colors.background }]}
+        style={styles.sectionHeader}
+        accessibilityRole="button"
+        accessibilityLabel={`${label}, ${confirmedCount} / ${total} ${t("preparacion.prepared")}`}
+        accessibilityState={{ expanded: !isCollapsed }}
       >
-        {/* Left: icon + name */}
-        <View style={styles.sectionLeft}>
-          <View
-            style={[
-              styles.zoneIconWrap,
-              {
-                backgroundColor: isComplete
-                  ? status.positive.container
-                  : theme.colors.primaryContainer,
-              },
-            ]}
-          >
-            <Icon
-              source={isComplete ? "check-all" : "package-variant"}
-              size={18}
-              color={isComplete ? status.positive.base : theme.colors.primary}
-            />
-          </View>
-          <Text
-            variant="labelLarge"
-            style={[styles.zoneName, { color: theme.colors.onSurface }]}
-            numberOfLines={1}
-          >
-            {section.title.toUpperCase()}
-          </Text>
-        </View>
-
-        {/* Right: items chip + chevron */}
+        <Text style={styles.sectionTitle} numberOfLines={1}>
+          {label}
+        </Text>
         <View style={styles.sectionRight}>
-          <StatusChip
-            tone={isComplete ? "positive" : "neutral"}
-            label={`${confirmedCount}/${section.allProducts.length} ${t("preparacion.items")}`}
-          />
+          {isComplete && (
+            <Icon source="check-circle" size={16} color={status.positive.base} />
+          )}
+          <Text style={[styles.sectionCount, isComplete && styles.sectionCountDone]}>
+            {`${confirmedCount}/${total}`}
+          </Text>
           <Icon
             source={isCollapsed ? "chevron-right" : "chevron-down"}
             size={20}
-            color={theme.colors.onSurfaceVariant}
+            color={colors.tint}
           />
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -134,23 +122,26 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
 
     const isConfirming = confirmingZone === section.title;
 
+    // A per-zone shortcut, so a quick action rather than a second gradient CTA on the screen.
     return (
-      <View style={styles.zoneFooter}>
-        <Button
-          mode="contained"
-          onPress={() => onConfirmZone(section.title)}
-          loading={isConfirming}
-          disabled={isConfirming}
-          icon={isConfirming ? undefined : "check-circle"}
-          style={styles.confirmZoneButton}
-          contentStyle={styles.confirmZoneButtonContent}
-          labelStyle={styles.confirmZoneLabel}
-        >
+      <Pressable
+        onPress={() => onConfirmZone(section.title)}
+        disabled={isConfirming}
+        style={styles.zoneAction}
+        accessibilityRole="button"
+        accessibilityState={{ disabled: isConfirming, busy: isConfirming }}
+      >
+        {isConfirming ? (
+          <ActivityIndicator size="small" color={colors.tint} />
+        ) : (
+          <Icon source="check-all" size={20} color={colors.tint} />
+        )}
+        <Text style={styles.zoneActionLabel}>
           {isConfirming
             ? t("preparacion.confirmingZone")
             : t("preparacion.confirmZone")}
-        </Button>
-      </View>
+        </Text>
+      </Pressable>
     );
   };
 
@@ -177,74 +168,67 @@ const ZoneProductList: React.FC<ZoneProductListProps> = ({
       ListHeaderComponent={ListHeaderComponent}
       contentContainerStyle={styles.listContent}
       ListEmptyComponent={
-        hasProducts ? null : (
-          <View style={styles.empty}>
-            <Text variant="bodyLarge" style={{ color: theme.colors.onSurfaceVariant }}>
-              {t("preparacion.noProducts")}
-            </Text>
-          </View>
-        )
+        hasProducts
+          ? null
+          : ListEmptyComponent ?? (
+              <EmptyState
+                icon="package-variant-closed"
+                title={t("preparacion.noProducts")}
+                message={t("preparacion.ui.noProductsBody")}
+              />
+            )
       }
     />
   );
 };
 
-const styles = StyleSheet.create({
-  listContent: {
-    paddingBottom: 120,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    minHeight: 52,
-  },
-  sectionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    gap: 10,
-  },
-  zoneIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  zoneName: {
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    flex: 1,
-  },
-  sectionRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  zoneFooter: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    paddingBottom: 16,
-  },
-  confirmZoneButton: {
-    borderRadius: 28,
-    minHeight: 52,
-  },
-  confirmZoneButtonContent: {
-    minHeight: 52,
-  },
-  confirmZoneLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  empty: {
-    padding: 32,
-    alignItems: "center",
-  },
-});
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, spacing, type, hairline, touchTarget, status } = theme.custom;
+  return StyleSheet.create({
+    listContent: {
+      paddingBottom: spacing.xxl,
+    },
+    // Sticky over the rows, so it carries the page colour and closes with a hairline.
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm,
+      minHeight: touchTarget,
+      backgroundColor: colors.background,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    sectionTitle: {
+      ...type.overline,
+      flex: 1,
+    },
+    sectionRight: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+    },
+    sectionCount: {
+      ...type.figure(13),
+      color: colors.inkSecondary,
+    },
+    sectionCountDone: {
+      color: status.positive.base,
+    },
+    zoneAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+      minHeight: touchTarget,
+      paddingHorizontal: gutter,
+    },
+    zoneActionLabel: {
+      ...type.body,
+      color: colors.tint,
+    },
+  });
+};
 
 export default ZoneProductList;

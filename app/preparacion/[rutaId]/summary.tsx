@@ -1,24 +1,17 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
+  Pressable,
   RefreshControl,
   SectionList,
   StyleSheet,
-  TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  ActivityIndicator,
-  Button,
-  Card,
-  Divider,
-  Icon,
-  Snackbar,
-  Text,
-  useTheme,
-} from "react-native-paper";
-import type { CustomTheme } from "@/constants/Theme";
+import { Icon, Snackbar, Text, useTheme } from "react-native-paper";
+import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
 import {
@@ -28,6 +21,8 @@ import {
   SummaryZona,
 } from "../../../types/preparacion";
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
+import EmptyState from "../../../components/ui/EmptyState";
+import PrepFooter from "../../../components/preparacion/PrepFooter";
 
 type SummaryTab = "zones" | "customers";
 
@@ -48,7 +43,9 @@ interface SummarySection {
 
 function SummaryScreen() {
   const theme = useTheme() as CustomTheme;
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(theme, gutterFor(width)), [theme, width]);
+  const { colors, status } = theme.custom;
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -138,267 +135,123 @@ function SummaryScreen() {
 
   const activeSections = activeTab === "zones" ? zoneSections : customerSections;
 
+  const tabs: { key: SummaryTab; icon: string; label: string }[] = [
+    { key: "zones", icon: "map-marker-outline", label: t("preparacion.zoneBreakdown") },
+    { key: "customers", icon: "account-group-outline", label: t("preparacion.customerBreakdown") },
+  ];
+
   if (loading) {
     return (
-      <SafeAreaView
-        style={[styles.centered, { backgroundColor: theme.colors.background }]}
-      >
-        <ActivityIndicator size="large" />
-        <Text
-          variant="bodyLarge"
-          style={{ marginTop: 16, color: theme.colors.onSurfaceVariant }}
-        >
-          {t("preparacion.summaryLoading")}
-        </Text>
+      <SafeAreaView style={styles.centered} edges={["left", "right"]}>
+        <ActivityIndicator size="large" color={colors.tint} />
+        <Text style={styles.loadingText}>{t("preparacion.summaryLoading")}</Text>
       </SafeAreaView>
     );
   }
 
+  const renderRow = ({ item }: { item: SummaryRow }) => {
+    const match = item.cantidadConfirmada === item.cantidadSolicitada;
+    const tone = match ? status.positive : status.warning;
+    const meta = [item.codigoProducto, item.unidad].filter(Boolean).join(" · ");
+    return (
+      <View
+        style={styles.productRow}
+        accessible
+        accessibilityLabel={`${item.descripcion}, ${meta}, ${item.cantidadConfirmada} / ${item.cantidadSolicitada}`}
+      >
+        <View style={styles.productInfo}>
+          <Text style={styles.productName} numberOfLines={2}>
+            {item.descripcion}
+          </Text>
+          <Text style={styles.caption} numberOfLines={1}>
+            {meta}
+          </Text>
+        </View>
+        <View style={styles.productQty}>
+          <Icon source={match ? "check-circle" : "alert-circle"} size={18} color={tone.base} />
+          <Text style={[styles.qtyText, !match && { color: tone.base }]}>
+            {item.cantidadConfirmada}
+          </Text>
+          <Text style={styles.qtyTotal}>{`/ ${item.cantidadSolicitada}`}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={["left", "right"]}
-    >
-      {/* Tab selector */}
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "zones" && {
-              borderBottomColor: theme.colors.primary,
-              borderBottomWidth: 3,
-            },
-          ]}
-          onPress={() => setActiveTab("zones")}
-          activeOpacity={0.7}
-        >
-          <Icon
-            source="map-marker"
-            size={18}
-            color={
-              activeTab === "zones"
-                ? theme.colors.primary
-                : theme.colors.onSurfaceVariant
-            }
-          />
-          <Text
-            variant="labelLarge"
-            style={{
-              color:
-                activeTab === "zones"
-                  ? theme.colors.primary
-                  : theme.colors.onSurfaceVariant,
-              fontWeight: activeTab === "zones" ? "bold" : "normal",
-              marginLeft: 6,
-            }}
-          >
-            {t("preparacion.zoneBreakdown")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === "customers" && {
-              borderBottomColor: theme.colors.primary,
-              borderBottomWidth: 3,
-            },
-          ]}
-          onPress={() => setActiveTab("customers")}
-          activeOpacity={0.7}
-        >
-          <Icon
-            source="account-group"
-            size={18}
-            color={
-              activeTab === "customers"
-                ? theme.colors.primary
-                : theme.colors.onSurfaceVariant
-            }
-          />
-          <Text
-            variant="labelLarge"
-            style={{
-              color:
-                activeTab === "customers"
-                  ? theme.colors.primary
-                  : theme.colors.onSurfaceVariant,
-              fontWeight: activeTab === "customers" ? "bold" : "normal",
-              marginLeft: 6,
-            }}
-          >
-            {t("preparacion.customerBreakdown")}
-          </Text>
-        </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
+      {/* Zones / customers: two views of the same data, so a segmented control. */}
+      <View style={styles.segments} accessibilityRole="tablist">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.key;
+          return (
+            <Pressable
+              key={tab.key}
+              style={[styles.segment, active && styles.segmentActive]}
+              onPress={() => setActiveTab(tab.key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+            >
+              <Icon source={tab.icon} size={18} color={active ? colors.ink : colors.inkSecondary} />
+              <Text style={[styles.segmentLabel, active && styles.segmentLabelActive]} numberOfLines={1}>
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {/* Section list */}
       <SectionList<SummaryRow, SummarySection>
         sections={activeSections}
         keyExtractor={(item, index) => item.codigoProducto + index}
         renderSectionHeader={({ section }) => (
-          <View
-            style={[
-              styles.sectionHeader,
-              { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-          >
-            <Text
-              variant="titleMedium"
-              style={{ fontWeight: "bold", color: theme.colors.onSurface }}
-            >
-              {activeTab === "zones" ? `🗺️ ${t("preparacion.zone")} ${section.title}` : `👤 ${section.title}`}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} numberOfLines={1}>
+              {`${activeTab === "zones" ? `${t("preparacion.zone")} ${section.title}` : section.title} · ${t(
+                "preparacion.ui.productCount",
+                { count: section.data.length }
+              )}`}
             </Text>
           </View>
         )}
-        renderItem={({ item }) => {
-          if (activeTab === "zones" && item.cantidadSolicitada != null) {
-            const match = item.cantidadConfirmada === item.cantidadSolicitada;
-            return (
-              <View
-                style={[
-                  styles.productRow,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-              >
-                <View style={styles.productInfo}>
-                  <Text
-                    variant="bodyLarge"
-                    style={{ fontWeight: "600", color: theme.colors.onSurface }}
-                    numberOfLines={2}
-                  >
-                    {item.descripcion}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: theme.colors.onSurfaceVariant }}
-                  >
-                    {item.codigoProducto} · {item.unidad}
-                  </Text>
-                </View>
-                <View style={styles.productQty}>
-                  <Text
-                    style={[
-                      styles.qtyText,
-                      {
-                        color: match
-                          ? theme.custom.status.positive.base
-                          : theme.custom.status.warning.base,
-                      },
-                    ]}
-                  >
-                    {item.cantidadConfirmada}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: theme.colors.onSurfaceVariant }}
-                  >
-                    / {item.cantidadSolicitada}
-                  </Text>
-                  {match && (
-                    <Icon
-                      source="check-circle"
-                      size={18}
-                      color={theme.custom.status.positive.base}
-                    />
-                  )}
-                </View>
-              </View>
-            );
-          }
-          // Customer tab
-          return (
-            <View
-              style={[
-                styles.productRow,
-                { backgroundColor: theme.colors.surface },
-              ]}
-            >
-              <View style={styles.productInfo}>
-                <Text
-                  variant="bodyLarge"
-                  style={{ fontWeight: "600", color: theme.colors.onSurface }}
-                  numberOfLines={2}
-                >
-                  {item.descripcion}
-                </Text>
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.onSurfaceVariant }}
-                >
-                  {item.codigoProducto}
-                </Text>
-              </View>
-              <View style={styles.qtyContainer}>
-                <Text style={[styles.qtyText, {
-                  color: item.cantidadConfirmada === item.cantidadSolicitada
-                    ? theme.colors.primary
-                    : theme.colors.error
-                }]}>
-                  {item.cantidadConfirmada}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  / {item.cantidadSolicitada}
-                </Text>
-              </View>
-            </View>
-          );
-        }}
+        renderItem={renderRow}
         stickySectionHeadersEnabled
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         contentContainerStyle={styles.listContent}
-        ItemSeparatorComponent={() => <Divider />}
         ListEmptyComponent={
-          <Card elevation={0} style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
-            <Card.Content style={styles.emptyContent}>
-              <Icon
-                source="clipboard-text-outline"
-                size={48}
-                color={theme.colors.onSurfaceVariant}
-              />
-              <Text
-                variant="bodyLarge"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  marginTop: 12,
-                  textAlign: "center",
-                }}
-              >
-                {t("preparacion.noSummaryData")}
-              </Text>
-            </Card.Content>
-          </Card>
+          !data && !!error ? (
+            <EmptyState
+              icon="alert-circle-outline"
+              title={t("preparacion.errorLoadingSummary")}
+              message={error}
+              action={{ label: t("common.retry"), icon: "refresh", onPress: loadSummary }}
+            />
+          ) : (
+            <EmptyState
+              icon="clipboard-text-outline"
+              title={t("preparacion.noSummaryData")}
+              message={t("preparacion.ui.noSummaryBody")}
+            />
+          )
         }
       />
 
-      {/* Bottom action bar */}
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            backgroundColor: theme.colors.surface,
-            borderTopColor: theme.custom.colors.hairline,
-          },
-        ]}
-      >
-        <Button
-          mode="contained"
-          onPress={handleCompletePreparation}
-          disabled={completing}
-          loading={completing}
-          icon="check-all"
-          style={styles.completeButton}
-          contentStyle={styles.completeButtonContent}
-        >
-          {completing
+      <PrepFooter
+        label={
+          completing
             ? t("preparacion.completingPreparation")
-            : t("preparacion.completePreparation")}
-        </Button>
-      </View>
+            : t("preparacion.completePreparation")
+        }
+        icon="check-all"
+        onPress={handleCompletePreparation}
+        loading={completing}
+      />
 
       <Snackbar
-        visible={!!error}
+        // The empty state already shows a failure with nothing loaded.
+        visible={!!error && !!data}
         onDismiss={() => setError("")}
         duration={4000}
         action={{
@@ -423,94 +276,102 @@ function SummaryScreen() {
   );
 }
 
-const createStyles = (theme: CustomTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  navBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    minHeight: 48,
-  },
-  navButton: {
-    minHeight: 48,
-  },
-  navButtonContent: {
-    minHeight: 48,
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  tabRow: {
-    flexDirection: "row",
-    borderBottomWidth: theme.custom.hairline,
-    borderBottomColor: theme.custom.colors.hairline,
-  },
-  tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    minHeight: 48,
-  },
-  sectionHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 48,
-  },
-  productRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 48,
-  },
-  productInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  productQty: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  qtyContainer: {
-    alignItems: "flex-end" as const,
-  },
-  qtyText: {
-    ...theme.custom.type.figure(22),
-  },
-  listContent: {
-    paddingBottom: 140,
-  },
-  emptyCard: {
-    margin: 16,
-  },
-  emptyContent: {
-    alignItems: "center",
-    paddingVertical: 32,
-  },
-  bottomBar: {
-    padding: 16,
-    paddingBottom: 32,
-    borderTopWidth: theme.custom.hairline,
-  },
-  completeButton: {
-    minHeight: 48,
-  },
-  completeButtonContent: {
-    minHeight: 48,
-  },
-});
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, spacing, type, radius, hairline, touchTarget } = theme.custom;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centered: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: spacing.lg,
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      ...type.bodySmall,
+    },
+    segments: {
+      flexDirection: "row",
+      marginHorizontal: gutter,
+      marginTop: spacing.md,
+      padding: spacing.xs / 2,
+      borderRadius: radius.segment,
+      backgroundColor: colors.fill,
+    },
+    segment: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: spacing.xs,
+      minHeight: touchTarget - spacing.sm,
+      paddingHorizontal: spacing.sm,
+      borderRadius: radius.tag,
+    },
+    segmentActive: {
+      backgroundColor: colors.surfaceCard,
+    },
+    segmentLabel: {
+      ...type.bodySmall,
+      flexShrink: 1,
+    },
+    segmentLabelActive: {
+      color: colors.ink,
+      fontWeight: "600",
+    },
+    // Sticky over the rows, so it carries the page colour and closes with a hairline.
+    sectionHeader: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm,
+      backgroundColor: colors.background,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    sectionTitle: {
+      ...type.overline,
+    },
+    productRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget + spacing.lg,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    productInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    productName: {
+      ...type.rowTitle,
+    },
+    caption: {
+      ...type.caption,
+    },
+    productQty: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: spacing.xs,
+    },
+    qtyText: {
+      ...type.figure(22),
+    },
+    qtyTotal: {
+      ...type.caption,
+      fontVariant: ["tabular-nums"],
+    },
+    listContent: {
+      paddingBottom: spacing.xxl,
+      flexGrow: 1,
+    },
+  });
+};
 
 export default function SummaryScreenRoute() {
   const { t } = useTranslation();

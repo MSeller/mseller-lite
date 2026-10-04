@@ -4,18 +4,16 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
+  TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
-import {
-  Button,
-  Divider,
-  Icon,
-  Text,
-  TextInput,
-  useTheme,
-} from "react-native-paper";
-import type { CustomTheme } from "../../constants/Theme";
+import { Icon, Text, useTheme } from "react-native-paper";
+import { gutterFor, type CustomTheme } from "../../constants/Theme";
+import { useTranslation } from "../../hooks/useTranslation";
 import { ConsolidadoDistribucion, DistribucionCliente } from "../../types/preparacion";
+import PrepFooter from "./PrepFooter";
+import QuantityStepper, { QuantityField } from "./QuantityStepper";
 
 interface ClienteDistribucion {
   codigoCliente: string;
@@ -47,8 +45,10 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
   loading = false,
 }) => {
   const theme = useTheme() as CustomTheme;
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(theme, gutterFor(width)), [theme, width]);
   const { status } = theme.custom;
+  const { t } = useTranslation();
 
   const [cantidadPreparada, setCantidadPreparada] = useState(
     cantidadTotal.toString()
@@ -126,292 +126,238 @@ const DistributionForm: React.FC<DistributionFormProps> = ({
     );
   };
 
+  const distributionTone = distribucionValida ? status.positive : status.negative;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={styles.container}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Product info header */}
-        <View
-          style={[
-            styles.productHeader,
-            { backgroundColor: theme.colors.surfaceVariant },
-          ]}
-        >
-          <Text variant="titleLarge" style={{ fontWeight: "bold" }}>
+      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+        {/* Product */}
+        <View style={styles.hero}>
+          <Text style={styles.overline}>{t("preparacion.ui.confirmProductTitle")}</Text>
+          <Text style={styles.title} accessibilityRole="header">
             {descripcion}
           </Text>
-          <Text
-            variant="bodyMedium"
-            style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
-          >
-            {codigoProducto}
-          </Text>
+          <Text style={styles.meta}>{codigoProducto}</Text>
         </View>
 
-        {/* Quantity input */}
+        {/* Quantity */}
         <View style={styles.section}>
-          <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-            Cantidad total solicitada:{" "}
-            <Text style={{ fontWeight: "bold" }}>{cantidadTotal}</Text>
-          </Text>
-
-          <Text
-            variant="bodyLarge"
-            style={{ color: theme.colors.onSurface, marginTop: 16 }}
-          >
-            Cantidad total preparada:
-          </Text>
-          <View style={styles.stepperRow}>
-            <Button
-              mode="outlined"
-              onPress={() => adjustTotal(-1)}
-              style={styles.stepperButton}
-              contentStyle={styles.stepperButtonContent}
-              disabled={parsedCantidad <= 0}
-            >
-              −
-            </Button>
-            <TextInput
-              value={cantidadPreparada}
-              onChangeText={(val) => {
-                setCantidadPreparada(val);
-                const parsed = parseInt(val, 10) || 0;
-                autoDistribute(parsed);
-              }}
-              keyboardType="number-pad"
-              style={[
-                styles.quantityInput,
-                { backgroundColor: theme.colors.surface },
-              ]}
-              contentStyle={styles.quantityInputContent}
-              mode="outlined"
-            />
-            <Button
-              mode="outlined"
-              onPress={() => adjustTotal(1)}
-              style={styles.stepperButton}
-              contentStyle={styles.stepperButtonContent}
-              disabled={parsedCantidad >= cantidadTotal}
-            >
-              +
-            </Button>
+          <View style={styles.labelRow}>
+            <Text style={styles.overline}>{t("preparacion.ui.requestedQty")}</Text>
+            <Text style={styles.labelFigure}>{cantidadTotal}</Text>
           </View>
+          <Text style={styles.overline}>{t("preparacion.ui.preparedQty")}</Text>
+          <QuantityStepper
+            value={cantidadPreparada}
+            onChangeText={(val) => {
+              setCantidadPreparada(val);
+              const parsed = parseInt(val, 10) || 0;
+              autoDistribute(parsed);
+            }}
+            onDecrement={() => adjustTotal(-1)}
+            onIncrement={() => adjustTotal(1)}
+            decrementDisabled={parsedCantidad <= 0}
+            incrementDisabled={parsedCantidad >= cantidadTotal}
+            accessibilityLabel={t("preparacion.ui.preparedQty")}
+            decrementLabel={t("preparacion.ui.decrease")}
+            incrementLabel={t("preparacion.ui.increase")}
+          />
 
           {hayDiferencia && !excedido && (
-            <View style={styles.warningRow}>
+            <View style={styles.statusRow} accessibilityRole="alert">
               <Icon source="alert" size={18} color={status.warning.base} />
-              <Text style={styles.warningText}>
-                Diferencia: {diferencia} unidades
+              <Text style={[styles.statusText, { color: status.warning.base }]}>
+                {t("preparacion.ui.difference", { count: diferencia })}
               </Text>
             </View>
           )}
           {excedido && (
-            <View style={styles.warningRow}>
+            <View style={styles.statusRow} accessibilityRole="alert">
               <Icon source="alert-circle" size={18} color={status.negative.base} />
-              <Text style={[styles.warningText, { color: status.negative.base }]}>
-                No puede exceder la cantidad solicitada
+              <Text style={[styles.statusText, { color: status.negative.base }]}>
+                {t("preparacion.ui.cannotExceed")}
               </Text>
             </View>
           )}
         </View>
 
-        <Divider />
-
         {/* Client distribution */}
-        <View style={styles.section}>
-          <Text
-            variant="titleMedium"
-            style={{ fontWeight: "bold", marginBottom: 4 }}
-          >
-            Distribución por cliente
-          </Text>
-          <Text
-            variant="bodySmall"
-            style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}
-          >
+        <View style={styles.listHeader}>
+          <Text style={styles.overline}>{t("preparacion.ui.distributionByCustomer")}</Text>
+          <Text style={styles.caption}>
             {hayDiferencia
-              ? "Ajuste manual — verifique asignación"
-              : "Auto-calculada, editable"}
+              ? t("preparacion.ui.distributionManual")
+              : t("preparacion.ui.distributionAuto")}
           </Text>
+        </View>
+        <View style={styles.rowsTop} />
 
-          {distribucion.map((d, index) => (
-            <View key={d.codigoCliente} style={styles.clientRow}>
-              <View style={styles.clientInfo}>
-                <Text variant="bodyLarge" style={{ fontWeight: "600" }}>
-                  {index + 1}. {d.codigoCliente}
-                </Text>
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.onSurfaceVariant }}
-                >
-                  Solicitado: {d.cantidadSolicitada}
-                </Text>
-              </View>
-              <TextInput
-                value={d.cantidadAsignada.toString()}
-                onChangeText={(val) => updateClienteAmount(index, val)}
-                keyboardType="number-pad"
-                style={[
-                  styles.clientInput,
-                  { backgroundColor: theme.colors.surface },
-                ]}
-                contentStyle={styles.clientInputContent}
-                mode="outlined"
-              />
+        {distribucion.map((d, index) => (
+          <View key={d.codigoCliente} style={styles.clientRow}>
+            <View style={styles.clientInfo}>
+              <Text style={styles.clientName} numberOfLines={1}>
+                {`${index + 1}. ${d.codigoCliente}`}
+              </Text>
+              <Text style={styles.caption}>
+                {t("preparacion.ui.requestedAmount", { qty: d.cantidadSolicitada })}
+              </Text>
             </View>
-          ))}
-
-          <View style={styles.totalRow}>
-            <Text
-              variant="bodyLarge"
-              style={{
-                fontWeight: "bold",
-                color: distribucionValida ? status.positive.base : status.negative.base,
-              }}
-            >
-              {distribucionValida ? "✓" : "⚠"} Total distribuido:{" "}
-              {totalDistribuido} / {parsedCantidad}
-            </Text>
+            <QuantityField
+              value={d.cantidadAsignada.toString()}
+              onChangeText={(val) => updateClienteAmount(index, val)}
+              accessibilityLabel={`${d.codigoCliente}, ${t("preparacion.ui.requestedAmount", {
+                qty: d.cantidadSolicitada,
+              })}`}
+            />
           </View>
+        ))}
+
+        {/* Meaning from the icon as well as the colour. */}
+        <View style={styles.totalRow} accessibilityRole="summary">
+          <Icon
+            source={distribucionValida ? "check-circle" : "alert-circle"}
+            size={20}
+            color={distributionTone.base}
+          />
+          <Text style={[styles.totalText, { color: distributionTone.base }]}>
+            {t("preparacion.ui.totalDistributed", {
+              distributed: totalDistribuido,
+              total: parsedCantidad,
+            })}
+          </Text>
         </View>
 
         {/* Observation (required when there's a difference) */}
         {hayDiferencia && !excedido && (
           <View style={styles.section}>
-            <Divider style={{ marginBottom: 16 }} />
+            <Text style={styles.overline}>{t("preparacion.ui.observationRequired")}</Text>
             <TextInput
-              label="Observación (requerida)"
               value={observacion}
               onChangeText={setObservacion}
-              mode="outlined"
               multiline
               numberOfLines={3}
-              placeholder="Razón de la diferencia..."
-              style={{ backgroundColor: theme.colors.surface }}
+              placeholder={t("preparacion.ui.observationPlaceholder")}
+              placeholderTextColor={theme.custom.colors.inkTertiary}
+              accessibilityLabel={t("preparacion.ui.observationRequired")}
+              style={styles.observation}
+              selectionColor={theme.custom.colors.tint}
             />
           </View>
         )}
       </ScrollView>
 
-      {/* Fixed bottom action bar */}
-      <View
-        style={[
-          styles.bottomBar,
-          {
-            backgroundColor: theme.colors.surface,
-            borderTopColor: theme.custom.colors.hairline,
-          },
-        ]}
-      >
-        <Button
-          mode="outlined"
-          onPress={onCancel}
-          style={styles.bottomButton}
-          disabled={loading}
-        >
-          Cancelar
-        </Button>
-        <Button
-          mode="contained"
-          onPress={handleConfirm}
-          style={styles.bottomButton}
-          disabled={!canConfirm}
-          loading={loading}
-          icon="check"
-        >
-          Confirmar
-        </Button>
-      </View>
+      <PrepFooter
+        label={t("common.confirm")}
+        icon="check"
+        onPress={handleConfirm}
+        disabled={!canConfirm && !loading}
+        loading={loading}
+        secondary={{ label: t("common.cancel"), onPress: onCancel, disabled: loading }}
+      />
     </KeyboardAvoidingView>
   );
 };
 
-const createStyles = (theme: CustomTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
-  },
-  productHeader: {
-    padding: 16,
-    borderBottomWidth: theme.custom.hairline,
-    borderBottomColor: theme.custom.colors.hairline,
-  },
-  section: {
-    padding: 16,
-  },
-  stepperRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    gap: 12,
-  },
-  stepperButton: {
-    minWidth: 48,
-    minHeight: 48,
-  },
-  stepperButtonContent: {
-    minHeight: 48,
-  },
-  quantityInput: {
-    flex: 1,
-    maxWidth: 140,
-    textAlign: "center",
-  },
-  quantityInputContent: {
-    ...theme.custom.type.figure(32),
-    textAlign: "center",
-  },
-  warningRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-    gap: 6,
-  },
-  warningText: {
-    color: theme.custom.status.warning.base,
-    fontWeight: "600",
-  },
-  clientRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 8,
-    minHeight: 48,
-  },
-  clientInfo: {
-    flex: 1,
-    marginRight: 12,
-  },
-  clientInput: {
-    width: 90,
-    textAlign: "center",
-  },
-  clientInputContent: {
-    ...theme.custom.type.figure(18),
-    textAlign: "center",
-  },
-  totalRow: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: theme.custom.hairline,
-    borderTopColor: theme.custom.colors.hairline,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
-    borderTopWidth: theme.custom.hairline,
-  },
-  bottomButton: {
-    flex: 1,
-    minHeight: 48,
-  },
-});
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, spacing, type, radius, hairline, touchTarget } = theme.custom;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      paddingBottom: spacing.xxl,
+    },
+    hero: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.lg,
+      gap: spacing.xs,
+    },
+    overline: {
+      ...type.overline,
+    },
+    title: {
+      ...type.largeTitle,
+    },
+    meta: {
+      ...type.bodySmall,
+    },
+    caption: {
+      ...type.caption,
+    },
+    section: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xl,
+      gap: spacing.md,
+    },
+    labelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    labelFigure: {
+      ...type.figure(17),
+    },
+    statusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    statusText: {
+      ...type.bodySmall,
+      fontWeight: "600",
+      flexShrink: 1,
+    },
+    listHeader: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xxl,
+      paddingBottom: spacing.md,
+      gap: spacing.xs,
+    },
+    rowsTop: {
+      height: hairline,
+      backgroundColor: colors.hairline,
+    },
+    clientRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.sm,
+      minHeight: touchTarget + spacing.lg,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    clientInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    clientName: {
+      ...type.rowTitle,
+    },
+    totalRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: spacing.sm,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.md,
+    },
+    totalText: {
+      ...type.figure(15),
+    },
+    observation: {
+      ...type.body,
+      minHeight: 96,
+      padding: spacing.md,
+      textAlignVertical: "top",
+      borderRadius: radius.control,
+      backgroundColor: colors.fill,
+    },
+  });
+};
 
 export default DistributionForm;

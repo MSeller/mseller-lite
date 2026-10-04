@@ -1,41 +1,25 @@
 import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { RefreshControl, ScrollView, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Card,
-  Chip,
-  Icon,
-  ProgressBar,
-  Snackbar,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import { useTheme } from "react-native-paper";
 import type { CustomTheme } from "@/constants/Theme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
 import { preparacionService } from "../../services/preparacionService";
+import { RutaPreparacion } from "../../types/preparacion";
+import { routeStatusLabelKey, describeRouteListError, type RouteListFailure } from "../../utils/routeStatus";
+import { useBottomTabOverflow } from "../ui/TabBarBackground";
 import {
-  RutaPreparacion,
-  RutaPreparacionStatus,
-} from "../../types/preparacion";
-import { RUTA_STATUS_TONE } from "../../utils/routeStatus";
-
-const statusLabel: Record<RutaPreparacionStatus, string> = {
-  borrador: "Borrador",
-  confirmada: "Confirmada",
-  en_preparacion: "En Preparación",
-  lista_despacho: "Lista Despacho",
-  en_ruta: "En Ruta",
-  completada: "Completada",
-  cancelada: "Cancelada",
-};
+  RouteListEmpty,
+  RouteListError,
+  RouteListFailureState,
+  RouteListHeader,
+  RouteListOverline,
+  RouteListSkeleton,
+  RouteRow,
+  RouteRowSeparator,
+} from "./RouteListParts";
 
 interface PickingRoutesScreenProps {
   /** Rendered above the title, under the status bar — the Rutas section switcher. */
@@ -49,7 +33,9 @@ interface PickingRoutesScreenProps {
 
 export default function PickingRoutesScreen({ headerAccessory, mode = "picking" }: PickingRoutesScreenProps) {
   const theme = useTheme() as CustomTheme;
-  const styles = useMemo(() => createStyles(theme), [theme]);
+  // iOS draws the tab bar over the list; this is how much of the bottom it covers.
+  const tabOverflow = useBottomTabOverflow();
+  const styles = useMemo(() => createStyles(theme, tabOverflow), [theme, tabOverflow]);
   const router = useRouter();
   const { t } = useTranslation();
   const { can, loading: accessLoading } = useNavigationAccess();
@@ -57,18 +43,17 @@ export default function PickingRoutesScreen({ headerAccessory, mode = "picking" 
   const [rutas, setRutas] = useState<RutaPreparacion[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState("");
+  const [failure, setFailure] = useState<RouteListFailure | null>(null);
 
   const loadRutas = useCallback(async () => {
     try {
-      setError("");
       const data = await preparacionService.getRutasPreparacion();
       setRutas(mode === "loading" ? data.filter((ruta) => ruta.status === "lista_despacho") : data);
+      // Cleared only once a load answers, so retrying a failed list never flashes "no routes".
+      setFailure(null);
     } catch (err: any) {
       console.error("Error loading rutas:", err);
-      setError(
-        err.response?.data?.message || err.message || t("preparacion.errorLoading")
-      );
+      setFailure(describeRouteListError(err, t("preparacion.errorLoading")));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -99,14 +84,18 @@ export default function PickingRoutesScreen({ headerAccessory, mode = "picking" 
   const copy =
     mode === "loading"
       ? {
-          title: `🚚 ${t("preparacion.loadingListTitle")}`,
+          title: t("preparacion.loadingListTitle"),
           subtitle: t("preparacion.loadingListSubtitle"),
           empty: t("preparacion.noRoutesToLoad"),
+          emptyBody: t("preparacion.list.emptyLoadingBody"),
+          emptyIcon: "truck-outline",
         }
       : {
-          title: `📦 ${t("preparacion.title")}`,
+          title: t("preparacion.title"),
           subtitle: t("preparacion.subtitle"),
           empty: t("preparacion.noRoutes"),
+          emptyBody: t("preparacion.list.emptyBody"),
+          emptyIcon: "package-variant-closed",
         };
 
   const getProgress = (ruta: RutaPreparacion) =>
@@ -114,135 +103,75 @@ export default function PickingRoutesScreen({ headerAccessory, mode = "picking" 
       ? ruta.productosPreparados / ruta.totalProductos
       : 0;
 
-  const renderRutaCard = (ruta: RutaPreparacion) => {
-    const label = statusLabel[ruta.status] ?? statusLabel.borrador;
-    const tone = theme.custom.status[RUTA_STATUS_TONE[ruta.status] ?? "neutral"];
-    const progress = getProgress(ruta);
+  const renderRuta = (ruta: RutaPreparacion, index: number) => {
+    const status = t(routeStatusLabelKey(ruta.status));
+    const counts = [
+      t("preparacion.list.orderCount", { count: ruta.totalPedidos }),
+      t("preparacion.list.productCount", { count: ruta.totalProductos }),
+    ].join(" · ");
+    const accessibilityLabel = [
+      t("preparacion.list.a11yRoute", { ruta: ruta.noRuta }),
+      status,
+      ruta.distribuidor,
+      counts,
+      t("preparacion.list.a11yProgress", {
+        done: ruta.productosPreparados,
+        total: ruta.totalProductos,
+      }),
+    ]
+      .filter(Boolean)
+      .join(", ");
 
     return (
-      <TouchableOpacity
-        key={ruta.rutaId}
-        onPress={() => handleRutaPress(ruta)}
-        activeOpacity={0.7}
-        style={styles.cardTouchable}
-      >
-        <Card elevation={0}
-          style={[styles.card, { backgroundColor: theme.colors.surface }]}
-        >
-          <Card.Content>
-            <View style={styles.cardHeader}>
-              <Text
-                variant="titleMedium"
-                style={{ fontWeight: "bold", color: theme.colors.onSurface }}
-              >
-                {ruta.noRuta}
-              </Text>
-              <Chip
-                style={{ backgroundColor: tone.container }}
-                textStyle={[styles.chipText, { color: tone.onContainer }]}
-                compact
-              >
-                {label}
-              </Chip>
-            </View>
-
-            <View style={styles.cardMeta}>
-              <View style={styles.metaItem}>
-                <Icon source="truck" size={16} color={theme.colors.onSurfaceVariant} />
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.onSurfaceVariant, marginLeft: 4 }}
-                >
-                  {ruta.distribuidor}
-                </Text>
-              </View>
-              <View style={styles.metaItem}>
-                <Icon source="package-variant" size={16} color={theme.colors.onSurfaceVariant} />
-                <Text
-                  variant="bodySmall"
-                  style={{ color: theme.colors.onSurfaceVariant, marginLeft: 4 }}
-                >
-                  {ruta.totalPedidos} {t("preparacion.orders")} · {ruta.totalProductos} {t("preparacion.products")}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.progressRow}>
-              <ProgressBar
-                progress={progress}
-                color={progress >= 1 ? theme.custom.status.positive.base : theme.colors.primary}
-                style={styles.progressBar}
-              />
-              <Text
-                variant="bodySmall"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  marginTop: 4,
-                  textAlign: "right",
-                }}
-              >
-                {ruta.productosPreparados}/{ruta.totalProductos} {t("preparacion.prepared")}
-              </Text>
-            </View>
-          </Card.Content>
-        </Card>
-      </TouchableOpacity>
+      <React.Fragment key={ruta.rutaId}>
+        {index > 0 && <RouteRowSeparator />}
+        <RouteRow
+          title={ruta.noRuta}
+          status={ruta.status}
+          lines={[ruta.distribuidor, counts].filter(Boolean)}
+          progress={getProgress(ruta)}
+          progressFigure={`${ruta.productosPreparados}/${ruta.totalProductos}`}
+          progressLabel={t("preparacion.prepared")}
+          accessibilityLabel={accessibilityLabel}
+          onPress={() => handleRutaPress(ruta)}
+        />
+      </React.Fragment>
     );
   };
 
-  // Loading skeletons
-  if (loading && rutas.length === 0) {
+  const renderBody = () => {
+    if (loading && rutas.length === 0) return <RouteListSkeleton />;
+    // With no rows to fall back on, why the list could not load fills the screen.
+    if (rutas.length === 0) {
+      if (failure) {
+        return (
+          <RouteListFailureState
+            failure={failure}
+            disabledTitle={t("preparacion.list.disabledTitle")}
+            disabledBody={t("preparacion.list.disabledBody")}
+            failedTitle={t("preparacion.list.failedTitle")}
+            onRetry={loadRutas}
+          />
+        );
+      }
+      return (
+        <RouteListEmpty icon={copy.emptyIcon} title={copy.empty} message={copy.emptyBody} />
+      );
+    }
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-        edges={["top", "left", "right"]}
-      >
-        {headerAccessory}
-        <View style={styles.headerContainer}>
-          <Text variant="headlineSmall" style={{ fontWeight: "bold" }}>
-            {copy.title}
-          </Text>
-        </View>
-        {[1, 2, 3].map((i) => (
-          <Card elevation={0}
-            key={i}
-            style={[
-              styles.card,
-              styles.skeletonCard,
-              { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-          >
-            <Card.Content>
-              <View style={[styles.skeletonLine, { width: "60%" }]} />
-              <View style={[styles.skeletonLine, { width: "80%", marginTop: 8 }]} />
-              <View style={[styles.skeletonLine, { width: "40%", marginTop: 8 }]} />
-            </Card.Content>
-          </Card>
-        ))}
-      </SafeAreaView>
+      <>
+        <RouteListOverline label={t("preparacion.list.count", { count: rutas.length })} />
+        {rutas.map(renderRuta)}
+      </>
     );
-  }
+  };
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={["top", "left", "right"]}
-    >
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {headerAccessory}
-      <View style={styles.headerContainer}>
-        <Text
-          variant="headlineSmall"
-          style={{ fontWeight: "bold", color: theme.colors.onBackground }}
-        >
-          {copy.title}
-        </Text>
-        <Text
-          variant="bodyMedium"
-          style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
-        >
-          {copy.subtitle}
-        </Text>
-      </View>
+      <RouteListHeader title={copy.title} subtitle={copy.subtitle} />
+
+      {!!failure && rutas.length > 0 && <RouteListError message={failure.message} onRetry={loadRutas} />}
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -250,104 +179,22 @@ export default function PickingRoutesScreen({ headerAccessory, mode = "picking" 
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
       >
-        {rutas.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Icon
-              source="package-variant-closed"
-              size={64}
-              color={theme.colors.onSurfaceVariant}
-            />
-            <Text
-              variant="titleMedium"
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                marginTop: 16,
-                textAlign: "center",
-              }}
-            >
-              {copy.empty}
-            </Text>
-          </View>
-        ) : (
-          rutas.map(renderRutaCard)
-        )}
+        {renderBody()}
       </ScrollView>
-
-      <Snackbar
-        visible={!!error}
-        onDismiss={() => setError("")}
-        duration={4000}
-        action={{
-          label: "Reintentar",
-          onPress: () => {
-            setError("");
-            loadRutas();
-          },
-        }}
-      >
-        {error}
-      </Snackbar>
     </SafeAreaView>
   );
 }
 
-const createStyles = (theme: CustomTheme) => StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  headerContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 12,
-  },
-  scrollContent: {
-    padding: 16,
-    paddingTop: 0,
-    paddingBottom: 100,
-  },
-  cardTouchable: {
-    marginBottom: 12,
-  },
-  card: {
-    borderRadius: theme.custom.radius.container,
-  },
-  chipText: {
-    ...theme.custom.type.caption,
-    fontWeight: "600",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  cardMeta: {
-    gap: 6,
-    marginBottom: 12,
-  },
-  metaItem: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  progressRow: {
-    marginTop: 4,
-  },
-  progressBar: {
-    height: 6,
-    borderRadius: 3,
-  },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 64,
-  },
-  skeletonCard: {
-    marginHorizontal: 16,
-    marginBottom: 12,
-  },
-  skeletonLine: {
-    height: 14,
-    borderRadius: theme.custom.radius.tag,
-    backgroundColor: theme.custom.colors.hairline,
-  },
-});
+const createStyles = (theme: CustomTheme, tabOverflow: number) => {
+  const { colors, spacing } = theme.custom;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
+      paddingBottom: spacing.xxl + tabOverflow,
+    },
+  });
+};

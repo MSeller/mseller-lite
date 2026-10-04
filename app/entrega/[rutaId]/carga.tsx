@@ -1,36 +1,40 @@
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { FlatList, Pressable, RefreshControl, StyleSheet, useWindowDimensions, View } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
-  Button,
-  Card,
-  Checkbox,
-  Chip,
   Dialog,
-  Divider,
   Icon,
   Portal,
-  ProgressBar,
   Snackbar,
   Text,
   TextInput,
   useTheme,
 } from "react-native-paper";
 
-import type { CustomTheme } from "@/constants/Theme";
+import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
 import { entregaService } from "../../../services/entregaService";
 import { CargaCliente, CargaResponse, ItemCargaFaltante } from "../../../types/preparacion";
+import { EntregaHeader } from "../../../components/entrega/EntregaHeader";
+import EmptyState from "../../../components/ui/EmptyState";
+import GradientButton from "../../../components/ui/GradientButton";
 import { PendientesFacturarBanner } from "../../../components/entrega/PendientesFacturarBanner";
+import BrandGradient from "../../../components/ui/BrandGradient";
+import StatusChip from "../../../components/ui/StatusChip";
 import { puedeSalirARuta } from "../../../utils/entregaAttempts";
 import { vehiculoLabel } from "../../../utils/mapLinks";
+import AppButton from "../../../components/ui/AppButton";
 
 export default function CargaScreen() {
   const theme = useTheme() as CustomTheme;
-  const styles = useMemo(() => createStyles(theme), [theme]);
-  const { status } = theme.custom;
+  const { width } = useWindowDimensions();
+  const gutter = gutterFor(width);
+  const styles = useMemo(() => createStyles(theme, gutter), [theme, gutter]);
+  const { status, colors } = theme.custom;
+  // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId } = useLocalSearchParams<{ rutaId: string }>();
@@ -208,16 +212,13 @@ export default function CargaScreen() {
     const productos = item.productos ?? [];
     const checked = checkedCount(item);
     const complete = allChecked(item);
-    const missing = productos.length - checked;
 
     const isDeclined = !!declined[item.rutaDetalleId];
     const reason = isDeclined ? declined[item.rutaDetalleId] : item.conIncidencia ? item.cargaObservacion : undefined;
     const locked = item.confirmado || isDeclined;
 
-    const tone = isDeclined ? status.negative : item.confirmado && !item.conIncidencia ? status.positive : status.warning;
-    const pillBg = tone.container;
-    const pillFg = tone.onContainer;
-    const statusColor = tone.base;
+    const toneKey = isDeclined ? "negative" : item.confirmado && !item.conIncidencia ? "positive" : "warning";
+    const tone = status[toneKey];
     const pillText = isDeclined
       ? t("entrega.declined")
       : item.confirmado
@@ -225,74 +226,93 @@ export default function CargaScreen() {
           ? t("entrega.loadedWithIssueShort")
           : t("entrega.loaded")
         : t("entrega.pending");
-    const pillIcon = isDeclined ? "close-circle" : item.confirmado ? "check" : "clock-outline";
 
     return (
-      <Card elevation={0}
-        style={[
-          styles.card,
-          { backgroundColor: theme.colors.surface, borderLeftColor: statusColor, opacity: locked ? 0.8 : 1 },
-        ]}
-      >
-        <Pressable onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}>
-          <Card.Content style={styles.cardContent}>
-            <View style={styles.header}>
-              <View style={[styles.seqBadge, { backgroundColor: statusColor }]}>
-                {isDeclined ? <Icon source="close" size={18} color={theme.custom.colors.background} /> : item.confirmado ? <Icon source="check" size={18} color={theme.custom.colors.background} /> : <Text style={styles.seqText}>{item.secuenciaEntrega}</Text>}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }} numberOfLines={1}>
-                  {item.nombreCliente}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{item.codigoCliente}</Text>
-                {!!item.direccion && (
-                  <View style={styles.addrRow}>
-                    <Icon source="map-marker" size={14} color={theme.colors.onSurfaceVariant} />
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 3, flex: 1 }} numberOfLines={2}>
-                      {item.direccion}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Chip compact icon={pillIcon} style={{ backgroundColor: pillBg }} textStyle={{ color: pillFg, fontSize: theme.custom.type.caption.fontSize, fontWeight: "700" }}>
-                {pillText}
-              </Chip>
-            </View>
-            <View style={styles.metaRow}>
-              <Icon source="file-document-outline" size={18} color={theme.colors.primary} />
-              <Text style={styles.invoiceText} numberOfLines={1}>{item.noFactura}</Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginLeft: 8, flex: 1 }} numberOfLines={1}>· {productos.length} {t("entrega.items")}</Text>
-              {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={22} color={theme.colors.onSurfaceVariant} />}
-            </View>
+      <View style={[styles.stop, isExpanded && styles.stopExpanded]}>
+        <Pressable
+          onPress={() => !locked && setExpandedId((p) => (p === item.rutaDetalleId ? null : item.rutaDetalleId))}
+          disabled={locked}
+          style={({ pressed }) => [styles.stopRow, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isExpanded, disabled: locked }}
+          accessibilityLabel={[
+            t("entrega.ui.loadStopA11y", {
+              seq: item.secuenciaEntrega,
+              customer: item.nombreCliente,
+              invoice: item.noFactura,
+              count: productos.length,
+              status: pillText,
+            }),
+            reason,
+          ]
+            .filter(Boolean)
+            .join(", ")}
+        >
+          <View style={[styles.stateWell, { backgroundColor: tone.container }]}>
+            {isDeclined ? (
+              <Icon source="close" size={18} color={tone.onContainer} />
+            ) : item.confirmado ? (
+              <Icon source="check" size={18} color={tone.onContainer} />
+            ) : (
+              <Text style={[styles.seqText, { color: tone.onContainer }]}>{item.secuenciaEntrega}</Text>
+            )}
+          </View>
+          <View style={styles.stopInfo}>
+            <Text style={styles.stopTitle} numberOfLines={1}>
+              {item.nombreCliente}
+            </Text>
+            <Text style={styles.stopMeta} numberOfLines={1}>
+              {[item.noFactura, item.codigoCliente, t("entrega.ui.itemsCount", { count: productos.length })].join(" · ")}
+            </Text>
+            {!!item.direccion && (
+              <Text style={styles.stopAddress} numberOfLines={2}>
+                {item.direccion}
+              </Text>
+            )}
             {!!reason && (
               <View style={[styles.reasonBox, { backgroundColor: tone.container }]}>
-                <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={14} color={pillFg} />
-                <Text variant="bodySmall" style={{ color: pillFg, marginLeft: 4, flex: 1 }}>{reason}</Text>
+                <Icon source={isDeclined ? "close-circle-outline" : "alert-circle-outline"} size={16} color={tone.onContainer} />
+                <Text style={[styles.reasonText, { color: tone.onContainer }]}>{reason}</Text>
               </View>
             )}
-          </Card.Content>
+          </View>
+          <View style={styles.stopTrailing}>
+            <StatusChip label={pillText} tone={toneKey} />
+            {!locked && <Icon source={isExpanded ? "chevron-up" : "chevron-down"} size={24} color={colors.tint} />}
+          </View>
         </Pressable>
 
         {isExpanded && !locked && (
-          <Card.Content style={styles.cardContentExpanded}>
-            <Divider style={styles.cardDivider} />
-            <Text style={styles.sectionLabel}>
+          <View style={styles.expanded}>
+            <Text style={styles.expandedOverline}>
               {t("entrega.invoiceDetailsLabel")} · {checked}/{productos.length}
             </Text>
             {productos.map((prod, idx) => {
               const isChecked = checkedItems[item.rutaDetalleId]?.has(prod.codigoProducto) ?? false;
+              const name = prod.descripcion || prod.codigoProducto;
               return (
                 <Pressable
                   key={`${prod.codigoProducto}-${idx}`}
                   onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)}
-                  style={[styles.itemCard, { backgroundColor: isChecked ? status.positive.container : theme.custom.colors.fill, borderColor: isChecked ? status.positive.base : "transparent" }]}
+                  style={({ pressed }) => [styles.itemRow, pressed && styles.pressed]}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isChecked }}
+                  accessibilityLabel={t("entrega.ui.loadItemA11y", {
+                    name,
+                    qty: prod.cantidad,
+                    unit: prod.unidad ?? "",
+                  })}
                 >
-                  <Checkbox status={isChecked ? "checked" : "unchecked"} onPress={() => toggleItem(item.rutaDetalleId, prod.codigoProducto)} color={status.positive.base} />
+                  <Icon
+                    source={isChecked ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
+                    size={26}
+                    color={isChecked ? status.positive.base : colors.tint}
+                  />
                   <View style={styles.itemInfo}>
-                    <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: "700", lineHeight: 20 }} numberOfLines={2}>
-                      {prod.descripcion || prod.codigoProducto}
+                    <Text style={[styles.itemName, isChecked && styles.itemNameChecked]} numberOfLines={2}>
+                      {name}
                     </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={1}>{prod.codigoProducto}</Text>
+                    <Text style={styles.itemCode} numberOfLines={1}>{prod.codigoProducto}</Text>
                   </View>
                   <View style={styles.qtyBox}>
                     <Text style={styles.qtyNum}>{prod.cantidad}</Text>
@@ -302,74 +322,162 @@ export default function CargaScreen() {
               );
             })}
 
-            <Button mode="contained" buttonColor={status.positive.base} onPress={() => handleConfirm(item)} loading={isBusy && complete} disabled={!complete || isBusy} icon="truck-check" style={styles.actionBtn} contentStyle={styles.actionBtnContent} labelStyle={styles.actionBtnLabel}>
-              {t("entrega.confirmLoad")}
-            </Button>
             {!complete && (
-              <>
-                <Text variant="bodySmall" style={{ color: theme.custom.status.warning.base, marginTop: 8, marginBottom: 2, textAlign: "center" }}>
-                  {t("entrega.itemsMissing", { count: missing })}
-                </Text>
-                <Button mode="outlined" textColor={theme.custom.status.warning.base} onPress={() => { setIssueNote(""); setIssueTarget(item); }} loading={isBusy && !complete} disabled={isBusy} icon="alert-circle-outline" style={styles.issueBtn}>
-                  {t("entrega.confirmWithIssue")}
-                </Button>
-                <Button mode="outlined" textColor={status.negative.base} onPress={() => { setDeclineNote(""); setDeclineTarget(item); }} disabled={isBusy} icon="close-circle-outline" style={styles.declineBtn}>
-                  {t("entrega.declineInvoice")}
-                </Button>
-              </>
+              <View style={styles.quickActions}>
+                <Pressable
+                  onPress={() => { setIssueNote(""); setIssueTarget(item); }}
+                  disabled={isBusy}
+                  style={styles.quickAction}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isBusy, busy: isBusy }}
+                >
+                  {isBusy ? (
+                    <ActivityIndicator size="small" color={status.warning.base} />
+                  ) : (
+                    <Icon source="alert-circle-outline" size={20} color={status.warning.base} />
+                  )}
+                  <Text style={[styles.quickActionLabel, { color: status.warning.base }]}>{t("entrega.confirmWithIssue")}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setDeclineNote(""); setDeclineTarget(item); }}
+                  disabled={isBusy}
+                  style={styles.quickAction}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isBusy }}
+                >
+                  <Icon source="close-circle-outline" size={20} color={status.negative.base} />
+                  <Text style={[styles.quickActionLabel, { color: status.negative.base }]}>{t("entrega.declineInvoice")}</Text>
+                </Pressable>
+              </View>
             )}
-          </Card.Content>
+          </View>
         )}
-      </Card>
+      </View>
     );
   };
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-        <ActivityIndicator size="large" />
-        <Text variant="bodyLarge" style={{ marginTop: 16, color: theme.colors.onSurfaceVariant }}>{t("common.loading")}</Text>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.tint} />
+        </View>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      {!!veh && (
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Icon source="truck" size={16} color={theme.colors.primary} />
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurface, marginLeft: 6 }}>{veh}</Text>
-          </View>
+  if (!data) {
+    return (
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
+        <EmptyState
+            style={styles.stateView}
+          icon="cloud-off-outline"
+          title={t("entrega.ui.errorTitle")}
+          message={error || t("entrega.errorLoadingCarga")}
+          action={{ label: t("common.retry"), onPress: () => { setLoading(true); loadCarga(); } }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // The footer carries the one primary action in reach: confirming the stop being checked, or,
+  // once every stop is loaded, leaving on the route.
+  const expandedItem = sorted.find(
+    (c) => c.rutaDetalleId === expandedId && !c.confirmado && !declined[c.rutaDetalleId]
+  );
+  const expandedComplete = expandedItem ? allChecked(expandedItem) : false;
+  const expandedBusy = !!expandedItem && busy === expandedItem.rutaDetalleId;
+  const expandedMissing = expandedItem ? (expandedItem.productos ?? []).length - checkedCount(expandedItem) : 0;
+  const showFooter = !!expandedItem || canLeave;
+
+  const listHeader = (
+    <View>
+      <View style={styles.hero}>
+        <View style={styles.heroMeta}>
+          {!!data.noRuta && <Text style={styles.heroOverline}>{data.noRuta}</Text>}
+          {!!veh && (
+            <View style={styles.vehRow}>
+              <Icon source="truck-outline" size={18} color={colors.inkSecondary} />
+              <Text style={styles.vehText} numberOfLines={1}>{veh}</Text>
+            </View>
+          )}
         </View>
-      )}
+        <BrandGradient raised>
+          <View
+            style={styles.summary}
+            accessible
+            accessibilityLabel={`${t("entrega.loadingProgressLabel")}: ${t("entrega.clientsShort", { loaded: loadedC, total: totalC })}`}
+          >
+            <Text style={styles.summaryOverline}>{t("entrega.loadingProgressLabel")}</Text>
+            <Text style={styles.summaryFigure} numberOfLines={1} adjustsFontSizeToFit>
+              {loadedC}
+              <Text style={styles.summaryFigureMuted}>/{totalC}</Text>
+            </Text>
+            <Text style={styles.summaryCaption}>
+              {allLoaded ? t("entrega.allLoaded") : t("entrega.clientsShort", { loaded: loadedC, total: totalC })}
+            </Text>
+            <View style={styles.track}>
+              <View style={[styles.trackFill, { width: `${totalC > 0 ? Math.round((loadedC / totalC) * 100) : 0}%` as const }]} />
+            </View>
+          </View>
+        </BrandGradient>
+      </View>
 
       <PendientesFacturarBanner count={pendientesFacturar} />
 
-      <View style={styles.progress}>
-        <View style={styles.progressHeaderRow}>
-          <Text style={styles.progressLabel}>{t("entrega.loadingProgressLabel")}</Text>
-          <Text style={[styles.progressMetric, { color: allLoaded ? status.positive.base : theme.colors.primary }]}>
-            {t("entrega.clientsShort", { loaded: loadedC, total: totalC })}
-          </Text>
-        </View>
-        <ProgressBar progress={totalC > 0 ? loadedC / totalC : 0} color={allLoaded ? status.positive.base : theme.colors.primary} style={styles.progressBar} />
+      <View style={styles.sectionHeader}>
+        <Text style={styles.overline}>{t("entrega.ui.clientsOverline", { count: sorted.length })}</Text>
       </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      <EntregaHeader title={t("entrega.loadTruck")} onBack={() => router.back()} />
 
       <FlatList
         data={sorted}
         keyExtractor={(item) => String(item.rutaDetalleId)}
         renderItem={renderCard}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-        ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={[styles.listContent, !showFooter && { paddingBottom: theme.custom.spacing.xxl + insets.bottom }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.tint} />}
+        ListEmptyComponent={
+          <EmptyState
+            style={styles.stateView}
+            icon="truck-outline"
+            title={t("entrega.ui.noLoadStops")}
+            message={t("entrega.ui.noLoadStopsBody")}
+            action={{ label: t("common.refresh"), onPress: handleRefresh }}
+          />
+        }
       />
 
-      {canLeave && (
-        <View style={styles.dispatchBar}>
-          <Button mode="contained" buttonColor={status.positive.base} icon="truck-fast" loading={dispatching} disabled={dispatching} onPress={handleDispatch} contentStyle={{ minHeight: 50 }} labelStyle={styles.actionBtnLabel}>
-            {t("entrega.leaveOnRoute")}
-          </Button>
+      {showFooter && (
+        <View style={[styles.footer, { paddingBottom: theme.custom.spacing.md + insets.bottom }]}>
+          {expandedItem ? (
+            <>
+              {!expandedComplete && (
+                <Text style={styles.footerHint}>{t("entrega.itemsMissing", { count: expandedMissing })}</Text>
+              )}
+              <GradientButton
+                icon="truck-check-outline"
+                label={t("entrega.confirmLoad")}
+                disabled={!expandedComplete || expandedBusy}
+                loading={expandedBusy && expandedComplete}
+                onPress={() => handleConfirm(expandedItem)}
+              />
+            </>
+          ) : (
+            <GradientButton
+              icon="truck-fast-outline"
+              label={t("entrega.leaveOnRoute")}
+              loading={dispatching}
+              onPress={handleDispatch}
+            />
+          )}
         </View>
       )}
 
@@ -377,28 +485,24 @@ export default function CargaScreen() {
         <Dialog visible={!!issueTarget} onDismiss={() => setIssueTarget(null)}>
           <Dialog.Title>{t("entrega.confirmWithIssue")}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
-              {t("entrega.issueHint")}
-            </Text>
+            <Text style={styles.dialogHint}>{t("entrega.issueHint")}</Text>
             <TextInput mode="outlined" value={issueNote} onChangeText={setIssueNote} placeholder={t("entrega.issuePlaceholder")} multiline numberOfLines={2} />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setIssueTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor={theme.custom.status.warning.base} onPress={submitIssue}>{t("entrega.confirmWithIssue")}</Button>
+            <AppButton onPress={() => setIssueTarget(null)}>{t("common.cancel")}</AppButton>
+            <AppButton textColor={status.warning.base} onPress={submitIssue}>{t("entrega.confirmWithIssue")}</AppButton>
           </Dialog.Actions>
         </Dialog>
 
         <Dialog visible={!!declineTarget} onDismiss={() => setDeclineTarget(null)}>
           <Dialog.Title>{t("entrega.declineInvoice")}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
-              {t("entrega.declineHint")}
-            </Text>
+            <Text style={styles.dialogHint}>{t("entrega.declineHint")}</Text>
             <TextInput mode="outlined" value={declineNote} onChangeText={setDeclineNote} placeholder={t("entrega.reasonPlaceholder")} multiline numberOfLines={2} />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</Button>
-            <Button textColor={status.negative.base} onPress={handleDecline}>{t("entrega.declineInvoice")}</Button>
+            <AppButton onPress={() => setDeclineTarget(null)}>{t("common.cancel")}</AppButton>
+            <AppButton textColor={status.negative.base} onPress={handleDecline}>{t("entrega.declineInvoice")}</AppButton>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -409,44 +513,117 @@ export default function CargaScreen() {
   );
 }
 
-const PROGRESS_BAR_HEIGHT = 8;
 const PENDING_INVOICE_POLL_MS = 30_000;
+const STATE_WELL_SIZE = 36;
+const TRACK_HEIGHT = 6;
 
-const createStyles = (theme: CustomTheme) => {
-  const { colors, radius, type, surface } = theme.custom;
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, radius, spacing, type, surface, hairline, touchTarget } = theme.custom;
   return StyleSheet.create({
-    container: { flex: 1 },
+    // Fills the screen and centres the empty or error state in it.
+    stateView: { flex: 1 },
+    container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-    infoCard: { ...surface.card, marginHorizontal: 16, marginTop: 12, padding: 12, gap: 4 },
-    infoRow: { flexDirection: "row", alignItems: "center" },
-    progress: { ...surface.card, marginHorizontal: 16, marginTop: 12, marginBottom: 4, padding: 16 },
-    progressHeaderRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-    progressLabel: { ...type.caption, fontWeight: "600", color: colors.inkSecondary },
-    progressMetric: { ...type.overline, fontWeight: "800" },
-    progressBar: { height: PROGRESS_BAR_HEIGHT, borderRadius: PROGRESS_BAR_HEIGHT / 2 },
-    card: { borderRadius: radius.container, borderLeftWidth: 5 },
-    cardContent: { paddingVertical: 14, paddingHorizontal: 16 },
-    cardContentExpanded: { paddingTop: 2, paddingBottom: 16, paddingHorizontal: 16 },
-    header: { flexDirection: "row", alignItems: "center", gap: 12 },
-    seqBadge: { width: 38, height: 38, borderRadius: radius.segment, justifyContent: "center", alignItems: "center" },
-    // Drawn on the solid status tone, so it takes the page colour (white in light, near-black in dark).
-    seqText: { ...type.figure(15), color: colors.background },
-    metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
-    addrRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 3 },
-    reasonBox: { flexDirection: "row", alignItems: "flex-start", marginTop: 8, padding: 8, borderRadius: radius.segment },
-    dispatchBar: { ...surface.floating, padding: 16 },
-    invoiceText: { ...type.rowTitle, marginLeft: 6 },
-    cardDivider: { marginTop: 12, marginBottom: 10 },
-    sectionLabel: { ...type.overline, marginBottom: 10 },
-    itemCard: { flexDirection: "row", alignItems: "center", borderRadius: radius.segment, borderWidth: 1, paddingVertical: 8, paddingLeft: 4, paddingRight: 10, marginBottom: 8, minHeight: 64 },
-    itemInfo: { flex: 1, marginLeft: 2, marginRight: 8 },
-    qtyBox: { minWidth: 48, alignItems: "center", justifyContent: "center", paddingLeft: 8 },
-    qtyNum: type.figure(24),
-    qtyUnit: { ...type.overline, marginTop: 1 },
-    actionBtn: { marginTop: 8, borderRadius: radius.control },
-    actionBtnContent: { minHeight: 50 },
-    actionBtnLabel: { fontSize: type.bodySmall.fontSize, fontWeight: "700", letterSpacing: 0.3 },
-    issueBtn: { marginTop: 8, borderRadius: radius.control, borderColor: theme.custom.status.warning.base },
-    declineBtn: { marginTop: 8, borderRadius: radius.control, borderColor: theme.custom.status.negative.base },
+    pressed: { backgroundColor: colors.fill },
+    hero: { paddingHorizontal: gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg, gap: spacing.md },
+    heroMeta: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: spacing.md },
+    heroOverline: { ...type.overline },
+    vehRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, flexShrink: 1 },
+    vehText: { ...type.bodySmall, flexShrink: 1 },
+    summary: { padding: spacing.xl, gap: spacing.sm },
+    summaryOverline: { ...type.overline, color: colors.onGradientSecondary },
+    summaryFigure: { ...type.figure(34), color: colors.onGradient },
+    summaryFigureMuted: { ...type.figure(22), color: colors.onGradientSecondary },
+    summaryCaption: { ...type.bodySmall, color: colors.onGradientSecondary },
+    // A divider-tone rail with a white fill; the radius is half its own height (geometry).
+    track: {
+      height: TRACK_HEIGHT,
+      borderRadius: TRACK_HEIGHT / 2,
+      backgroundColor: colors.onGradientDivider,
+      overflow: "hidden",
+      marginTop: spacing.xs,
+    },
+    trackFill: { height: TRACK_HEIGHT, backgroundColor: colors.onGradient },
+    sectionHeader: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    overline: { ...type.overline },
+    listContent: { flexGrow: 1, paddingBottom: spacing.xxl },
+    stop: { borderBottomWidth: hairline, borderBottomColor: colors.hairline },
+    stopExpanded: { backgroundColor: colors.surfaceRaised },
+    stopRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget,
+    },
+    // A status-tinted disc: the sequence number until loaded, then the outcome. The radius is
+    // half the disc's own size (geometry, not a token).
+    stateWell: {
+      width: STATE_WELL_SIZE,
+      height: STATE_WELL_SIZE,
+      borderRadius: STATE_WELL_SIZE / 2,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    seqText: { ...type.figure(type.bodySmall.fontSize ?? 15) },
+    stopInfo: { flex: 1, gap: spacing.xs },
+    stopTitle: { ...type.rowTitle },
+    stopMeta: { ...type.caption },
+    stopAddress: { ...type.bodySmall, color: colors.inkSecondary },
+    stopTrailing: { alignItems: "flex-end", gap: spacing.sm },
+    reasonBox: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      padding: spacing.sm,
+      borderRadius: radius.tag,
+    },
+    reasonText: { ...type.caption, flex: 1 },
+    expanded: { paddingBottom: spacing.sm },
+    expandedOverline: {
+      ...type.overline,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.sm,
+    },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget + spacing.md,
+      borderTopWidth: hairline,
+      borderTopColor: colors.hairline,
+    },
+    itemInfo: { flex: 1 },
+    itemName: { ...type.body },
+    itemNameChecked: { color: colors.inkSecondary },
+    itemCode: { ...type.caption },
+    qtyBox: { minWidth: touchTarget, alignItems: "flex-end", justifyContent: "center" },
+    qtyNum: type.figure(22),
+    qtyUnit: { ...type.overline },
+    quickActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      columnGap: spacing.xl,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.sm,
+      borderTopWidth: hairline,
+      borderTopColor: colors.hairline,
+    },
+    quickAction: { flexDirection: "row", alignItems: "center", gap: spacing.sm, minHeight: touchTarget },
+    quickActionLabel: { ...type.body },
+    footer: { ...surface.floating, paddingHorizontal: gutter, paddingTop: spacing.md, gap: spacing.sm },
+    footerHint: { ...type.caption, textAlign: "center", color: colors.warningForeground },
+    dialogHint: { ...type.bodySmall, marginBottom: spacing.sm },
   });
 };

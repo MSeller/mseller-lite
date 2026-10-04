@@ -1,22 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Button,
-  Card,
-  Chip,
-  IconButton,
-  Paragraph,
-  SegmentedButtons,
-  Surface,
-  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
   TextInput,
-  useTheme,
-} from "react-native-paper";
+  useWindowDimensions,
+  View,
+} from "react-native";
+import { ActivityIndicator, FAB, Icon, IconButton, Menu, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CustomTheme } from "../../constants/Theme";
+import { gutterFor, type CustomTheme } from "../../constants/Theme";
 import { useBarcodeScanner } from "../../hooks/useBarcodeScanner";
+import { useProductAccess } from "../../hooks/useProductAccess";
 import { useTranslation } from "../../hooks/useTranslation";
 import {
   searchProducts,
@@ -24,8 +20,25 @@ import {
   searchProductsByText,
 } from "../../services/ProductService";
 import type { Product } from "../../types/inventory";
+import { formatMoney, productDisplayName } from "../../utils/documentFormat";
+import CatalogCreateModal from "../catalog/CatalogCreateModal";
+import NewProductForm from "../documents/create/NewProductForm";
+import BarcodeScanSheet from "../scan/BarcodeScanSheet";
+import StatusChip from "../ui/StatusChip";
+import { useBottomTabOverflow } from "../ui/TabBarBackground";
+import EmptyState, { type EmptyStateAction } from "../ui/EmptyState";
+import { stockOf, stockTone } from "../../utils/productStock";
 
 type SearchType = "barcode" | "code" | "text";
+
+const SEARCH_TYPES: { value: SearchType; icon: string }[] = [
+  { value: "barcode", icon: "barcode-scan" },
+  { value: "code", icon: "pound" },
+  { value: "text", icon: "format-text" },
+];
+
+/** Nothing matched, or the lookup itself failed — different titles and different next steps. */
+type SearchProblem = { kind: "notFound" } | { kind: "failed"; message: string };
 
 interface ProductScreenProps {
   onProductSelect: (product: Product) => void;
@@ -33,29 +46,55 @@ interface ProductScreenProps {
   headerAccessory?: React.ReactNode;
 }
 
+/**
+ * Inventario › Productos: look a product up by barcode, code or name and open its prices
+ * and stock. Every role reaches it; registering a product from here follows the Consumo
+ * API's rule (`useProductAccess`).
+ */
 const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAccessory }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
-  const styles = createStyles(theme);
+  const { width } = useWindowDimensions();
+  const gutter = gutterFor(width);
+  const styles = useMemo(() => createStyles(theme, gutter), [theme, gutter]);
+  const { colors } = theme.custom;
+  // iOS draws the tab bar over the screen; this is how much of the bottom it covers.
+  const tabOverflow = useBottomTabOverflow();
+  const { canCreateProducts } = useProductAccess();
+
   const [searchValue, setSearchValue] = useState("");
   const [searchType, setSearchType] = useState<SearchType>("barcode");
+  const [modeMenuOpen, setModeMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Product[] | null>(null);
-  const [error, setError] = useState("");
+  const [problem, setProblem] = useState<SearchProblem | null>(null);
+  // What the last lookup asked for, so a barcode that matched nothing can pre-fill the new product.
+  const [lastQuery, setLastQuery] = useState<{ value: string; type: SearchType } | null>(null);
   const [isAutoSearching, setIsAutoSearching] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Barcode scanner detection (legacy - for backwards compatibility)
   const barcodeBuffer = useRef("");
   const barcodeTimeout = useRef<any>(null);
   const lastInputTime = useRef(0);
 
+  const clearSearch = useCallback(() => {
+    setSearchValue("");
+    setResults(null);
+    setProblem(null);
+    setLastQuery(null);
+  }, []);
+
   const performSearch = useCallback(
     async (value: string = searchValue, type: SearchType = searchType) => {
       if (!value.trim()) return;
 
       setLoading(true);
-      setError("");
+      setProblem(null);
       setResults(null);
+      setLastQuery({ value: value.trim(), type });
       try {
         let data;
         switch (type) {
@@ -73,23 +112,22 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
         }
         setResults(data.data);
 
-        // If no products found, show a friendly message
         if (data.data.length === 0) {
-          setError(t("errors.noProductsFoundMessage"));
+          setProblem({ kind: "notFound" });
         }
       } catch (e: any) {
-        // Handle different types of errors with user-friendly messages
+        // The lookup answers 404 when nothing matches: that is an empty result, not a failure.
         if (e.response?.status === 404 || e.message?.includes("404")) {
-          setError(t("errors.productNotFoundMessage"));
+          setProblem({ kind: "notFound" });
         } else if (
           e.message?.includes("Network Error") ||
           e.message?.includes("network")
         ) {
-          setError(t("errors.networkError"));
+          setProblem({ kind: "failed", message: t("errors.networkError") });
         } else if (e.message?.includes("timeout")) {
-          setError(t("errors.timeoutError"));
+          setProblem({ kind: "failed", message: t("errors.timeoutError") });
         } else {
-          setError(e.message || t("errors.genericError"));
+          setProblem({ kind: "failed", message: e.message || t("errors.genericError") });
         }
       } finally {
         setLoading(false);
@@ -101,13 +139,9 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
   // Barcode scanner hook callback
   const handleBarcodeScanned = useCallback(
     (scannedData: string) => {
-      console.log("Barcode scanned in ProductScreen:", scannedData);
-
-      // Set search type to barcode and update search value
       setSearchType("barcode");
       setSearchValue(scannedData);
 
-      // Trigger search automatically
       setIsAutoSearching(true);
       performSearch(scannedData, "barcode").finally(() => {
         setIsAutoSearching(false);
@@ -116,10 +150,11 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
     [performSearch]
   );
 
-  // Initialize barcode scanner hook
   const { isReady: scannerReady, isScanning } = useBarcodeScanner({
     onScan: handleBarcodeScanned,
-    enabled: searchType === "barcode",
+    // Off while the camera or the new-product form is open (the form listens to the
+    // scanner for its own barcode field), so one read is not handled twice.
+    enabled: searchType === "barcode" && !cameraOpen && !creating,
     minLength: 3,
   });
 
@@ -133,29 +168,25 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
     const currentTime = Date.now();
     const timeDiff = currentTime - lastInputTime.current;
 
-    // Clear previous timeout
     if (barcodeTimeout.current) {
       clearTimeout(barcodeTimeout.current);
     }
 
     // If time between characters is less than 50ms, it's likely a scanner
     if (timeDiff < 50 && barcodeBuffer.current.length > 0) {
-      barcodeBuffer.current += text.slice(-1); // Only add the last character
+      barcodeBuffer.current += text.slice(-1);
     } else {
       barcodeBuffer.current = text;
     }
 
     lastInputTime.current = currentTime;
 
-    // Set timeout to process the barcode
     barcodeTimeout.current = setTimeout(() => {
       const potentialBarcode = text.trim();
 
       // Check if it looks like a barcode (numeric, reasonable length)
       if (potentialBarcode.length >= 8 && /^\d+$/.test(potentialBarcode)) {
-        // Show auto-search indicator
         setIsAutoSearching(true);
-        // Auto-search when barcode is detected
         performSearch(potentialBarcode, "barcode").finally(() => {
           setIsAutoSearching(false);
         });
@@ -165,7 +196,6 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
     }, 300);
   };
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       if (barcodeTimeout.current) {
@@ -174,400 +204,463 @@ const ProductScreen: React.FC<ProductScreenProps> = ({ onProductSelect, headerAc
     };
   }, []);
 
-  const getSearchPlaceholder = () => {
-    switch (searchType) {
-      case "barcode":
-        return "Código de Barras";
-      case "code":
-        return "Código del Producto";
-      case "text":
-        return "Nombre del Producto";
-      default:
-        return "Código de Barras";
-    }
+  const openCamera = useCallback(() => {
+    setSearchType("barcode");
+    setCameraOpen(true);
+  }, []);
+
+  // The new record opens straight away, like a searched one, so its stock and prices show.
+  const handleCreated = useCallback(
+    (product: Product) => {
+      setCreating(false);
+      onProductSelect(product);
+    },
+    [onProductSelect]
+  );
+
+  const busy = loading || isAutoSearching;
+  const canSubmit = !!searchValue.trim() && !busy;
+  const notFoundBarcode =
+    problem?.kind === "notFound" && lastQuery?.type === "barcode" ? lastQuery.value : undefined;
+  const newProductName = searchType === "text" ? searchValue.trim() : "";
+
+  const scannerCaption = isAutoSearching
+    ? t("products.search.autoSearching")
+    : searchType === "barcode" && scannerReady
+      ? isScanning
+        ? t("products.search.scannerReading")
+        : t("products.search.scannerReady")
+      : "";
+
+  const createAction: EmptyStateAction | undefined = canCreateProducts
+    ? { label: t("documents.newProduct.title"), icon: "plus", onPress: () => setCreating(true) }
+    : undefined;
+
+  const renderRow = (product: Product, index: number) => {
+    const stock = stockOf(product);
+    const stockLabel = t("documents.stockShort", { value: stock });
+    const inactive = product.status === "I";
+    const name = product.nombre ? productDisplayName(product.nombre) : product.codigo;
+    const meta = [product.codigo, product.codigoBarra].filter(Boolean).join(" · ");
+    const spoken = [
+      name,
+      meta,
+      formatMoney(product.precio1),
+      product.esServicio ? null : stockLabel,
+      inactive ? t("catalog.inactive") : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    return (
+      <Pressable
+        key={product.codigo}
+        onPress={() => onProductSelect(product)}
+        style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+        accessibilityRole="button"
+        accessibilityLabel={spoken}
+      >
+        {index > 0 && <View style={styles.separator} />}
+        <View style={styles.rowContent}>
+          <View style={styles.rowIcon}>
+            <Icon
+              source={product.esServicio ? "room-service-outline" : "package-variant-closed"}
+              size={22}
+              color={colors.tint}
+            />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowTitle} numberOfLines={2}>
+              {name}
+            </Text>
+            {!!meta && (
+              <Text style={styles.rowMeta} numberOfLines={1}>
+                {meta}
+              </Text>
+            )}
+            {(!product.esServicio || inactive) && (
+              <View style={styles.chips}>
+                {!product.esServicio && <StatusChip label={stockLabel} tone={stockTone(stock)} />}
+                {inactive && <StatusChip label={t("catalog.inactive")} tone="negative" />}
+              </View>
+            )}
+          </View>
+          <Text style={styles.rowPrice}>{formatMoney(product.precio1)}</Text>
+          <Icon source="chevron-right" size={20} color={colors.inkTertiary} />
+        </View>
+      </Pressable>
+    );
   };
 
-  const getKeyboardType = () => {
-    return searchType === "text" ? "default" : "numeric";
+  const renderBody = () => {
+    if (loading) {
+      return (
+        <View style={styles.loading}>
+          <ActivityIndicator />
+        </View>
+      );
+    }
+    if (problem?.kind === "failed") {
+      return (
+        <EmptyState
+          icon="cloud-alert-outline"
+          title={t("products.search.failedTitle")}
+          message={problem.message}
+          action={{ label: t("common.retry"), icon: "refresh", onPress: () => performSearch() }}
+        />
+      );
+    }
+    if (problem?.kind === "notFound") {
+      return (
+        <EmptyState
+          icon="package-variant-remove"
+          title={t("products.search.notFoundTitle")}
+          message={t(canCreateProducts ? "products.search.notFoundCreateBody" : "products.search.notFoundBody")}
+          action={
+            createAction ?? { label: t("products.search.clear"), icon: "close", onPress: clearSearch }
+          }
+        />
+      );
+    }
+    if (results && results.length > 0) {
+      return (
+        <View>
+          <Text style={styles.overline}>
+            {t("products.search.results", { count: results.length })}
+          </Text>
+          {results.map(renderRow)}
+        </View>
+      );
+    }
+    return (
+      <EmptyState
+        icon="barcode-scan"
+        title={t("products.search.idleTitle")}
+        message={t("products.search.idleBody")}
+        action={{ label: t("scan.scanBarcode"), icon: "camera-outline", onPress: openCamera }}
+      />
+    );
   };
 
   return (
-    <SafeAreaView
-      style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
-      edges={["top", "left", "right"]}
-    >
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       {headerAccessory}
       <ScrollView
-        style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
-        contentContainerStyle={styles.container}
+        style={styles.scroll}
+        contentContainerStyle={{
+          // Room for the create button, so it never covers the last row.
+          paddingBottom: (canCreateProducts ? 96 : theme.custom.spacing.xxl) + tabOverflow,
+        }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Text variant="titleLarge">Búsqueda de Productos</Text>
+        <View style={styles.header}>
+          <Text style={styles.largeTitle} accessibilityRole="header">
+            {t("products.search.title")}
+          </Text>
+          <Text style={styles.subtitle}>{t("products.search.subtitle")}</Text>
+        </View>
 
-            {/* Search Type Selector */}
-            <SegmentedButtons
-              value={searchType}
-              onValueChange={(value) => setSearchType(value as SearchType)}
-              buttons={[
-                {
-                  value: "barcode",
-                  label: "Código Barra",
-                  icon: "barcode-scan",
-                },
-                {
-                  value: "code",
-                  label: "Código",
-                  icon: "barcode-off",
-                },
-                {
-                  value: "text",
-                  label: "Texto",
-                  icon: "format-text",
-                },
-              ]}
-              style={{ marginBottom: 16 }}
-            />
-
-            {/* Scanner Status */}
-            {searchType === "barcode" && scannerReady && (
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  marginBottom: 12,
-                }}
-              >
-                <Chip
-                  icon={isScanning ? "loading" : "barcode-scan"}
-                  style={{
-                    backgroundColor: isScanning
-                      ? theme.colors.secondary
-                      : theme.colors.primaryContainer,
-                  }}
-                  textStyle={{ fontSize: 12 }}
+        <View style={styles.searchBlock}>
+          <View style={styles.well}>
+            <Menu
+              visible={modeMenuOpen}
+              onDismiss={() => setModeMenuOpen(false)}
+              anchor={
+                <Pressable
+                  onPress={() => setModeMenuOpen(true)}
+                  style={styles.modePicker}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("products.search.modeLabel")}: ${t(`products.search.mode.${searchType}`)}`}
                 >
-                  {isScanning ? "Scanning..." : "Scanner Ready"}
-                </Chip>
-              </View>
-            )}
-
+                  <Text style={styles.modeLabel} numberOfLines={1}>
+                    {t(`products.search.modeShort.${searchType}`)}
+                  </Text>
+                  <Icon source="unfold-more-horizontal" size={18} color={colors.tint} />
+                </Pressable>
+              }
+            >
+              {SEARCH_TYPES.map((option) => (
+                <Menu.Item
+                  key={option.value}
+                  title={t(`products.search.mode.${option.value}`)}
+                  leadingIcon={searchType === option.value ? "check" : option.icon}
+                  onPress={() => {
+                    setSearchType(option.value);
+                    setModeMenuOpen(false);
+                  }}
+                />
+              ))}
+            </Menu>
+            <View style={styles.wellDivider} />
             <TextInput
-              label={getSearchPlaceholder()}
               value={searchValue}
               onChangeText={handleTextChange}
-              keyboardType={getKeyboardType()}
-              style={{ marginBottom: 12 }}
-              left={
-                searchType === "barcode" ? (
-                  <TextInput.Icon icon="barcode-scan" />
-                ) : searchType === "code" ? (
-                  <TextInput.Icon icon="barcode-off" />
-                ) : (
-                  <TextInput.Icon icon="format-text" />
-                )
-              }
-              right={
-                searchValue ? (
-                  <TextInput.Icon
-                    icon="close-circle"
-                    onPress={() => {
-                      setSearchValue("");
-                      setResults(null);
-                      setError("");
-                    }}
-                  />
-                ) : null
-              }
+              onSubmitEditing={() => performSearch()}
+              placeholder={t(`products.search.placeholder.${searchType}`)}
+              placeholderTextColor={colors.inkTertiary}
+              keyboardType={searchType === "text" ? "default" : "numeric"}
+              returnKeyType="search"
+              autoCorrect={false}
+              autoCapitalize="none"
+              style={styles.input}
+              selectionColor={colors.tint}
+              accessibilityLabel={t(`products.search.mode.${searchType}`)}
             />
-            <Button
-              icon="magnify"
-              mode="contained"
-              onPress={() => performSearch()}
-              loading={loading || isAutoSearching}
-              disabled={!searchValue.trim() || loading || isAutoSearching}
-            >
-              {isAutoSearching ? "Búsqueda automática..." : "Buscar"}
-            </Button>
-            {error ? (
-              <Card elevation={0}
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: theme.colors.errorContainer,
-                    marginTop: 12,
-                  },
-                ]}
-              >
-                <Card.Content>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <IconButton
-                      icon="alert-circle-outline"
-                      size={24}
-                      iconColor={theme.colors.error}
-                      style={{ margin: 0 }}
-                    />
-                    <Text
-                      variant="titleMedium"
-                      style={{ color: theme.colors.error, flex: 1 }}
-                    >
-                      {t("errors.noProductsFoundTitle")}
-                    </Text>
-                  </View>
-                  <Paragraph
-                    style={{
-                      color: theme.colors.onErrorContainer,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {error}
-                  </Paragraph>
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      marginTop: 12,
-                      marginLeft: 8,
-                    }}
-                  >
-                    <Button
-                      mode="outlined"
-                      onPress={() => {
-                        setError("");
-                        setSearchValue("");
-                        setResults(null);
-                      }}
-                      style={{ marginRight: 8 }}
-                      textColor={theme.colors.error}
-                    >
-                      {t("common.retry")}
-                    </Button>
-                  </View>
-                </Card.Content>
-              </Card>
-            ) : null}
-          </Card.Content>
-        </Card>
-        {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
-        {results && results.length > 0 && (
-          <Card elevation={0} style={styles.card}>
-            <Card.Content>
-              <Text variant="titleLarge" style={styles.sectionTitle}>
-                <IconButton
-                  icon="format-list-bulleted"
-                  size={20}
-                  iconColor={theme.colors.primary}
-                />
-                Resultados ({results.length})
-              </Text>
-              {results.map((prod) => (
-                <TouchableOpacity
-                  key={prod.codigo}
-                  onPress={() => onProductSelect(prod)}
-                  style={styles.resultItem}
-                >
-                  <Surface style={styles.resultCard} elevation={0}>
-                    <View style={styles.resultHeader}>
-                      <Text style={styles.resultTitle} numberOfLines={2}>
-                        {prod.nombre}
-                      </Text>
-                      <IconButton
-                        icon="chevron-right"
-                        size={20}
-                        iconColor={theme.colors.primary}
-                      />
-                    </View>
-                    <View style={styles.resultDetails}>
-                      <View style={styles.resultInfo}>
-                        <Text style={styles.resultLabel}>Código:</Text>
-                        <Text style={styles.resultValue}>{prod.codigo}</Text>
-                      </View>
-                      <View style={styles.resultInfo}>
-                        <Text style={styles.resultLabel}>Código de Barra:</Text>
-                        <Text style={styles.resultValue}>
-                          {prod.codigoBarra}
-                        </Text>
-                      </View>
-                      <View style={styles.resultInfo}>
-                        <Text style={styles.resultLabel}>Precio:</Text>
-                        <Text style={[styles.resultValue, styles.resultPrice]}>
-                          ${prod.precio1.toFixed(2)}
-                        </Text>
-                      </View>
-                      <View style={styles.resultInfo}>
-                        <Text style={styles.resultLabel}>Área:</Text>
-                        <Text style={styles.resultValue}>{prod.area}</Text>
-                      </View>
-                    </View>
-                    {/* Stock summary */}
-                    <View style={styles.stockSummary}>
-                      <Chip
-                        icon="package-variant"
-                        compact
-                        style={styles.stockSummaryChip}
-                      >
-                        {prod.existencias.reduce(
-                          (total, ex) => total + ex.existencia,
-                          0
-                        )}{" "}
-                        unidades
-                      </Chip>
-                      <Chip
-                        icon={
-                          prod.status === "A" ? "check-circle" : "alert-circle"
-                        }
-                        compact
-                        style={[
-                          styles.statusSummaryChip,
-                          {
-                            backgroundColor:
-                              prod.status === "A"
-                                ? theme.colors.primaryContainer
-                                : theme.colors.errorContainer,
-                          },
-                        ]}
-                      >
-                        {prod.status === "A" ? "Activo" : "Inactivo"}
-                      </Chip>
-                    </View>
-                  </Surface>
-                </TouchableOpacity>
-              ))}
-            </Card.Content>
-          </Card>
-        )}
-        {results && results.length === 0 && !loading && !error && (
-          <Card elevation={0}
-            style={[
-              styles.card,
-              { backgroundColor: theme.colors.surfaceVariant },
-            ]}
-          >
-            <Card.Content style={{ alignItems: "center", paddingVertical: 32 }}>
+            {!!searchValue && (
               <IconButton
-                icon="package-variant-off"
-                size={48}
-                iconColor={theme.colors.onSurfaceVariant}
-                style={{ margin: 0, marginBottom: 8 }}
+                icon="close-circle"
+                size={18}
+                iconColor={colors.inkTertiary}
+                onPress={clearSearch}
+                style={styles.wellButton}
+                accessibilityLabel={t("products.search.clear")}
               />
-              <Text
-                variant="titleMedium"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  marginBottom: 8,
-                }}
-              >
-                {t("errors.noProductsFoundTitle")}
-              </Text>
-              <Paragraph
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  textAlign: "center",
-                  marginBottom: 16,
-                }}
-              >
-                {t("errors.noProductsFoundMessage")}
-              </Paragraph>
-              <Button
-                mode="outlined"
-                onPress={() => {
-                  setSearchValue("");
-                  setResults(null);
-                }}
-                icon="magnify"
-              >
+            )}
+            {searchType === "barcode" && (
+              <IconButton
+                icon="barcode-scan"
+                size={22}
+                iconColor={colors.tint}
+                onPress={() => setCameraOpen(true)}
+                style={styles.wellButton}
+                accessibilityLabel={t("scan.scanBarcode")}
+              />
+            )}
+          </View>
+
+          <View style={styles.captionRow}>
+            <View style={styles.caption}>
+              {!!scannerCaption && (
+                <>
+                  <Icon
+                    source={isAutoSearching ? "magnify" : "barcode-scan"}
+                    size={14}
+                    color={colors.inkTertiary}
+                  />
+                  <Text style={styles.captionText} numberOfLines={1}>
+                    {scannerCaption}
+                  </Text>
+                </>
+              )}
+            </View>
+            {/* The numeric keypads have no Return key on iOS, so search stays reachable here. */}
+            <Pressable
+              onPress={() => performSearch()}
+              disabled={!canSubmit}
+              style={styles.searchAction}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canSubmit }}
+              hitSlop={8}
+            >
+              <Icon source="magnify" size={18} color={canSubmit ? colors.tint : colors.inkTertiary} />
+              <Text style={[styles.searchActionLabel, !canSubmit && styles.searchActionDisabled]}>
                 {t("common.search")}
-              </Button>
-            </Card.Content>
-          </Card>
-        )}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {renderBody()}
       </ScrollView>
+
+      {canCreateProducts && (
+        <FAB
+          icon="plus"
+          label={t("documents.newProduct.title")}
+          style={[styles.fab, { bottom: theme.custom.spacing.lg + tabOverflow }]}
+          // Paper reads the content colour from these props, not from `style` —
+          // tinting the background there alone leaves dark text on a dark FAB.
+          color={theme.colors.onPrimary}
+          customSize={56}
+          onPress={() => setCreating(true)}
+        />
+      )}
+
+      <BarcodeScanSheet
+        visible={cameraOpen}
+        onDismiss={() => setCameraOpen(false)}
+        onScan={handleBarcodeScanned}
+        title={t("scan.scanBarcode")}
+      />
+
+      <CatalogCreateModal
+        visible={creating}
+        title={t("documents.newProduct.title")}
+        busy={saving}
+        onDismiss={() => setCreating(false)}
+      >
+        <NewProductForm
+          initialName={newProductName}
+          initialBarcode={notFoundBarcode}
+          onCreated={handleCreated}
+          onBusyChange={setSaving}
+        />
+      </CatalogCreateModal>
     </SafeAreaView>
   );
 };
 
-const createStyles = (theme: CustomTheme) =>
-  StyleSheet.create({
-    container: {
-      padding: 16,
-      paddingTop: 8, // Reduced top padding since SafeAreaView handles safe area
-      paddingBottom: 0, // Remove bottom padding to eliminate gap above tab bar
-    },
-    card: {
-      marginBottom: 16,
-      borderRadius: 12,
-      backgroundColor: theme.colors.surface,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      marginBottom: 12,
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    // Search results styles
-    resultItem: {
-      marginBottom: 8,
-    },
-    resultCard: {
-      padding: 16,
-      borderRadius: 12,
-      backgroundColor: theme.colors.surface,
-    },
-    resultHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 12,
-    },
-    resultTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, type, spacing, radius, hairline, touchTarget } = theme.custom;
+  return StyleSheet.create({
+    safeArea: {
       flex: 1,
-      marginRight: 8,
+      backgroundColor: colors.background,
     },
-    resultDetails: {
-      marginBottom: 12,
+    scroll: {
+      flex: 1,
     },
-    resultInfo: {
+    header: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.sm,
+      gap: spacing.xs,
+    },
+    largeTitle: {
+      ...type.largeTitle,
+    },
+    subtitle: {
+      ...type.bodySmall,
+    },
+    searchBlock: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
+    },
+    well: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingVertical: 4,
+      minHeight: 48,
+      backgroundColor: colors.fill,
+      borderRadius: radius.control,
+      paddingRight: spacing.xs,
     },
-    resultLabel: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
+    modePicker: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      minHeight: touchTarget,
+      paddingLeft: spacing.md,
+      paddingRight: spacing.sm,
+    },
+    modeLabel: {
+      ...type.bodySmall,
       fontWeight: "600",
+      color: colors.tint,
     },
-    resultValue: {
-      fontSize: 14,
-      color: theme.colors.onSurface,
-      fontWeight: "bold",
+    wellDivider: {
+      width: hairline,
+      alignSelf: "stretch",
+      marginVertical: spacing.md,
+      backgroundColor: colors.hairline,
     },
-    resultPrice: {
-      color: theme.colors.primary,
-      fontSize: 16,
+    input: {
+      ...type.body,
+      flex: 1,
+      minHeight: 48,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 0,
     },
-    stockSummary: {
+    wellButton: {
+      margin: 0,
+    },
+    captionRow: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      marginTop: 8,
+      justifyContent: "space-between",
+      gap: spacing.md,
+      minHeight: touchTarget,
     },
-    stockSummaryChip: {
-      backgroundColor: theme.colors.primaryContainer,
+    caption: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
     },
-    statusSummaryChip: {
-      marginLeft: 8,
+    captionText: {
+      ...type.caption,
+      flexShrink: 1,
+    },
+    searchAction: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.xs,
+      minHeight: touchTarget,
+      paddingLeft: spacing.sm,
+    },
+    searchActionLabel: {
+      ...type.bodySmall,
+      fontWeight: "600",
+      color: colors.tint,
+    },
+    searchActionDisabled: {
+      color: colors.inkTertiary,
+    },
+    loading: {
+      paddingVertical: spacing.xxl,
+      alignItems: "center",
+    },
+    overline: {
+      ...type.overline,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.sm,
+      paddingBottom: spacing.xs,
+    },
+    row: {
+      backgroundColor: colors.background,
+    },
+    rowPressed: {
+      backgroundColor: colors.fill,
+    },
+    // Inset to the text column, like iOS grouped rows, so the icons read as one column.
+    separator: {
+      height: hairline,
+      marginLeft: gutter + touchTarget + spacing.md,
+      backgroundColor: colors.hairline,
+    },
+    rowContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+    },
+    rowIcon: {
+      width: touchTarget,
+      height: touchTarget,
+      borderRadius: radius.container,
+      backgroundColor: colors.tintSoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowBody: {
+      flex: 1,
+      gap: spacing.xs,
+    },
+    rowTitle: {
+      ...type.rowTitle,
+    },
+    rowMeta: {
+      ...type.caption,
+    },
+    chips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+    },
+    rowPrice: {
+      ...type.figure(17),
+    },
+    fab: {
+      position: "absolute",
+      right: gutter,
+      ...theme.custom.surface.gradientShadow,
+      borderRadius: radius.control,
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: spacing.sm,
     },
   });
+};
 
 export default ProductScreen;

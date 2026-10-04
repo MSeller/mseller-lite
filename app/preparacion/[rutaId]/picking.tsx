@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshControl, StyleSheet, View } from "react-native";
+import { RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -8,7 +8,9 @@ import {
   Text,
   useTheme,
 } from "react-native-paper";
+import type { CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import EmptyState from "../../../components/ui/EmptyState";
 import ProgressHeader from "../../../components/preparacion/ProgressHeader";
 import ZoneProductList from "../../../components/preparacion/ZoneProductList";
 import { preparacionService } from "../../../services/preparacionService";
@@ -19,7 +21,8 @@ import {
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
 
 function PickingScreen() {
-  const theme = useTheme();
+  const theme = useTheme() as CustomTheme;
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId, confirmedProduct, confirmedQty } = useLocalSearchParams<{
@@ -89,7 +92,7 @@ function PickingScreen() {
       }
       setSuccess(`${confirmedProduct} — ${t("preparacion.confirmed")}`);
     }
-  }, [confirmedProduct, confirmedQty]);
+  }, [confirmedProduct, confirmedQty, t]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -125,25 +128,15 @@ function PickingScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView
-        style={[styles.centered, { backgroundColor: theme.colors.background }]}
-      >
-        <ActivityIndicator size="large" />
-        <Text
-          variant="bodyLarge"
-          style={{ marginTop: 16, color: theme.colors.onSurfaceVariant }}
-        >
-          {t("preparacion.loadingPicking")}
-        </Text>
+      <SafeAreaView style={styles.centered} edges={["left", "right"]}>
+        <ActivityIndicator size="large" color={theme.custom.colors.tint} />
+        <Text style={styles.loadingText}>{t("preparacion.loadingPicking")}</Text>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={["left", "right"]}
-    >
+    <SafeAreaView style={styles.container} edges={["left", "right"]}>
       <ZoneProductList
         zonas={data?.zonas ?? []}
         pickedQtys={pickedQtys}
@@ -157,13 +150,25 @@ function PickingScreen() {
           <ProgressHeader
             totalProductos={totalProductos}
             productosPreparados={productosPreparados}
-            noRuta={data?.noRuta ?? `Ruta ${rutaId}`}
+            noRuta={data?.noRuta ?? `#${rutaId}`}
           />
+        }
+        ListEmptyComponent={
+          // Without data the snackbar alone left an empty page; the failure gets its own state.
+          !data && !!error ? (
+            <EmptyState
+              icon="alert-circle-outline"
+              title={t("preparacion.errorLoadingPicking")}
+              message={error}
+              action={{ label: t("common.retry"), icon: "refresh", onPress: loadConsolidado }}
+            />
+          ) : undefined
         }
       />
 
       <Snackbar
-        visible={!!error}
+        // The empty state already shows a failure with nothing loaded.
+        visible={!!error && !!data}
         onDismiss={() => setError("")}
         duration={4000}
         action={{
@@ -188,16 +193,25 @@ function PickingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centered: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
+const createStyles = (theme: CustomTheme) => {
+  const { colors, spacing, type } = theme.custom;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centered: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: spacing.lg,
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      ...type.bodySmall,
+    },
+  });
+};
 
 export default function PickingScreenRoute() {
   const { t } = useTranslation();
