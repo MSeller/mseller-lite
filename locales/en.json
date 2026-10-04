@@ -474,7 +474,7 @@
     "pay_efectivo": "Cash",
     "pay_cheque": "Check",
     "pay_transferencia": "Transfer",
-    "pay_credito": "Credit",
+    "pay_credito": "On account",
     "amountReceived": "Amount received",
     "photoProof": "Proof of delivery",
     "takePhoto": "Take photo",
@@ -541,7 +541,16 @@
       "unassignedTitle": "No driver code",
       "unassignedBody": "Your user doesn't have a driver code assigned. Ask an administrator at your company to assign one.",
       "failedTitle": "Couldn't load routes"
-    }
+    },
+    "cobro": {
+      "due": "Amount due",
+      "duePartial": "Due for what was delivered",
+      "codBadge": "Cash on delivery",
+      "codHint": "Cash on delivery: collect from the customer before delivering.",
+      "change": "Change to return",
+      "short": "{{amount}} short: the cash does not cover the amount due."
+    },
+    "pay_tarjeta": "Card"
   },
   "documents": {
     "title": "Documents",

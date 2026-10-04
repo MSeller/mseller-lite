@@ -33,6 +33,7 @@ import {
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
 import { formatDateTime, formatMoney } from "../../../../utils/documentFormat";
+import { estadoCobro, METODOS_COBRADOS, metodosDisponibles, montoAdeudado } from "../../../../utils/deliveryPayment";
 import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
@@ -46,8 +47,6 @@ type Outcome =
   | "parcial"
   | "entregar_despues";
 
-const PAYMENT_TYPES = ["efectivo", "cheque", "transferencia", "credito"] as const;
-const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
   const theme = useTheme() as CustomTheme;
@@ -82,6 +81,8 @@ export default function FacturaEntregaScreen() {
   const [issueNote, setIssueNote] = useState("");
   const [tipoPago, setTipoPago] = useState<string>("efectivo");
   const [monto, setMonto] = useState("");
+  // The payment dialog also closes a partial delivery: what is due is then the delivered part.
+  const [partialPayment, setPartialPayment] = useState(false);
   const [fotoUri, setFotoUri] = useState<string | null>(null);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -114,6 +115,15 @@ export default function FacturaEntregaScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // ── Payment on delivery, per the invoice's payment condition ──
+  const condicion = data?.condicionPago;
+  const metodos = metodosDisponibles(condicion);
+  const adeudado = data ? montoAdeudado(data.total, data.lineas, partialPayment ? faltantes : {}) : 0;
+  const cobro = estadoCobro(tipoPago, adeudado, monto);
+  // COD needs a method; cash must cover what is due — short cash cannot be delivered.
+  const cobroValido =
+    (!condicion?.contraEntrega || !!tipoPago) && (tipoPago !== "efectivo" || cobro.tipo === "ok");
 
   const submit = async (status: Outcome, extra?: Partial<RegistrarEntregaRequest>) => {
     if (!data) return;
@@ -152,7 +162,8 @@ export default function FacturaEntregaScreen() {
       setError(t("entrega.partialNeedsItems"));
       return;
     }
-    submit("parcial", { itemsFaltantes: items });
+    // Collect for the delivered part before saving — the same payment step as a full delivery.
+    openDeliverDialog(false, true);
   };
 
   const setFaltante = (code: string, qty: number, max: number) =>
@@ -185,23 +196,31 @@ export default function FacturaEntregaScreen() {
       setError(t("entrega.issueNoteRequired"));
       return;
     }
-    const paidToTruck = PAID_TO_TRUCK.includes(tipoPago);
-    const montoNum = parseFloat(monto);
+    if (!cobroValido) return;
+    const cobrado = METODOS_COBRADOS.includes(tipoPago);
     setDeliverOpen(false);
-    submit(issueMode ? "entregado_con_novedad" : "entregado", {
-      tipoPago,
-      montoRecibido: paidToTruck && !isNaN(montoNum) ? montoNum : undefined,
+    submit(partialPayment ? "parcial" : issueMode ? "entregado_con_novedad" : "entregado", {
+      tipoPago: tipoPago || undefined,
+      montoCobrado: cobrado ? adeudado : undefined,
+      // Cash can exceed what is due; the server stores the change for audit.
+      montoRecibido: cobrado ? (cobro.tipo === "ok" ? cobro.recibido : adeudado) : undefined,
       fotoUrl: fotoUrl ?? undefined,
       observacion: issueMode ? issueNote.trim() : undefined,
+      itemsFaltantes: partialPayment
+        ? Object.entries(faltantes)
+            .filter(([, q]) => q > 0)
+            .map(([codigoProducto, cantidadFaltante]) => ({ codigoProducto, cantidadFaltante }))
+        : undefined,
     });
   };
 
   // Open the delivery dialog with a clean form so payment/photo/note from a previous (cancelled)
   // attempt never leak into the next submission.
-  const openDeliverDialog = (issue: boolean) => {
+  const openDeliverDialog = (issue: boolean, partial = false) => {
     setIssueMode(issue);
+    setPartialPayment(partial);
     setIssueNote("");
-    setTipoPago("efectivo");
+    setTipoPago(metodos.includes("efectivo") ? "efectivo" : metodos[0] ?? "");
     setMonto("");
     setFotoUri(null);
     setFotoUrl(null);
@@ -294,7 +313,10 @@ export default function FacturaEntregaScreen() {
         <View style={styles.hero}>
           <Text style={styles.overline}>{t("entrega.invoiceLabel")} · {docNo}</Text>
           <Text style={styles.largeTitle}>{data.nombreCliente || data.codigoCliente}</Text>
-          <StatusChip label={t(st.key)} tone={st.tone} />
+          <View style={styles.heroChips}>
+            <StatusChip label={t(st.key)} tone={st.tone} />
+            {!!condicion?.contraEntrega && <StatusChip label={t("entrega.cobro.codBadge")} tone="warning" />}
+          </View>
         </View>
 
         {alreadyRecorded && (
@@ -512,31 +534,59 @@ export default function FacturaEntregaScreen() {
                   style={styles.dialogField}
                 />
               )}
-              <Text style={styles.dialogOverline}>{t("entrega.paymentType")}</Text>
-              <View style={styles.payRow}>
-                {PAYMENT_TYPES.map((tp) => (
-                  <Chip
-                    key={tp}
-                    selected={tipoPago === tp}
-                    showSelectedCheck
-                    onPress={() => setTipoPago(tp)}
-                    style={styles.payChip}
-                  >
-                    {t(`entrega.pay_${tp}`)}
-                  </Chip>
-                ))}
+              <View style={styles.dueRow}>
+                <Text style={styles.dialogOverline}>
+                  {partialPayment ? t("entrega.cobro.duePartial") : t("entrega.cobro.due")}
+                </Text>
+                <Text style={styles.dueAmount}>{formatMoney(adeudado)}</Text>
               </View>
+              {!!condicion?.contraEntrega && (
+                <Text style={styles.codHint}>{t("entrega.cobro.codHint")}</Text>
+              )}
 
-              {PAID_TO_TRUCK.includes(tipoPago) && (
-                <TextInput
-                  mode="outlined"
-                  label={t("entrega.amountReceived")}
-                  value={monto}
-                  onChangeText={setMonto}
-                  keyboardType="decimal-pad"
-                  left={<TextInput.Affix text="$" />}
-                  style={styles.amountField}
-                />
+              {metodos.length > 0 && (
+                <>
+                  <Text style={styles.dialogOverline}>{t("entrega.paymentType")}</Text>
+                  <View style={styles.payRow}>
+                    {metodos.map((tp) => (
+                      <Chip
+                        key={tp}
+                        selected={tipoPago === tp}
+                        showSelectedCheck
+                        onPress={() => setTipoPago(tp)}
+                        style={styles.payChip}
+                      >
+                        {t(`entrega.pay_${tp}`)}
+                      </Chip>
+                    ))}
+                  </View>
+                </>
+              )}
+
+              {tipoPago === "efectivo" && (
+                <>
+                  <TextInput
+                    mode="outlined"
+                    label={t("entrega.amountReceived")}
+                    value={monto}
+                    onChangeText={setMonto}
+                    keyboardType="decimal-pad"
+                    left={<TextInput.Affix text="$" />}
+                    error={cobro.tipo === "insuficiente"}
+                    style={styles.amountField}
+                  />
+                  {cobro.tipo === "ok" && (
+                    <View style={styles.changeRow} accessibilityLiveRegion="polite">
+                      <Text style={styles.changeLabel}>{t("entrega.cobro.change")}</Text>
+                      <Text style={[styles.changeAmount, { color: status.positive.base }]}>{formatMoney(cobro.cambio)}</Text>
+                    </View>
+                  )}
+                  {cobro.tipo === "insuficiente" && (
+                    <Text style={[styles.changeLabel, { color: status.negative.base }]} accessibilityLiveRegion="polite">
+                      {t("entrega.cobro.short", { amount: formatMoney(cobro.falta) })}
+                    </Text>
+                  )}
+                </>
               )}
 
               <Text style={[styles.dialogOverline, styles.photoOverline]}>{t("entrega.photoProof")}</Text>
@@ -567,10 +617,10 @@ export default function FacturaEntregaScreen() {
             <AppButton
               mode="contained"
               loading={submitting}
-              disabled={submitting || uploadingPhoto}
+              disabled={submitting || uploadingPhoto || !cobroValido}
               onPress={confirmDelivery}
             >
-              {t("entrega.confirmDelivery")}
+              {partialPayment ? t("entrega.confirmPartial") : t("entrega.confirmDelivery")}
             </AppButton>
           </Dialog.Actions>
         </Dialog>
@@ -765,6 +815,13 @@ const createStyles = (theme: CustomTheme, gutter: number) => {
     dialogOverline: { ...type.overline, marginBottom: spacing.sm },
     dialogBody: { ...type.body },
     amountField: { marginTop: spacing.md },
+    heroChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    dueRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginBottom: spacing.sm },
+    dueAmount: { ...type.figure(22) },
+    codHint: { ...type.caption, color: colors.warningForeground, marginBottom: spacing.md },
+    changeRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: spacing.sm },
+    changeLabel: { ...type.bodySmall, marginTop: spacing.sm },
+    changeAmount: { ...type.figure(20) },
     photoOverline: { marginTop: spacing.lg },
     payRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
     payChip: { marginBottom: spacing.xs },

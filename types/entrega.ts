@@ -57,6 +57,20 @@ export interface VentanaEntrega {
   observacion?: string | null;
 }
 
+/**
+ * How a delivery under the invoice's payment condition may be collected (mseller-api#398).
+ * Methods: efectivo, cheque, transferencia, tarjeta (collected by the driver) or credito
+ * (left on the customer's account).
+ */
+export interface CondicionCobro {
+  codigo: string;
+  descripcion?: string | null;
+  dias: number;
+  /** COD: the driver must record how the customer paid before the delivery is saved. */
+  contraEntrega: boolean;
+  metodosPermitidos: string[];
+}
+
 /** One invoice/stop in the ordered delivery list. */
 export interface EntregaFacturaResumen {
   rutaDetalleId: number;
@@ -75,6 +89,8 @@ export interface EntregaFacturaResumen {
   cargaConfirmada: boolean;
   /** Absent from APIs older than the delivery-window change. */
   ventanasEntrega?: VentanaEntrega[];
+  /** Absent from APIs before the collection policy, or when the condition code is unknown. */
+  condicionPago?: CondicionCobro | null;
 }
 
 /** Route header + ordered invoice list. */
@@ -156,6 +172,7 @@ export interface EntregaFacturaDetalle {
   statusDetalle: RutaDetalleStatus;
   cargaConfirmada: boolean;
   ventanasEntrega?: VentanaEntrega[];
+  condicionPago?: CondicionCobro | null;
   lineas: EntregaFacturaLinea[];
   entrega?: RutaEntregaResumen | null;
   /** Every other attempt for this document across routes, newest first. */
@@ -182,8 +199,11 @@ export interface RegistrarEntregaRequest {
   observacion?: string;
   firmaUrl?: string;
   fotoUrl?: string;
+  /** What the customer handed over; for cash it can exceed `montoCobrado` (the rest is change). */
   montoRecibido?: number;
-  /** efectivo | cheque | transferencia | credito | debito */
+  /** The amount that applies to the invoice for this delivery (full total, or the delivered part). */
+  montoCobrado?: number;
+  /** efectivo | cheque | transferencia | tarjeta | credito (left on account) */
   tipoPago?: string;
   idempotencyKey?: string;
   dispositivoId?: string;

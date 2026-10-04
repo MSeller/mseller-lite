@@ -511,7 +511,7 @@
     "pay_efectivo": "Efectivo",
     "pay_cheque": "Cheque",
     "pay_transferencia": "Transferencia",
-    "pay_credito": "Crédito",
+    "pay_credito": "A crédito",
     "amountReceived": "Monto recibido",
     "photoProof": "Foto de recibido",
     "takePhoto": "Tomar foto",
@@ -578,7 +578,16 @@
       "unassignedTitle": "Sin código de chofer",
       "unassignedBody": "Tu usuario no tiene un código de distribuidor asignado. Pídele a un administrador de tu empresa que te lo asigne.",
       "failedTitle": "No se pudieron cargar las rutas"
-    }
+    },
+    "cobro": {
+      "due": "Total a cobrar",
+      "duePartial": "A cobrar por lo entregado",
+      "codBadge": "Contra entrega",
+      "codHint": "Contra entrega: cobra al cliente antes de entregar.",
+      "change": "Cambio a devolver",
+      "short": "Faltan {{amount}}: el efectivo no cubre lo que se debe cobrar."
+    },
+    "pay_tarjeta": "Tarjeta"
   },
   "documents": {
     "title": "Documentos",
