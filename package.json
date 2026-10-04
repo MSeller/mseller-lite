@@ -2,7 +2,7 @@
   "name": "mseller-lite",
   "main": "expo-router/entry",
   "packageManager": "pnpm@10.12.4",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "scripts": {
     "start": "expo start",
     "dev:firebase-local": "EXPO_PUBLIC_EMULATOR_ENABLED=true EXPO_PUBLIC_LOCAL_MODE=true EXPO_PUBLIC_USE_LOCAL_API=true EXPO_PUBLIC_FIREBASE_EMULATOR_HOST=192.168.1.187 EXPO_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_PORT=8080 EXPO_PUBLIC_LOCAL_API_PORT=7173 EXPO_PUBLIC_TARGET=http://192.168.1.187:7173 TARGET=http://192.168.1.187:7173 expo start",
