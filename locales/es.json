@@ -558,7 +558,12 @@
       "partialOverline": "Cantidades faltantes",
       "decreaseMissing": "Restar faltante",
       "increaseMissing": "Sumar faltante",
-      "otherOutcomes": "Otro resultado"
+      "otherOutcomes": "Otro resultado",
+      "window": "Horario de entrega",
+      "windowOpen": "abierto ahora",
+      "windowClosed": "ya cerró",
+      "referenceA11y": "Referencia: {{value}}",
+      "windowA11y": "Horario de entrega: {{value}}"
     },
     "list": {
       "count_one": "{{count}} ruta",

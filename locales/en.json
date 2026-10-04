@@ -521,7 +521,12 @@
       "partialOverline": "Missing quantities",
       "decreaseMissing": "Decrease missing",
       "increaseMissing": "Increase missing",
-      "otherOutcomes": "Other outcome"
+      "otherOutcomes": "Other outcome",
+      "window": "Delivery window",
+      "windowOpen": "open now",
+      "windowClosed": "already closed",
+      "referenceA11y": "Reference: {{value}}",
+      "windowA11y": "Delivery window: {{value}}"
     },
     "list": {
       "count_one": "{{count}} route",

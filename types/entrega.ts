@@ -47,6 +47,16 @@ export interface EntregaRuta {
   observacion?: string | null;
 }
 
+/**
+ * One of the customer's delivery windows on the route's weekday, in the business's local time
+ * ("HH:mm"). From the customer's HorariosEntrega; empty when none are set.
+ */
+export interface VentanaEntrega {
+  horaInicio: string;
+  horaFin: string;
+  observacion?: string | null;
+}
+
 /** One invoice/stop in the ordered delivery list. */
 export interface EntregaFacturaResumen {
   rutaDetalleId: number;
@@ -63,6 +73,8 @@ export interface EntregaFacturaResumen {
   secuenciaEntrega: number;
   statusDetalle: RutaDetalleStatus;
   cargaConfirmada: boolean;
+  /** Absent from APIs older than the delivery-window change. */
+  ventanasEntrega?: VentanaEntrega[];
 }
 
 /** Route header + ordered invoice list. */
@@ -143,6 +155,7 @@ export interface EntregaFacturaDetalle {
   secuenciaEntrega: number;
   statusDetalle: RutaDetalleStatus;
   cargaConfirmada: boolean;
+  ventanasEntrega?: VentanaEntrega[];
   lineas: EntregaFacturaLinea[];
   entrega?: RutaEntregaResumen | null;
   /** Every other attempt for this document across routes, newest first. */

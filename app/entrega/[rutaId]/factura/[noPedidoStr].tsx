@@ -264,6 +264,16 @@ export default function FacturaEntregaScreen() {
     ...(data.referenciaDireccion
       ? [{ label: t("entrega.ui.reference"), value: data.referenciaDireccion, icon: "sign-direction" }]
       : []),
+    ...(data.ventanasEntrega?.length
+      ? [{
+          label: t("entrega.ui.window"),
+          // Each window on its own line, with its note ("tocar por la puerta lateral") under it.
+          value: data.ventanasEntrega
+            .map((v) => `${v.horaInicio} – ${v.horaFin}${v.observacion ? `\n${v.observacion}` : ""}`)
+            .join("\n"),
+          icon: "clock-outline",
+        }]
+      : []),
     ...(data.telefono
       ? [{ label: t("entrega.ui.phone"), value: data.telefono, icon: "phone-outline", onPress: () => Linking.openURL(`tel:${data.telefono}`) }]
       : []),
