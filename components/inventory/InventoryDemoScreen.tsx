@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import {
-  Button,
   Card,
   Chip,
   IconButton,
@@ -13,6 +12,7 @@ import { getEnvironmentConfig } from "../../config/environment";
 import { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
+import AppButton from "../ui/AppButton";
 
 interface InventoryDemoScreenProps {
   onNavigateBack?: () => void;
@@ -53,7 +53,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
                       flex: 1,
                     }}
                   >
-                    🏗️ {t("inventory.inventoryCount")} {t("inventory.mobile")}
+                    {t("inventory.inventoryCount")} {t("inventory.mobile")}
                   </Title>
                   <Chip
                     icon={envConfig.isLocalDevelopment ? "server" : "cloud"}
@@ -78,7 +78,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
                 </View>
                 {envConfig.isLocalDevelopment && (
                   <Paragraph style={styles.localModeInfo}>
-                    🚧 Modo Local: {envConfig.apiBaseURL}
+                    Modo Local: {envConfig.apiBaseURL}
                   </Paragraph>
                 )}
               </View>
@@ -108,12 +108,12 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.primary, marginBottom: 16 }}>
-              ✨ Características Implementadas
+              Características Implementadas
             </Title>
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                📱 Interfaz Móvil Optimizada
+                Interfaz Móvil Optimizada
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 UI responsiva con React Native Paper, soporte para modo
@@ -123,7 +123,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                🔐 Autenticación Integrada
+                Autenticación Integrada
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 Firebase Auth con configuración automática de URLs de API basada
@@ -133,7 +133,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                📊 Sistema de Conteo Completo
+                Sistema de Conteo Completo
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 Pantallas para conteo de productos, progreso en tiempo real, y
@@ -143,7 +143,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                📁 Operaciones Offline
+                Operaciones Offline
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 Cola de sincronización automática con AsyncStorage para
@@ -153,7 +153,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                🌐 Soporte Multiidioma
+                Soporte Multiidioma
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 Inglés y Español incluidos, con detección automática del idioma
@@ -163,7 +163,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
 
             <View style={styles.featureItem}>
               <Paragraph style={styles.featureTitle}>
-                🔌 APIs Implementadas
+                APIs Implementadas
               </Paragraph>
               <Paragraph style={styles.featureDescription}>
                 Servicio completo para integración con Consumo.Api del sistema
@@ -177,7 +177,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.primary, marginBottom: 16 }}>
-              🔗 Endpoints de API Listos
+              Endpoints de API Listos
             </Title>
 
             <View style={styles.apiSection}>
@@ -226,7 +226,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.secondary, marginBottom: 16 }}>
-              🚀 Próximos Pasos
+              Próximos Pasos
             </Title>
 
             <Paragraph style={styles.stepItem}>
@@ -261,7 +261,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.tertiary, marginBottom: 16 }}>
-              🛠️ Configuración de Desarrollo Local
+              Configuración de Desarrollo Local
             </Title>
 
             <View style={styles.archItem}>
@@ -304,8 +304,8 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
                 ]}
               >
                 {envConfig.isLocalDevelopment
-                  ? `🚧 LOCAL - ${envConfig.apiBaseURL}`
-                  : "☁️ PRODUCTION - Header-based routing"}
+                  ? `LOCAL - ${envConfig.apiBaseURL}`
+                  : "PRODUCTION - Header-based routing"}
               </Paragraph>
             </View>
           </Card.Content>
@@ -315,7 +315,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
             <Title style={{ color: theme.colors.tertiary, marginBottom: 16 }}>
-              🏗️ Arquitectura Técnica
+              Arquitectura Técnica
             </Title>
 
             <View style={styles.archItem}>
@@ -348,7 +348,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
         </Card>
 
         <View style={styles.footer}>
-          <Button
+          <AppButton
             mode="contained"
             icon="api"
             onPress={() => {
@@ -357,7 +357,7 @@ const InventoryDemoScreen: React.FC<InventoryDemoScreenProps> = ({
             style={styles.footerButton}
           >
             Probar Configuración de API
-          </Button>
+          </AppButton>
         </View>
       </ScrollView>
     </View>

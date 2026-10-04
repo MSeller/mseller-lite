@@ -319,7 +319,7 @@ const InventoryProgressScreen: React.FC<InventoryProgressScreenProps> = ({
 
                   {product.ubicacionDetallada && (
                     <Text variant="bodySmall" style={styles.location}>
-                      📍 {inventoryService.formatProductLocation(product)}
+                      {inventoryService.formatProductLocation(product)}
                     </Text>
                   )}
 

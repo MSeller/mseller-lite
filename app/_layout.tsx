@@ -128,7 +128,7 @@ export default function RootLayout() {
   // Add global error handling for production
   useEffect(() => {
     console.log(
-      "🚀 App starting - Environment:",
+      "App starting - Environment:",
       __DEV__ ? "Development" : "Production"
     );
 

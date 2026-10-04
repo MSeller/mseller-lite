@@ -60,4 +60,6 @@ v2 "editorial"). The iOS repo is the source of truth (`docs/design/DESIGN_SYSTEM
   PR (and vice versa: propose shared-guide changes in mobile-seller first).
 - Capture flows mirror iOS screens: new order is ONE screen like iOS Pedido
   (`DocumentViewController.swift`) — no multi-step wizards.
+- No emojis in user-facing text — titles, labels, buttons, toasts, locale strings. Use a Paper
+  icon with theme colours instead. `pnpm design:check` flags them.
 - Design work is presentation-only: no changes to business logic, data flow or what gets saved.
