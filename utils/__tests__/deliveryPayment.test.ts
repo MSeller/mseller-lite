@@ -1,6 +1,13 @@
 import { describe, expect, it } from "@jest/globals";
 
-import { estadoCobro, metodosDisponibles, montoAdeudado, parseMonto } from "../deliveryPayment";
+import {
+  estadoCobro,
+  loCobraElChofer,
+  metodoInicial,
+  metodosDisponibles,
+  montoAdeudado,
+  puedeConfirmarCobro,
+} from "../deliveryPayment";
 
 const lineas = [
   { codigoProducto: "A", cantidad: 2, precio: 50, subTotal: 100 },
@@ -27,13 +34,17 @@ describe("montoAdeudado", () => {
   });
 });
 
-describe("parseMonto", () => {
-  it("reads dots, decimal commas and thousand separators", () => {
-    expect(parseMonto("1250.5")).toBe(1250.5);
-    expect(parseMonto("1250,5")).toBe(1250.5);
-    expect(parseMonto("1,250.50")).toBe(1250.5);
-    expect(parseMonto("")).toBeNaN();
-    expect(parseMonto("abc")).toBeNaN();
+describe("loCobraElChofer / metodoInicial", () => {
+  it("counts every method but credit as money the driver takes", () => {
+    expect(["efectivo", "cheque", "transferencia", "tarjeta"].every(loCobraElChofer)).toBe(true);
+    expect(loCobraElChofer("credito")).toBe(false);
+    expect(loCobraElChofer("bitcoin")).toBe(false);
+  });
+
+  it("preselects cash when allowed", () => {
+    expect(metodoInicial(["cheque", "efectivo"])).toBe("efectivo");
+    expect(metodoInicial(["transferencia"])).toBe("transferencia");
+    expect(metodoInicial([])).toBe("");
   });
 });
 
@@ -47,8 +58,23 @@ describe("estadoCobro", () => {
     expect(estadoCobro("efectivo", 236, "200")).toEqual({ tipo: "insuficiente", falta: 36 });
   });
 
+  it("reads a decimal comma", () => {
+    expect(estadoCobro("efectivo", 236, "250,5")).toEqual({ tipo: "ok", recibido: 250.5, cambio: 14.5 });
+  });
+
   it("waits for an amount, and needs none for other methods", () => {
     expect(estadoCobro("efectivo", 236, "")).toEqual({ tipo: "pendiente" });
+    expect(estadoCobro("efectivo", 236, "12abc")).toEqual({ tipo: "pendiente" });
     expect(estadoCobro("transferencia", 236, "")).toEqual({ tipo: "exacto" });
+  });
+});
+
+describe("puedeConfirmarCobro", () => {
+  const cod = { codigo: "COD", dias: 0, contraEntrega: true, metodosPermitidos: ["efectivo"] };
+  it("blocks short cash and a COD delivery without a method", () => {
+    expect(puedeConfirmarCobro(cod, "efectivo", { tipo: "insuficiente", falta: 1 })).toBe(false);
+    expect(puedeConfirmarCobro(cod, "", { tipo: "exacto" })).toBe(false);
+    expect(puedeConfirmarCobro(cod, "efectivo", { tipo: "ok", recibido: 10, cambio: 0 })).toBe(true);
+    expect(puedeConfirmarCobro(null, "", { tipo: "exacto" })).toBe(true);
   });
 });

@@ -33,7 +33,15 @@ import {
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
 import { formatDateTime, formatMoney } from "../../../../utils/documentFormat";
-import { estadoCobro, METODOS_COBRADOS, metodosDisponibles, montoAdeudado } from "../../../../utils/deliveryPayment";
+import {
+  EFECTIVO,
+  estadoCobro,
+  loCobraElChofer,
+  metodoInicial,
+  metodosDisponibles,
+  montoAdeudado,
+  puedeConfirmarCobro,
+} from "../../../../utils/deliveryPayment";
 import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
@@ -79,7 +87,7 @@ export default function FacturaEntregaScreen() {
   const [deliverOpen, setDeliverOpen] = useState(false);
   const [issueMode, setIssueMode] = useState(false);
   const [issueNote, setIssueNote] = useState("");
-  const [tipoPago, setTipoPago] = useState<string>("efectivo");
+  const [tipoPago, setTipoPago] = useState<string>(EFECTIVO);
   const [monto, setMonto] = useState("");
   // The payment dialog also closes a partial delivery: what is due is then the delivered part.
   const [partialPayment, setPartialPayment] = useState(false);
@@ -121,9 +129,7 @@ export default function FacturaEntregaScreen() {
   const metodos = metodosDisponibles(condicion);
   const adeudado = data ? montoAdeudado(data.total, data.lineas, partialPayment ? faltantes : {}) : 0;
   const cobro = estadoCobro(tipoPago, adeudado, monto);
-  // COD needs a method; cash must cover what is due — short cash cannot be delivered.
-  const cobroValido =
-    (!condicion?.contraEntrega || !!tipoPago) && (tipoPago !== "efectivo" || cobro.tipo === "ok");
+  const cobroValido = puedeConfirmarCobro(condicion, tipoPago, cobro);
 
   const submit = async (status: Outcome, extra?: Partial<RegistrarEntregaRequest>) => {
     if (!data) return;
@@ -197,7 +203,7 @@ export default function FacturaEntregaScreen() {
       return;
     }
     if (!cobroValido) return;
-    const cobrado = METODOS_COBRADOS.includes(tipoPago);
+    const cobrado = loCobraElChofer(tipoPago);
     setDeliverOpen(false);
     submit(partialPayment ? "parcial" : issueMode ? "entregado_con_novedad" : "entregado", {
       tipoPago: tipoPago || undefined,
@@ -220,7 +226,7 @@ export default function FacturaEntregaScreen() {
     setIssueMode(issue);
     setPartialPayment(partial);
     setIssueNote("");
-    setTipoPago(metodos.includes("efectivo") ? "efectivo" : metodos[0] ?? "");
+    setTipoPago(metodoInicial(metodos));
     setMonto("");
     setFotoUri(null);
     setFotoUrl(null);
@@ -563,7 +569,7 @@ export default function FacturaEntregaScreen() {
                 </>
               )}
 
-              {tipoPago === "efectivo" && (
+              {tipoPago === EFECTIVO && (
                 <>
                   <TextInput
                     mode="outlined"
