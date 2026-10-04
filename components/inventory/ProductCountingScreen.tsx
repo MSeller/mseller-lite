@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import {
-  Button,
   Card,
   Chip,
   Divider,
@@ -37,6 +36,7 @@ import {
   ProductoConteo,
   TipoOperacion,
 } from "../../types/inventory";
+import AppButton from "../ui/AppButton";
 
 interface ProductCountingScreenProps {
   conteo: InventarioConteo;
@@ -450,7 +450,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
               )}
             </View>
             <View style={styles.searchModeToggle}>
-              <Button
+              <AppButton
                 mode={searchMode === "barcode" ? "contained" : "outlined"}
                 onPress={() => {
                   setSearchMode("barcode");
@@ -465,15 +465,15 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                 icon="barcode-scan"
               >
                 {t("inventory.scanBarcode")}
-              </Button>
-              <Button
+              </AppButton>
+              <AppButton
                 mode={searchMode === "manual" ? "contained" : "outlined"}
                 onPress={() => setSearchMode("manual")}
                 style={styles.toggleButton}
                 icon="magnify"
               >
                 {t("inventory.enterManually")}
-              </Button>
+              </AppButton>
             </View>
 
             <Searchbar
@@ -512,7 +512,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
               style={styles.searchBar}
             />
 
-            <Button
+            <AppButton
               mode="contained"
               onPress={handleSearch}
               loading={loading}
@@ -520,7 +520,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
               style={styles.searchButton}
             >
               {t("common.search")}
-            </Button>
+            </AppButton>
           </Card.Content>
         </Card>
 
@@ -552,7 +552,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
 
               {foundProduct.ubicacionDetallada && (
                 <Paragraph style={styles.location}>
-                  📍 {foundProduct.ubicacionDetallada}
+                  {foundProduct.ubicacionDetallada}
                 </Paragraph>
               )}
 
@@ -587,7 +587,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                 style={styles.input}
               />
 
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={handleSaveCount}
                 loading={loading}
@@ -596,7 +596,7 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                 icon="content-save"
               >
                 {t("inventory.saveCount")}
-              </Button>
+              </AppButton>
             </Card.Content>
           </Card>
         )}
@@ -646,7 +646,6 @@ const ProductCountingScreen: React.FC<ProductCountingScreenProps> = ({
                     </Paragraph>
                     {currentProduct.ubicacionDetallada && (
                       <Paragraph style={styles.location}>
-                        📍{" "}
                         {inventoryService.formatProductLocation(currentProduct)}
                       </Paragraph>
                     )}

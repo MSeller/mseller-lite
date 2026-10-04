@@ -1,16 +1,28 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button, Icon, Snackbar, Text, TextInput, useTheme } from "react-native-paper";
-import AppCard from "../../../components/ui/AppCard";
+import { Icon, Snackbar, Text, useTheme } from "react-native-paper";
+import PrepFooter from "../../../components/preparacion/PrepFooter";
+import QuantityStepper from "../../../components/preparacion/QuantityStepper";
+import BrandGradient from "../../../components/ui/BrandGradient";
 import SectionAccessGate from "../../../components/navigation/SectionAccessGate";
-import type { CustomTheme } from "../../../constants/Theme";
+import { gutterFor, type CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
 import { preparacionService } from "../../../services/preparacionService";
 
 function ConfirmarProductoScreen() {
   const theme = useTheme() as CustomTheme;
+  const { width } = useWindowDimensions();
+  const styles = useMemo(() => createStyles(theme, gutterFor(width)), [theme, width]);
   const { status } = theme.custom;
   const router = useRouter();
   const { t } = useTranslation();
@@ -73,82 +85,80 @@ function ConfirmarProductoScreen() {
     }
   };
 
+  const formatQty = (qty: number) => `${qty}${unidad ? ` ${unidad}` : ""}`;
+
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
-      edges={["top", "left", "right"]}
-    >
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.container}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Product info */}
-          <AppCard style={styles.productHeader} contentStyle={styles.productHeaderContent}>
-            <Text variant="titleLarge" style={{ color: theme.colors.onSurface }}>
+        <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+          {/* Product */}
+          <View style={styles.hero}>
+            <Text style={styles.overline}>{t("preparacion.ui.confirmProductTitle")}</Text>
+            <Text style={styles.title} accessibilityRole="header">
               {nombre || params.codigoProducto || ""}
             </Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-              {[nombre ? params.codigoProducto : null, unidad].filter(Boolean).join("  ·  ")}
-            </Text>
-          </AppCard>
+            {(!!nombre || !!unidad) && (
+              <Text style={styles.meta}>
+                {[nombre ? params.codigoProducto : null, unidad].filter(Boolean).join(" · ")}
+              </Text>
+            )}
+          </View>
+
+          {/* Requested vs prepared */}
+          <BrandGradient raised style={styles.summaryCard}>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryCell}>
+                <Text style={styles.summaryOverline}>{t("preparacion.ui.requestedQty")}</Text>
+                <Text style={styles.summaryFigure} numberOfLines={1} adjustsFontSizeToFit>
+                  {formatQty(cantidadTotal)}
+                </Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryCell}>
+                <Text style={styles.summaryOverline}>{t("preparacion.ui.preparedQty")}</Text>
+                <Text
+                  style={[styles.summaryFigure, hayDiferencia && styles.summaryFigureAlert]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {formatQty(parsedCantidad)}
+                </Text>
+              </View>
+            </View>
+          </BrandGradient>
 
           {/* Quantity */}
           <View style={styles.section}>
-            <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-              Cantidad solicitada:{" "}
-              <Text style={{ fontWeight: "bold" }}>{cantidadTotal} {unidad}</Text>
-            </Text>
-
-            <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, marginTop: 16 }}>
-              Cantidad preparada:
-            </Text>
-            <View style={styles.stepperRow}>
-              <Button
-                mode="outlined"
-                onPress={() => adjustTotal(-1)}
-                style={styles.stepperButton}
-                contentStyle={styles.stepperButtonContent}
-                disabled={parsedCantidad <= 0}
-              >
-                −
-              </Button>
-              <TextInput
-                value={cantidadPreparada}
-                onChangeText={setCantidadPreparada}
-                keyboardType="number-pad"
-                style={[styles.quantityInput, { backgroundColor: theme.colors.surface }]}
-                contentStyle={styles.quantityInputContent}
-                mode="outlined"
-              />
-              <Button
-                mode="outlined"
-                onPress={() => adjustTotal(1)}
-                style={styles.stepperButton}
-                contentStyle={styles.stepperButtonContent}
-                disabled={parsedCantidad >= cantidadTotal}
-              >
-                +
-              </Button>
-            </View>
-
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8, textAlign: "center" }}>
-              La distribución entre clientes se calcula automáticamente
-            </Text>
+            <Text style={styles.overline}>{t("preparacion.ui.preparedQty")}</Text>
+            <QuantityStepper
+              value={cantidadPreparada}
+              onChangeText={setCantidadPreparada}
+              onDecrement={() => adjustTotal(-1)}
+              onIncrement={() => adjustTotal(1)}
+              decrementDisabled={parsedCantidad <= 0}
+              incrementDisabled={parsedCantidad >= cantidadTotal}
+              accessibilityLabel={t("preparacion.ui.preparedQty")}
+              decrementLabel={t("preparacion.ui.decrease")}
+              incrementLabel={t("preparacion.ui.increase")}
+            />
+            <Text style={styles.hint}>{t("preparacion.ui.autoDistributionHint")}</Text>
 
             {hayDiferencia && !excedido && (
-              <View style={styles.warningRow}>
+              <View style={styles.statusRow} accessibilityRole="alert">
                 <Icon source="alert" size={18} color={status.warning.base} />
-                <Text style={[styles.warningText, { color: status.warning.base }]}>
-                  Diferencia: {diferencia} unidades
+                <Text style={[styles.statusText, { color: status.warning.base }]}>
+                  {t("preparacion.ui.difference", { count: diferencia })}
                 </Text>
               </View>
             )}
             {excedido && (
-              <View style={styles.warningRow}>
+              <View style={styles.statusRow} accessibilityRole="alert">
                 <Icon source="alert-circle" size={18} color={status.negative.base} />
-                <Text style={[styles.warningText, { color: status.negative.base }]}>
-                  No puede exceder la cantidad solicitada
+                <Text style={[styles.statusText, { color: status.negative.base }]}>
+                  {t("preparacion.ui.cannotExceed")}
                 </Text>
               </View>
             )}
@@ -157,36 +167,30 @@ function ConfirmarProductoScreen() {
           {/* Observation (required on difference) */}
           {hayDiferencia && !excedido && (
             <View style={styles.section}>
+              <Text style={styles.overline}>{t("preparacion.ui.observationRequired")}</Text>
               <TextInput
-                label="Observación (requerida)"
                 value={observacion}
                 onChangeText={setObservacion}
-                mode="outlined"
                 multiline
                 numberOfLines={3}
-                placeholder="Razón de la diferencia..."
-                style={{ backgroundColor: theme.colors.surface }}
+                placeholder={t("preparacion.ui.observationPlaceholder")}
+                placeholderTextColor={theme.custom.colors.inkTertiary}
+                accessibilityLabel={t("preparacion.ui.observationRequired")}
+                style={styles.observation}
+                selectionColor={theme.custom.colors.tint}
               />
             </View>
           )}
         </ScrollView>
 
-        {/* Bottom action bar */}
-        <View style={[styles.bottomBar, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.outlineVariant }]}>
-          <Button mode="outlined" onPress={() => router.back()} style={styles.bottomButton} disabled={loading}>
-            Cancelar
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleConfirm}
-            style={styles.bottomButton}
-            disabled={!canConfirm}
-            loading={loading}
-            icon="check"
-          >
-            {t("preparacion.confirmProduct")}
-          </Button>
-        </View>
+        <PrepFooter
+          label={t("preparacion.confirmProduct")}
+          icon="check"
+          onPress={handleConfirm}
+          disabled={!canConfirm && !loading}
+          loading={loading}
+          secondary={{ label: t("common.cancel"), onPress: () => router.back(), disabled: loading }}
+        />
       </KeyboardAvoidingView>
 
       <Snackbar visible={!!error} onDismiss={() => setError("")} duration={4000}>
@@ -196,34 +200,37 @@ function ConfirmarProductoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { paddingBottom: 100 },
-  productHeader: { marginHorizontal: 12, marginTop: 12 },
-  productHeaderContent: { padding: 16 },
-  section: { padding: 16 },
-  stepperRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 12,
-    gap: 12,
-  },
-  stepperButton: { minWidth: 48, minHeight: 48 },
-  stepperButtonContent: { minHeight: 48 },
-  quantityInput: { flex: 1, maxWidth: 140, textAlign: "center" },
-  quantityInputContent: { fontSize: 32, fontWeight: "900", textAlign: "center" },
-  warningRow: { flexDirection: "row", alignItems: "center", marginTop: 8, gap: 6 },
-  warningText: { fontWeight: "600" },
-  bottomBar: {
-    flexDirection: "row",
-    padding: 16,
-    paddingBottom: 32,
-    gap: 12,
-    borderTopWidth: 1,
-  },
-  bottomButton: { flex: 1, minHeight: 48 },
-});
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, spacing, type, radius, hairline } = theme.custom;
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    scrollContent: { paddingBottom: spacing.xxl },
+    hero: { paddingHorizontal: gutter, paddingTop: spacing.lg, gap: spacing.xs },
+    overline: { ...type.overline },
+    title: { ...type.largeTitle },
+    meta: { ...type.bodySmall },
+    summaryCard: { marginHorizontal: gutter, marginTop: spacing.lg },
+    summaryRow: { flexDirection: "row", alignItems: "stretch" },
+    summaryCell: { flex: 1, padding: spacing.xl, gap: spacing.xs },
+    summaryDivider: { width: hairline, backgroundColor: colors.onGradientDivider },
+    summaryOverline: { ...type.overline, color: colors.onGradientSecondary },
+    summaryFigure: { ...type.figure(28), color: colors.onGradient },
+    summaryFigureAlert: { color: colors.onGradientAlert },
+    section: { paddingHorizontal: gutter, paddingTop: spacing.xl, gap: spacing.md },
+    hint: { ...type.caption, textAlign: "center" },
+    statusRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+    statusText: { ...type.bodySmall, fontWeight: "600", flexShrink: 1 },
+    observation: {
+      ...type.body,
+      minHeight: 96,
+      padding: spacing.md,
+      paddingTop: spacing.md,
+      textAlignVertical: "top",
+      borderRadius: radius.control,
+      backgroundColor: colors.fill,
+    },
+  });
+};
 
 export default function ConfirmarProductoRoute() {
   const { t } = useTranslation();

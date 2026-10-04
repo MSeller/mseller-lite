@@ -13,7 +13,6 @@ import {
 import {
   ActivityIndicator,
   Appbar,
-  Button,
   HelperText,
   Icon,
   ProgressBar,
@@ -57,6 +56,7 @@ import {
 import { capturePhoto } from "../../utils/photoCapture";
 import SelectField from "../ui/SelectField";
 import OptionPickerModal, { type PickerOption } from "./OptionPickerModal";
+import AppButton from "../ui/AppButton";
 
 const RNC_LOOKUP_DEBOUNCE_MS = 800;
 
@@ -400,13 +400,13 @@ const OnboardingScreen: React.FC = () => {
                 )}
               </View>
               <View style={styles.logoActions}>
-                <Button mode="outlined" icon="upload" onPress={handlePickLogo} disabled={uploadingLogo}>
+                <AppButton mode="outlined" icon="upload" onPress={handlePickLogo} disabled={uploadingLogo}>
                   {form.logo ? t("onboarding.brandingStep.changeLogo") : t("onboarding.brandingStep.uploadLogo")}
-                </Button>
+                </AppButton>
                 {!!form.logo && (
-                  <Button mode="text" onPress={() => update({ logo: "" })} disabled={uploadingLogo}>
+                  <AppButton mode="text" onPress={() => update({ logo: "" })} disabled={uploadingLogo}>
                     {t("onboarding.brandingStep.removeLogo")}
-                  </Button>
+                  </AppButton>
                 )}
               </View>
             </View>
@@ -495,9 +495,9 @@ const OnboardingScreen: React.FC = () => {
           <Appbar.BackAction onPress={() => setStepIndex((index) => index - 1)} />
         ) : null}
         <Appbar.Content title={t("onboarding.pageTitle")} />
-        <Button onPress={signOutCompletely} compact>
+        <AppButton onPress={signOutCompletely} compact>
           {t("onboarding.signOut")}
-        </Button>
+        </AppButton>
       </Appbar.Header>
       {/* On web Paper's ProgressBar fills its parent's height; the fixed track keeps it a thin rule. */}
       <View style={styles.progressTrack}>
@@ -522,22 +522,22 @@ const OnboardingScreen: React.FC = () => {
         </ScrollView>
 
         <View style={styles.footer}>
-          <Button
+          <AppButton
             mode="outlined"
             onPress={() => setStepIndex((index) => index - 1)}
             disabled={stepIndex === 0}
             style={styles.footerButton}
           >
             {t("onboarding.back")}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             mode="contained"
             onPress={handleNext}
             disabled={!canContinue}
             style={styles.footerButton}
           >
             {isLastStep ? t("onboarding.finish") : t("onboarding.next")}
-          </Button>
+          </AppButton>
         </View>
       </KeyboardAvoidingView>
 

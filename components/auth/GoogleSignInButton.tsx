@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { StyleSheet } from "react-native";
-import { Button } from "react-native-paper";
 
 import { useTranslation } from "../../hooks/useTranslation";
 import {
@@ -8,6 +7,7 @@ import {
   isGoogleSignInAvailable,
   signInWithGoogle,
 } from "../../services/googleSignIn";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   disabled?: boolean;
@@ -45,7 +45,7 @@ const GoogleSignInButton: React.FC<Props> = ({ disabled, onError }) => {
   };
 
   return (
-    <Button
+    <AppButton
       mode="outlined"
       icon="google"
       onPress={handlePress}
@@ -55,13 +55,12 @@ const GoogleSignInButton: React.FC<Props> = ({ disabled, onError }) => {
       contentStyle={styles.content}
     >
       {t("auth.continueWithGoogle")}
-    </Button>
+    </AppButton>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 8,
   },
   content: {
     paddingVertical: 12,

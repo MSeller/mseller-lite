@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import {
-  Button,
   Card,
   Paragraph,
   Snackbar,
@@ -12,6 +11,7 @@ import {
 import { CustomTheme } from "../../constants/Theme";
 import { useAuthOperations } from "../../hooks/useAuthOperations";
 import { useTranslation } from "../../hooks/useTranslation";
+import AppButton from "../ui/AppButton";
 
 interface PasswordResetScreenProps {
   onNavigateBack?: () => void;
@@ -75,7 +75,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   disabled={loading}
                 />
 
-                <Button
+                <AppButton
                   mode="contained"
                   onPress={handleResetPassword}
                   loading={loading}
@@ -84,7 +84,7 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
                   contentStyle={styles.buttonContent}
                 >
                   {t("auth.sendResetLink")}
-                </Button>
+                </AppButton>
               </>
             ) : (
               <View style={styles.successContainer}>
@@ -100,14 +100,14 @@ const PasswordResetScreen: React.FC<PasswordResetScreenProps> = ({
             )}
 
             {onNavigateBack && (
-              <Button
+              <AppButton
                 mode="text"
                 onPress={onNavigateBack}
                 disabled={loading}
                 style={styles.textButton}
               >
                 {t("auth.backToLogin")}
-              </Button>
+              </AppButton>
             )}
           </Card.Content>
         </Card>

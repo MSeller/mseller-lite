@@ -1,25 +1,30 @@
-import React, { useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
-import {
-  Button,
-  Card,
-  Chip,
-  Divider,
-  IconButton,
-  Surface,
-  Text,
-  useTheme,
-} from "react-native-paper";
+import React, { useMemo, useState } from "react";
+import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { ActivityIndicator, Appbar, Icon, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CustomTheme } from "../../constants/Theme";
+import { gutterFor, type CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import { ZebraLabelService } from "../../services/zebraLabelService";
 import type { Product } from "../../types/inventory";
+import {
+  formatDateTime,
+  formatMoney,
+  formatQuantity,
+  productDisplayName,
+} from "../../utils/documentFormat";
+import StatusChip from "../ui/StatusChip";
+import { useBottomTabOverflow } from "../ui/TabBarBackground";
+import { stockOf, stockTone } from "../../utils/productStock";
 
 interface ProductDetailScreenProps {
   product: Product;
   onBack: () => void;
+}
+
+interface InfoRow {
+  label: string;
+  value: string | number | null | undefined;
 }
 
 const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
@@ -28,7 +33,12 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 }) => {
   const theme = useTheme() as CustomTheme;
   const { t } = useTranslation();
-  const styles = createStyles(theme);
+  const { width } = useWindowDimensions();
+  const gutter = gutterFor(width);
+  const styles = useMemo(() => createStyles(theme, gutter), [theme, gutter]);
+  const { colors } = theme.custom;
+  // iOS draws the tab bar over the screen; this is how much of the bottom it covers.
+  const tabOverflow = useBottomTabOverflow();
   const [isCreatingLabel, setIsCreatingLabel] = useState(false);
 
   const handleCreateLabel = async () => {
@@ -36,14 +46,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
 
     setIsCreatingLabel(true);
     try {
-      // Get available printers
       const printers = await ZebraLabelService.getAvailablePrinters();
 
       if (printers.length === 0) {
         Alert.alert(
-          "Sin Impresoras",
-          "No se encontraron impresoras disponibles. Asegúrate de que tu impresora Zebra esté conectada.",
-          [{ text: "OK" }]
+          t("products.detail.label.noPrintersTitle"),
+          t("products.detail.label.noPrintersMessage"),
+          [{ text: t("products.detail.label.ok") }]
         );
         return;
       }
@@ -52,445 +61,332 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({
       // In a production app, you might want to let users choose
       const selectedPrinter = printers[0];
 
-      // Generate ZPL label data
       const zplData = ZebraLabelService.generateProductLabel(product);
 
-      // Show preview and confirm
       Alert.alert(
         t("inventory.createLabel"),
-        `¿Deseas imprimir la etiqueta para "${
-          product.nombre
-        }"?\n\nImpresora: ${selectedPrinter.type.toUpperCase()}${
-          selectedPrinter.address ? ` (${selectedPrinter.address})` : ""
-        }`,
+        t("products.detail.label.confirm", {
+          name: product.nombre,
+          printer: `${selectedPrinter.type.toUpperCase()}${
+            selectedPrinter.address ? ` (${selectedPrinter.address})` : ""
+          }`,
+        }),
         [
           {
-            text: "Cancelar",
+            text: t("common.cancel"),
             style: "cancel",
           },
           {
-            text: "Vista Previa",
+            text: t("products.detail.label.preview"),
             onPress: () => {
-              // Show ZPL preview
-              Alert.alert("Vista Previa ZPL", zplData, [{ text: "OK" }]);
+              Alert.alert(t("products.detail.label.previewTitle"), zplData, [
+                { text: t("products.detail.label.ok") },
+              ]);
             },
           },
           {
-            text: "Imprimir",
+            text: t("products.detail.label.print"),
             onPress: async () => {
               const result = await ZebraLabelService.printLabel(
                 zplData,
                 selectedPrinter
               );
 
-              Alert.alert(result.success ? "Éxito" : "Error", result.message, [
-                { text: "OK" },
-              ]);
+              Alert.alert(
+                result.success ? t("common.success") : t("common.error"),
+                result.message,
+                [{ text: t("products.detail.label.ok") }]
+              );
             },
           },
         ]
       );
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Error al crear la etiqueta", [
-        { text: "OK" },
-      ]);
+      Alert.alert(
+        t("common.error"),
+        error.message || t("products.detail.label.failed"),
+        [{ text: t("products.detail.label.ok") }]
+      );
     } finally {
       setIsCreatingLabel(false);
     }
   };
 
-  return (
-    <SafeAreaView
-      style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
-      edges={["top", "left", "right"]}
+  const name = product.nombre ? productDisplayName(product.nombre) : product.codigo;
+  const active = product.status !== "I";
+  const otherPrices = [
+    { level: 2, value: product.precio2 },
+    { level: 3, value: product.precio3 },
+  ].filter((price) => (price.value ?? 0) > 0);
+  // A product registered a moment ago has no per-location rows yet; its main warehouse stands in.
+  const locations = product.existencias ?? [];
+  const showStock = locations.length > 0 || !product.esServicio;
+  const info: InfoRow[] = [
+    { label: t("products.detail.code"), value: product.codigo },
+    { label: t("products.detail.barcode"), value: product.codigoBarra },
+    { label: t("products.detail.area"), value: product.area },
+    { label: t("products.detail.department"), value: product.departamento },
+    { label: t("products.detail.unit"), value: product.unidad },
+    { label: t("products.detail.package"), value: product.empaque },
+  ];
+
+  const renderStockRow = (key: string | number, label: string, value: number, updated?: string, first = false) => (
+    <View
+      key={key}
+      style={styles.row}
+      accessible
+      accessibilityLabel={`${label}, ${t("documents.stockShort", { value: formatQuantity(value) })}`}
     >
+      {!first && <View style={styles.separator} />}
+      <View style={styles.rowContent}>
+        <View style={styles.rowBody}>
+          <Text style={styles.rowTitle} numberOfLines={2}>
+            {label}
+          </Text>
+          {!!updated && (
+            <Text style={styles.caption}>{t("products.detail.updated", { date: updated })}</Text>
+          )}
+        </View>
+        <StatusChip label={formatQuantity(value)} tone={stockTone(value)} />
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <Appbar.Header statusBarHeight={0} mode="small" style={styles.appbar}>
+        <Appbar.BackAction onPress={onBack} color={colors.tint} accessibilityLabel={t("common.back")} />
+        <Appbar.Content title="" />
+      </Appbar.Header>
+
       <ScrollView
-        style={[{ flex: 1 }, { backgroundColor: theme.colors.background }]}
-        contentContainerStyle={styles.container}
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: theme.custom.spacing.xxl + tabOverflow }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header with Product Name and Back Button */}
-        <View style={styles.headerContainer}>
-          <IconButton
-            icon="arrow-left"
-            iconColor={theme.colors.primary}
-            size={24}
-            onPress={onBack}
-            style={styles.backButton}
-          />
-          <Text
-            variant="titleLarge"
-            style={[styles.headerTitle, { color: theme.colors.primary }]}
-          >
-            Detalles del Producto
+        <View style={styles.hero}>
+          <Text style={styles.overline} selectable>
+            {t("products.detail.codeOverline", { code: product.codigo })}
           </Text>
+          <Text style={styles.largeTitle} accessibilityRole="header" selectable>
+            {name}
+          </Text>
+          {!!product.descripcion && <Text style={styles.description}>{product.descripcion}</Text>}
+          <View style={styles.chips}>
+            <StatusChip
+              label={active ? t("catalog.active") : t("catalog.inactive")}
+              tone={active ? "positive" : "negative"}
+            />
+            {product.promocion && <StatusChip label={t("products.detail.promotion")} tone="accent" />}
+            {product.esServicio && <StatusChip label={t("products.detail.service")} tone="neutral" />}
+          </View>
+          <Pressable
+            onPress={handleCreateLabel}
+            disabled={isCreatingLabel}
+            style={({ pressed }) => [styles.quickAction, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: isCreatingLabel, busy: isCreatingLabel }}
+            hitSlop={8}
+          >
+            {isCreatingLabel ? (
+              <ActivityIndicator size={18} color={colors.tint} />
+            ) : (
+              <Icon source="printer-outline" size={20} color={colors.tint} />
+            )}
+            <Text style={styles.quickActionLabel}>{t("inventory.createLabel")}</Text>
+          </Pressable>
         </View>
 
-        {/* Product Name Card */}
-        <Card elevation={0} style={[styles.card, styles.productNameCard]}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.productName}>
-              {product.nombre}
-            </Text>
-            {product.descripcion && (
-              <Text style={styles.productDescription}>
-                {product.descripcion}
-              </Text>
-            )}
-            <View style={styles.statusContainer}>
-              <Chip
-                icon="check-circle"
-                mode="outlined"
-                compact
-                style={[
-                  styles.statusChip,
-                  {
-                    backgroundColor:
-                      product.status === "A"
-                        ? theme.colors.primaryContainer
-                        : theme.colors.errorContainer,
-                  },
-                ]}
-              >
-                {product.status === "A" ? "Activo" : "Inactivo"}
-              </Chip>
-              {product.promocion && (
-                <Chip
-                  icon="sale"
-                  mode="outlined"
-                  compact
-                  style={[
-                    styles.statusChip,
-                    { backgroundColor: theme.colors.tertiaryContainer },
-                  ]}
-                >
-                  En Promoción
-                </Chip>
-              )}
-              {product.esServicio && (
-                <Chip
-                  icon="cog"
-                  mode="outlined"
-                  compact
-                  style={styles.statusChip}
-                >
-                  Servicio
-                </Chip>
-              )}
+        <View style={styles.section}>
+          <Text style={styles.sectionOverline}>{t("products.detail.price")}</Text>
+          <Text
+            style={styles.priceFigure}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            accessibilityLabel={`${t("products.detail.price")}: ${formatMoney(product.precio1)}`}
+          >
+            {formatMoney(product.precio1)}
+          </Text>
+          {otherPrices.map((price) => (
+            <View key={price.level} style={styles.valueRow}>
+              <Text style={styles.label}>{t("products.detail.priceLevel", { level: price.level })}</Text>
+              <Text style={styles.valueFigure}>{formatMoney(price.value)}</Text>
             </View>
-          </Card.Content>
-        </Card>
+          ))}
+        </View>
 
-        {/* Product Codes Card */}
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.sectionTitle}>
-              <IconButton
-                icon="barcode"
-                size={20}
-                iconColor={theme.colors.primary}
-              />
-              Códigos
-            </Text>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Código:</Text>
-              <Text style={styles.infoValue}>{product.codigo}</Text>
-            </Surface>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Código de Barra:</Text>
-              <Text style={styles.infoValue}>{product.codigoBarra}</Text>
-            </Surface>
-          </Card.Content>
-        </Card>
-
-        {/* Product Details Card */}
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.sectionTitle}>
-              <IconButton
-                icon="information"
-                size={20}
-                iconColor={theme.colors.primary}
-              />
-              Información General
-            </Text>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Área:</Text>
-              <Text style={styles.infoValue}>{product.area}</Text>
-            </Surface>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Departamento:</Text>
-              <Text style={styles.infoValue}>{product.departamento}</Text>
-            </Surface>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Unidad:</Text>
-              <Text style={styles.infoValue}>{product.unidad}</Text>
-            </Surface>
-            <Surface style={styles.infoRow} elevation={0}>
-              <Text style={styles.infoLabel}>Empaque:</Text>
-              <Text style={styles.infoValue}>{product.empaque}</Text>
-            </Surface>
-          </Card.Content>
-        </Card>
-
-        {/* Pricing Card */}
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.sectionTitle}>
-              <IconButton
-                icon="currency-usd"
-                size={20}
-                iconColor={theme.colors.primary}
-              />
-              Precios
-            </Text>
-            <Surface style={styles.priceRow} elevation={0}>
-              <Text style={styles.priceLabel}>Precio 1:</Text>
-              <Text style={[styles.priceValue, styles.mainPrice]}>
-                ${product.precio1.toFixed(2)}
+        {showStock && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.overline}>{t("products.detail.stock")}</Text>
+              <Text style={styles.overline}>
+                {t("products.detail.stockTotal", { value: formatQuantity(stockOf(product)) })}
               </Text>
-            </Surface>
-            {product.precio2 > 0 && (
-              <Surface style={styles.priceRow} elevation={0}>
-                <Text style={styles.priceLabel}>Precio 2:</Text>
-                <Text style={styles.priceValue}>
-                  ${product.precio2.toFixed(2)}
-                </Text>
-              </Surface>
-            )}
-            {product.precio3 > 0 && (
-              <Surface style={styles.priceRow} elevation={0}>
-                <Text style={styles.priceLabel}>Precio 3:</Text>
-                <Text style={styles.priceValue}>
-                  ${product.precio3.toFixed(2)}
-                </Text>
-              </Surface>
-            )}
-            <Divider style={styles.priceDivider} />
-            {/* <Surface style={styles.priceRow} elevation={0}>
-            <Text style={styles.priceLabel}>Costo:</Text>
-            <Text style={[styles.priceValue, styles.costPrice]}>
-              ${product.costo.toFixed(2)}
-            </Text>
-          </Surface> */}
-          </Card.Content>
-        </Card>
+            </View>
+            {locations.length > 0
+              ? locations.map((ex, index) =>
+                  renderStockRow(
+                    ex.id,
+                    ex.localidadNombre,
+                    ex.existencia,
+                    formatDateTime(ex.ultimaActualizacion),
+                    index === 0
+                  )
+                )
+              : renderStockRow("main", t("products.detail.mainWarehouse"), stockOf(product), undefined, true)}
+          </View>
+        )}
 
-        {/* Stock Information Card */}
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.sectionTitle}>
-              <IconButton
-                icon="package-variant"
-                size={20}
-                iconColor={theme.colors.primary}
-              />
-              Existencias por Localidad
-            </Text>
-            {product.existencias.map((ex) => {
-              const stockLevel = ex.existencia;
-              const isLowStock = stockLevel <= 0;
-              const isMediumStock = stockLevel <= 5 && stockLevel > 0;
-
-              const chipStyle = isLowStock
-                ? { backgroundColor: theme.colors.errorContainer }
-                : isMediumStock
-                ? { backgroundColor: theme.colors.tertiaryContainer }
-                : { backgroundColor: theme.colors.primaryContainer };
-
-              const textColor = isLowStock
-                ? theme.colors.onErrorContainer
-                : isMediumStock
-                ? theme.colors.onTertiaryContainer
-                : theme.colors.onPrimaryContainer;
-
-              return (
-                <Surface key={ex.id} style={styles.stockRow} elevation={0}>
-                  <View style={styles.stockInfo}>
-                    <Text style={styles.locationName}>
-                      {ex.localidadNombre}
-                    </Text>
-                    <Text style={styles.lastUpdated}>
-                      Última actualización:{" "}
-                      {new Date(ex.ultimaActualizacion).toLocaleDateString()}
-                    </Text>
-                  </View>
-                  <Chip
-                    icon={
-                      stockLevel <= 0
-                        ? "alert-circle"
-                        : stockLevel <= 5
-                        ? "alert"
-                        : "check"
-                    }
-                    style={[styles.stockChip, chipStyle]}
-                    textStyle={{ color: textColor, fontWeight: "bold" }}
-                  >
-                    {ex.existencia}
-                  </Chip>
-                </Surface>
-              );
-            })}
-          </Card.Content>
-        </Card>
-
-        {/* Action Buttons */}
-        <Card elevation={0} style={styles.card}>
-          <Card.Content>
-            <Button
-              mode="contained"
-              style={styles.actionButton}
-              icon="qr-code"
-              onPress={handleCreateLabel}
-              loading={isCreatingLabel}
-              disabled={isCreatingLabel}
-            >
-              {t("inventory.createLabel")}
-            </Button>
-          </Card.Content>
-        </Card>
+        <View style={styles.section}>
+          <Text style={styles.sectionOverline}>{t("products.detail.info")}</Text>
+          {info.map((row, index) => {
+            const empty = row.value === null || row.value === undefined || row.value === "";
+            return (
+              <View key={row.label} style={styles.row}>
+                {index > 0 && <View style={styles.separator} />}
+                <View style={styles.infoRow}>
+                  <Text style={styles.label}>{row.label}</Text>
+                  <Text style={[styles.value, empty && styles.emptyValue]} selectable>
+                    {empty ? t("catalog.noValue") : String(row.value)}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-const createStyles = (theme: CustomTheme) =>
-  StyleSheet.create({
-    container: {
-      padding: 16,
-      paddingTop: 8, // Reduced top padding since SafeAreaView handles safe area
-      paddingBottom: 0, // Remove bottom padding to eliminate gap above tab bar
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, type, spacing, hairline, touchTarget } = theme.custom;
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
     },
-    card: {
-      marginBottom: 16,
-      borderRadius: 12,
-      backgroundColor: theme.colors.surface,
+    appbar: {
+      backgroundColor: colors.background,
     },
-    headerContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      marginBottom: 16,
+    scroll: {
+      flex: 1,
     },
-    backButton: {
-      margin: 0,
+    hero: {
+      paddingHorizontal: gutter,
+      paddingBottom: spacing.sm,
+      gap: spacing.xs,
     },
-    headerTitle: {
-      fontSize: 20,
-      fontWeight: "bold",
-      marginLeft: 8,
+    overline: {
+      ...type.overline,
     },
-    productNameCard: {
-      backgroundColor: theme.colors.surfaceVariant,
+    largeTitle: {
+      ...type.largeTitle,
     },
-    productName: {
-      fontSize: 24,
-      fontWeight: "bold",
-      marginBottom: 8,
+    description: {
+      ...type.bodySmall,
     },
-    productDescription: {
-      fontSize: 16,
-      color: theme.colors.onSurfaceVariant,
-      marginBottom: 12,
-      fontStyle: "italic",
-    },
-    statusContainer: {
+    chips: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 8,
+      gap: spacing.xs,
+      marginTop: spacing.xs,
     },
-    statusChip: {
-      marginRight: 8,
-      marginBottom: 4,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: "bold",
-      marginBottom: 12,
+    quickAction: {
       flexDirection: "row",
       alignItems: "center",
+      alignSelf: "flex-start",
+      gap: spacing.xs,
+      minHeight: touchTarget,
+    },
+    pressed: {
+      opacity: 0.6,
+    },
+    quickActionLabel: {
+      ...type.body,
+      fontWeight: "600",
+      color: colors.tint,
+    },
+    section: {
+      paddingTop: spacing.xl,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingBottom: spacing.xs,
+    },
+    sectionOverline: {
+      ...type.overline,
+      paddingHorizontal: gutter,
+      paddingBottom: spacing.xs,
+    },
+    priceFigure: {
+      ...type.figure(34),
+      paddingHorizontal: gutter,
+      paddingBottom: spacing.sm,
+    },
+    valueRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: spacing.lg,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.sm,
+    },
+    valueFigure: {
+      ...type.figure(17),
+    },
+    row: {
+      backgroundColor: colors.background,
+    },
+    separator: {
+      height: hairline,
+      marginLeft: gutter,
+      backgroundColor: colors.hairline,
+    },
+    rowContent: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+    },
+    rowBody: {
+      flex: 1,
+      gap: 2,
+    },
+    rowTitle: {
+      ...type.rowTitle,
+    },
+    caption: {
+      ...type.caption,
     },
     infoRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      marginBottom: 8,
-      borderRadius: 8,
-      backgroundColor: theme.colors.surfaceVariant,
+      alignItems: "flex-start",
+      gap: spacing.lg,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
     },
-    infoLabel: {
-      fontSize: 14,
+    label: {
+      ...type.bodySmall,
+      flexShrink: 0,
+      maxWidth: "45%",
+    },
+    value: {
+      ...type.body,
       fontWeight: "600",
-      color: theme.colors.onSurfaceVariant,
       flex: 1,
-    },
-    infoValue: {
-      fontSize: 14,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
-      flex: 2,
       textAlign: "right",
     },
-    priceRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      marginBottom: 8,
-      borderRadius: 8,
-      backgroundColor: theme.colors.surfaceVariant,
-    },
-    priceLabel: {
-      fontSize: 14,
-      fontWeight: "600",
-      color: theme.colors.onSurfaceVariant,
-    },
-    priceValue: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
-    },
-    mainPrice: {
-      fontSize: 20,
-      color: theme.colors.primary,
-    },
-    costPrice: {
-      color: theme.colors.error,
-    },
-    priceDivider: {
-      marginVertical: 8,
-    },
-    stockRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      marginBottom: 8,
-      borderRadius: 8,
-      backgroundColor: theme.colors.surfaceVariant,
-    },
-    stockInfo: {
-      flex: 1,
-    },
-    locationName: {
-      fontSize: 16,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
-    },
-    lastUpdated: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-      marginTop: 2,
-    },
-    stockChip: {
-      marginLeft: 12,
-    },
-    actionButton: {
-      marginBottom: 12,
+    emptyValue: {
+      color: colors.inkTertiary,
+      fontWeight: "400",
     },
   });
+};
 
 export default ProductDetailScreen;

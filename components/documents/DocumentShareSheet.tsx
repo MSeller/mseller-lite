@@ -3,7 +3,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
   ActivityIndicator,
-  Button,
   Chip,
   Divider,
   Icon,
@@ -38,6 +37,7 @@ import {
 } from "../../utils/documentPdf";
 import { describePrinterError } from "../printing/printerErrors";
 import TicketPreview from "../printing/TicketPreview";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   visible: boolean;
@@ -294,15 +294,15 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
               </Text>
               <TicketPreview ticket={ticket} columns={profile.columns} hasCutter={profile.hasCutter} />
               <View style={styles.formActions}>
-                <Button
+                <AppButton
                   mode="text"
                   onPress={() => setTicket(null)}
                   disabled={ocupado}
                   contentStyle={styles.actionContent}
                 >
                   {t("common.cancel")}
-                </Button>
-                <Button
+                </AppButton>
+                <AppButton
                   mode="contained"
                   icon="printer-pos"
                   onPress={handlePrintTicket}
@@ -312,7 +312,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                   contentStyle={styles.actionContent}
                 >
                   {t("documents.share.printTicketNow")}
-                </Button>
+                </AppButton>
               </View>
             </View>
           ) : (
@@ -334,7 +334,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
               )}
 
               {ticketDisponible && (
-                <Button
+                <AppButton
                   mode="contained"
                   icon="printer-pos"
                   onPress={handleOpenTicket}
@@ -344,12 +344,12 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                   contentStyle={styles.actionContent}
                 >
                   {printer ? t("documents.share.printTicket") : t("documents.share.setupPrinter")}
-                </Button>
+                </AppButton>
               )}
 
               {pdfDisponible ? (
                 <View style={styles.actions}>
-                  <Button
+                  <AppButton
                     mode={ticketDisponible ? "contained-tonal" : "contained"}
                     // printer-check, not printer-refresh: the latter is not in the bundled
                     // MaterialCommunityIcons set and renders as a literal "?" on the button.
@@ -361,8 +361,8 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                     contentStyle={styles.actionContent}
                   >
                     {yaImpreso ? t("documents.share.reprint") : t("documents.share.print")}
-                  </Button>
-                  <Button
+                  </AppButton>
+                  <AppButton
                     mode="outlined"
                     icon="file-download-outline"
                     onPress={handleDownload}
@@ -372,7 +372,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                     contentStyle={styles.actionContent}
                   >
                     {t("documents.share.savePdf")}
-                  </Button>
+                  </AppButton>
                 </View>
               ) : (
                 <View style={styles.notice}>
@@ -413,15 +413,15 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                     style={styles.input}
                   />
                   <View style={styles.formActions}>
-                    <Button
+                    <AppButton
                       mode="text"
                       onPress={() => setEmailMode(false)}
                       disabled={ocupado}
                       contentStyle={styles.actionContent}
                     >
                       {t("common.cancel")}
-                    </Button>
-                    <Button
+                    </AppButton>
+                    <AppButton
                       mode="contained"
                       icon="send"
                       onPress={handleSend}
@@ -431,11 +431,11 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                       contentStyle={styles.actionContent}
                     >
                       {t("documents.share.send")}
-                    </Button>
+                    </AppButton>
                   </View>
                 </View>
               ) : (
-                <Button
+                <AppButton
                   mode="contained-tonal"
                   icon="email-outline"
                   onPress={() => setEmailMode(true)}
@@ -444,7 +444,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                   contentStyle={styles.actionContent}
                 >
                   {t("documents.share.emailIt")}
-                </Button>
+                </AppButton>
               )}
 
               {!!history?.envios?.length && (
@@ -489,7 +489,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                           >
                             {t(`documents.share.state.${envio.estado}`)}
                           </Chip>
-                          <Button
+                          <AppButton
                             mode="text"
                             compact
                             icon="email-sync-outline"
@@ -497,7 +497,7 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
                             disabled={ocupado}
                           >
                             {t("documents.share.resend")}
-                          </Button>
+                          </AppButton>
                         </View>
                       </View>
                     );
@@ -522,9 +522,9 @@ const DocumentShareSheet: React.FC<Props> = ({ visible, onDismiss, noPedidoStr, 
             </View>
           )}
 
-          <Button mode="text" onPress={onDismiss} disabled={ocupado} contentStyle={styles.actionContent}>
+          <AppButton mode="text" onPress={onDismiss} disabled={ocupado} contentStyle={styles.actionContent}>
             {t("common.close")}
-          </Button>
+          </AppButton>
         </ScrollView>
       </Modal>
     </Portal>
@@ -547,7 +547,7 @@ const createStyles = (theme: CustomTheme) =>
     lastPrint: { flexDirection: "row", alignItems: "center", gap: 6 },
     lastPrintText: { color: theme.colors.onSurfaceVariant, flex: 1 },
     actions: { gap: 8 },
-    action: { borderRadius: theme.custom.radius.container },
+    action: {},
     // 52px keeps every action a comfortable tap target on a touch screen.
     actionContent: { height: 52 },
     notice: {
@@ -555,7 +555,6 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "flex-start",
       gap: 8,
       backgroundColor: theme.colors.surfaceVariant,
-      borderRadius: theme.custom.radius.control,
       padding: 12,
     },
     noticeText: { color: theme.colors.onSurfaceVariant, flex: 1, lineHeight: 18 },
@@ -563,7 +562,7 @@ const createStyles = (theme: CustomTheme) =>
     form: { gap: 10 },
     input: { backgroundColor: theme.colors.surface },
     formActions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8 },
-    sendButton: { borderRadius: theme.custom.radius.container, minWidth: 140 },
+    sendButton: { minWidth: 140 },
     historyBlock: { gap: 6, marginTop: 4 },
     historyTitle: { color: theme.colors.onSurfaceVariant, textTransform: "uppercase", letterSpacing: 0.6 },
     historyRow: {

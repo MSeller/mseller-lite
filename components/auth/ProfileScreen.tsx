@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import {
-  Avatar,
-  Button,
+  ActivityIndicator,
   Card,
   Divider,
+  Icon,
+  Menu,
   Paragraph,
   Snackbar,
   Title,
@@ -13,7 +14,12 @@ import {
 import { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { useTranslation } from "../../hooks/useTranslation";
-import { signOutCompletely } from "../../services/accountService";
+import { ImageTooLargeError } from "../../services/mediaService";
+import { changeProfilePhoto, signOutCompletely } from "../../services/accountService";
+import { PhotoPermissionError, type PhotoSource } from "../../utils/photoCapture";
+import UserAvatar from "../ui/UserAvatar";
+import { useBottomTabOverflow } from "../ui/TabBarBackground";
+import AppButton from "../ui/AppButton";
 
 interface ProfileScreenProps {
   /** Extra settings rows, shown above Sign Out (the Más tab adds language and developer tools). */
@@ -21,7 +27,11 @@ interface ProfileScreenProps {
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
-  const { user, userProfile } = useUser();
+  const { user, userProfile, refreshUserProfile } = useUser();
+  const [photoMenu, setPhotoMenu] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // The new photo shows at once; the profile refresh catches up behind it.
+  const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -43,12 +53,28 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
     }
   };
 
-  const getInitials = (name: string): string => {
-    return name
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase())
-      .join("")
-      .slice(0, 2);
+  const handleChangePhoto = async (source: PhotoSource) => {
+    setPhotoMenu(false);
+    setUploadingPhoto(true);
+    setError("");
+    try {
+      const url = await changeProfilePhoto(source);
+      if (url) {
+        setNewPhoto(url);
+        setSuccess(t("profile.photoUpdated"));
+        await refreshUserProfile();
+      }
+    } catch (e) {
+      setError(
+        e instanceof PhotoPermissionError
+          ? t("profile.photoPermission")
+          : e instanceof ImageTooLargeError
+            ? t("documents.productPhoto.tooLarge")
+            : t("profile.photoFailed")
+      );
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const formatDate = (date: string): string => {
@@ -59,6 +85,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
     });
   };
 
+  const tabOverflow = useBottomTabOverflow();
+
   if (!user) {
     return null;
   }
@@ -66,21 +94,55 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
+      // iOS draws the tab bar over the screen; without this the last rows (Cerrar sesión)
+      // sit under it and cannot be reached.
+      contentContainerStyle={{ paddingBottom: tabOverflow }}
     >
       <View style={styles.content}>
         <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={styles.cardContent}>
-            <View style={styles.avatarContainer}>
-              {user.photoURL ? (
-                <Avatar.Image size={80} source={{ uri: user.photoURL }} />
-              ) : (
-                <Avatar.Text
-                  size={80}
-                  label={getInitials(user.displayName || "User")}
-                  style={{ backgroundColor: theme.colors.primary }}
-                />
-              )}
-            </View>
+            <Menu
+              visible={photoMenu}
+              onDismiss={() => setPhotoMenu(false)}
+              anchor={
+                <Pressable
+                  onPress={() => setPhotoMenu(true)}
+                  disabled={uploadingPhoto}
+                  style={styles.avatarContainer}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("profile.changePhoto")}
+                >
+                  <UserAvatar
+                    size={88}
+                    photoURL={newPhoto || userProfile?.photoURL || user.photoURL}
+                    name={[userProfile?.firstName, userProfile?.lastName].filter(Boolean).join(" ") || user.displayName}
+                  />
+                  <View
+                    style={[
+                      styles.photoBadge,
+                      { backgroundColor: theme.custom.colors.tint, borderColor: theme.colors.surface },
+                    ]}
+                  >
+                    {uploadingPhoto ? (
+                      <ActivityIndicator size={14} color={theme.colors.onPrimary} />
+                    ) : (
+                      <Icon source="camera" size={16} color={theme.colors.onPrimary} />
+                    )}
+                  </View>
+                </Pressable>
+              }
+            >
+              <Menu.Item
+                leadingIcon="camera-outline"
+                title={t("documents.productPhoto.takePhoto")}
+                onPress={() => handleChangePhoto("camera")}
+              />
+              <Menu.Item
+                leadingIcon="image-outline"
+                title={t("documents.productPhoto.choosePhoto")}
+                onPress={() => handleChangePhoto("library")}
+              />
+            </Menu>
 
             <Title style={[styles.name, { color: theme.colors.onSurface }]}>
               {user.displayName || "User"}
@@ -254,7 +316,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
 
             {children}
 
-            <Button
+            <AppButton
               mode="contained"
               onPress={handleSignOut}
               loading={loading}
@@ -264,7 +326,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ children }) => {
               contentStyle={styles.buttonContent}
             >
               {t("auth.signOut")}
-            </Button>
+            </AppButton>
           </Card.Content>
         </Card>
       </View>
@@ -308,6 +370,18 @@ const styles = StyleSheet.create({
   },
   avatarContainer: {
     marginBottom: 16,
+  },
+  // A circle: the radius is half the badge's own size (geometry, not a token).
+  photoBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 30,
+    height: 30,
+    borderRadius: 30 / 2,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   name: {
     fontSize: 24,

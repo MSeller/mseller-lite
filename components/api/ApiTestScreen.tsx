@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import {
-  Button,
   Card,
   Divider,
   Paragraph,
@@ -13,6 +12,7 @@ import { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
 import { restClient } from "../../services/api";
 import { refreshUserAccessToken } from "../../services/userService";
+import AppButton from "../ui/AppButton";
 
 const ApiTestScreen: React.FC = () => {
   const { userProfile, refreshUserProfile } = useUser();
@@ -118,7 +118,7 @@ const ApiTestScreen: React.FC = () => {
                 Authentication
               </Title>
 
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={handleRefreshToken}
                 loading={loading}
@@ -127,9 +127,9 @@ const ApiTestScreen: React.FC = () => {
                 contentStyle={styles.buttonContent}
               >
                 Refresh Access Token
-              </Button>
+              </AppButton>
 
-              <Button
+              <AppButton
                 mode="outlined"
                 onPress={handleRefreshProfile}
                 loading={loading}
@@ -138,7 +138,7 @@ const ApiTestScreen: React.FC = () => {
                 contentStyle={styles.buttonContent}
               >
                 Refresh User Profile
-              </Button>
+              </AppButton>
             </View>
 
             <Divider style={styles.divider} />
@@ -189,7 +189,7 @@ const ApiTestScreen: React.FC = () => {
                 </Paragraph>
               </View>
 
-              <Button
+              <AppButton
                 mode="contained"
                 onPress={handleTestApiCall}
                 loading={loading}
@@ -198,7 +198,7 @@ const ApiTestScreen: React.FC = () => {
                 contentStyle={styles.buttonContent}
               >
                 Test API Call
-              </Button>
+              </AppButton>
             </View>
 
             {apiResponse && (

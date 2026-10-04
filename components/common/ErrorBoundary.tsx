@@ -48,7 +48,7 @@ class ErrorBoundary extends React.Component<
     };
 
     console.log(
-      "📊 Error Details for Debugging:",
+      "Error Details for Debugging:",
       JSON.stringify(errorDetails, null, 2)
     );
 

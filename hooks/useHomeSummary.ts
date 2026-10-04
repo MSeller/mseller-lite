@@ -6,6 +6,7 @@ import { documentService } from "../services/documentService";
 import { entregaService } from "../services/entregaService";
 import { inventoryService, offlineManager } from "../services/inventoryService";
 import { preparacionService } from "../services/preparacionService";
+import { describeRouteListError } from "../utils/routeStatus";
 import type { DocumentSummary } from "../types/documents";
 import { useNavigationAccess } from "./useNavigationAccess";
 
@@ -13,6 +14,11 @@ import { useNavigationAccess } from "./useNavigationAccess";
 export interface CardState<T> {
   loading: boolean;
   failed: boolean;
+  /**
+   * Set when the module answered that it is not for this user — switched off (403) or, for
+   * deliveries, no driver code (400). Retrying cannot fix either, so the card says so instead.
+   */
+  unavailable: "disabled" | "unassigned" | null;
   data: T | null;
 }
 
@@ -48,7 +54,7 @@ export interface HomeSummary {
   retry: (card: CardKey) => void;
 }
 
-const idle = <T,>(): CardState<T> => ({ loading: false, failed: false, data: null });
+const idle = <T,>(): CardState<T> => ({ loading: false, failed: false, unavailable: null, data: null });
 
 /** Coming back to Home refreshes the counts, but not more often than this. */
 const FOCUS_REFRESH_AFTER_MS = 30_000;
@@ -86,6 +92,8 @@ export const useHomeSummary = (): HomeSummary => {
       enabled: boolean,
       setState: React.Dispatch<React.SetStateAction<CardState<T>>>,
       load: () => Promise<T>,
+      /** Route modules only: their 403 means the module is switched off for this user. */
+      { routeModule = false, unassignedOn400 = false }: { routeModule?: boolean; unassignedOn400?: boolean } = {},
     ) => {
       const requestId = ++requestIds.current[card];
       const isLatest = () => requestIds.current[card] === requestId;
@@ -96,10 +104,17 @@ export const useHomeSummary = (): HomeSummary => {
       setState((prev) => ({ ...prev, loading: true, failed: false }));
       try {
         const data = await load();
-        if (isLatest()) setState({ loading: false, failed: false, data });
+        if (isLatest()) setState({ loading: false, failed: false, unavailable: null, data });
       } catch (error) {
-        console.warn(`Home summary card "${card}" failed to load:`, error);
-        if (isLatest()) setState((prev) => ({ ...prev, loading: false, failed: true }));
+        const kind = routeModule ? describeRouteListError(error, "", { unassignedOn400 }).kind : "failed";
+        if (kind === "failed") console.warn(`Home summary card "${card}" failed to load:`, error);
+        if (isLatest()) {
+          setState((prev) =>
+            kind === "failed"
+              ? { ...prev, loading: false, failed: true, unavailable: null }
+              : { loading: false, failed: false, unavailable: kind, data: null }
+          );
+        }
       }
     },
     [],
@@ -107,13 +122,14 @@ export const useHomeSummary = (): HomeSummary => {
 
   const loaders = {
     picking: () =>
-      track("picking", can("picking"), setPicking, async () => {
+      // Also behind the driver's Carga card: routes ready to load are the same request.
+      track("picking", can("picking") || can("truckLoading"), setPicking, async () => {
         const rutas = await preparacionService.getRutasPreparacion();
         return {
           toPrepare: rutas.filter((r) => r.status === "confirmada" || r.status === "en_preparacion").length,
           readyToDispatch: rutas.filter((r) => r.status === "lista_despacho").length,
         };
-      }),
+      }, { routeModule: true }),
     deliveries: () =>
       track("deliveries", can("deliveries"), setDeliveries, async () => {
         const { items } = await entregaService.getRutas();
@@ -122,7 +138,7 @@ export const useHomeSummary = (): HomeSummary => {
           activeRoutes: open.filter((r) => r.esActiva).length,
           pendingStops: open.reduce((sum, r) => sum + (r.facturasPendientes ?? 0), 0),
         };
-      }),
+      }, { routeModule: true, unassignedOn400: true }),
     stockCount: () =>
       track("stockCount", can("stockCount"), setStockCount, async () => {
         const [counts, unsynced] = await Promise.all([

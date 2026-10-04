@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
-import { Appbar, Button, Text, useTheme } from "react-native-paper";
+import { Appbar, Text, useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
@@ -13,6 +13,7 @@ import { describeB2BError } from "../../utils/b2b";
 import AppCard from "../ui/AppCard";
 import EmptyState from "../ui/EmptyState";
 import FormField from "../ui/FormField";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   tiendaId?: string;
@@ -105,9 +106,9 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             title={t("marketplace.pickStoreTitle")}
             message={t("marketplace.pickStoreBody")}
           />
-          <Button mode="contained" onPress={() => router.replace("/(tabs)/marketplace")}>
+          <AppButton mode="contained" onPress={() => router.replace("/(tabs)/marketplace")}>
             {t("marketplace.browseStores")}
-          </Button>
+          </AppButton>
         </View>
       </SafeAreaView>
     );
@@ -126,9 +127,9 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
               <Text variant="bodyMedium" style={styles.help}>
                 {t("marketplace.requestSentBody")}
               </Text>
-              <Button mode="contained" onPress={goBack} style={styles.successButton}>
+              <AppButton mode="contained" onPress={goBack} style={styles.successButton}>
                 {t("common.back")}
-              </Button>
+              </AppButton>
             </View>
           </AppCard>
         </View>
@@ -188,7 +189,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             </Text>
           )}
 
-          <Button
+          <AppButton
             mode="contained"
             onPress={submit}
             disabled={submitting}
@@ -197,7 +198,7 @@ const RequestAccessScreen: React.FC<Props> = ({ tiendaId, tiendaNombre }) => {
             contentStyle={styles.submitContent}
           >
             {t("marketplace.requestAction")}
-          </Button>
+          </AppButton>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

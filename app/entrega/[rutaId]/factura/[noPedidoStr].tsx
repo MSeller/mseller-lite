@@ -1,14 +1,12 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Linking, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Linking, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
-  Button,
-  Card,
+  Appbar,
   Chip,
   Dialog,
-  Divider,
   Icon,
   IconButton,
   Portal,
@@ -18,8 +16,14 @@ import {
   useTheme,
 } from "react-native-paper";
 
-import type { CustomTheme } from "@/constants/Theme";
+import { gutterFor, type CustomTheme } from "@/constants/Theme";
 import { useTranslation } from "@/hooks/useTranslation";
+import { EntregaHeader } from "../../../../components/entrega/EntregaHeader";
+import { useBackToRoute } from "../../../../components/entrega/useBackToRoute";
+import EmptyState from "../../../../components/ui/EmptyState";
+import GradientButton from "../../../../components/ui/GradientButton";
+import { detalleStatusOf } from "../../../../components/entrega/detalleStatus";
+import StatusChip from "../../../../components/ui/StatusChip";
 import { entregaService } from "../../../../services/entregaService";
 import { inventoryService } from "../../../../services/inventoryService";
 import {
@@ -28,11 +32,12 @@ import {
   RegistrarEntregaRequest,
 } from "../../../../types/entrega";
 import { getCurrentCoords } from "../../../../utils/deliveryLocation";
-import { formatDateTime } from "../../../../utils/documentFormat";
+import { formatDateTime, formatMoney } from "../../../../utils/documentFormat";
 import { huellaEnvio, nuevaClaveIntento } from "../../../../utils/entregaAttempts";
 import { uploadDeliveryPhoto } from "../../../../utils/deliveryPhoto";
 import { capturePhoto, PhotoPermissionError } from "../../../../utils/photoCapture";
 import { hasCoords, mapProviderOptions, openInMaps } from "../../../../utils/mapLinks";
+import AppButton from "../../../../components/ui/AppButton";
 
 type Outcome =
   | "entregado"
@@ -46,13 +51,16 @@ const PAID_TO_TRUCK = ["efectivo", "cheque", "transferencia"];
 
 export default function FacturaEntregaScreen() {
   const theme = useTheme() as CustomTheme;
-  const styles = useMemo(() => createStyles(theme), [theme]);
-  const { status } = theme.custom;
+  const { width } = useWindowDimensions();
+  const gutter = gutterFor(width);
+  const styles = useMemo(() => createStyles(theme, gutter), [theme, gutter]);
+  const { status, colors } = theme.custom;
   // Android draws edge to edge: the system navigation bar overlaps the bottom of the screen.
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useTranslation();
   const { rutaId, noPedidoStr } = useLocalSearchParams<{ rutaId: string; noPedidoStr: string }>();
+  const backToRoute = useBackToRoute(rutaId);
   const numericRutaId = parseInt(rutaId ?? "0", 10);
 
   const [data, setData] = useState<EntregaFacturaDetalle | null>(null);
@@ -200,23 +208,47 @@ export default function FacturaEntregaScreen() {
     setDeliverOpen(true);
   };
 
+
+  const header = (
+    <EntregaHeader title={t("entrega.deliveryDetailTitle")} onBack={backToRoute}>
+      {!!data && (
+        <Appbar.Action
+          icon="map-marker-outline"
+          color={colors.tint}
+          disabled={!hasCoords(data)}
+          onPress={() => setShowMap(true)}
+          accessibilityLabel={t("entrega.ui.openMap")}
+        />
+      )}
+    </EntregaHeader>
+  );
+
   if (loading) {
     return (
-      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-        <ActivityIndicator size="large" />
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        {header}
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.tint} />
+        </View>
       </SafeAreaView>
     );
   }
 
   if (!data) {
     return (
-      <SafeAreaView style={[styles.centered, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-        <Text>{error || t("entrega.errorLoading")}</Text>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        {header}
+        <EmptyState
+            style={styles.stateView}
+          icon="cloud-off-outline"
+          title={t("entrega.ui.errorTitle")}
+          message={error || t("entrega.errorLoading")}
+          action={{ label: t("common.retry"), onPress: () => { setLoading(true); load(); } }}
+        />
       </SafeAreaView>
     );
   }
 
-  const canNavigate = hasCoords(data);
   const alreadyRecorded = data.entrega && data.statusDetalle !== "activo";
   const intentosPrevios = data.intentosPrevios ?? [];
   // Every outcome button goes through here: on a stop that already has an outcome it asks before
@@ -224,201 +256,230 @@ export default function FacturaEntregaScreen() {
   const withNewAttemptCheck = (action: () => void) => () =>
     alreadyRecorded ? setPendingAction(() => action) : action();
 
+  const st = detalleStatusOf(data.statusDetalle);
+  const docNo = data.noFactura || data.noPedidoStr;
+  const detailRows: { label: string; value: string; icon: string; onPress?: () => void }[] = [
+    { label: t("entrega.ui.customerCode"), value: data.codigoCliente, icon: "account-outline" },
+    ...(data.direccion ? [{ label: t("entrega.ui.address"), value: data.direccion, icon: "home-map-marker" }] : []),
+    ...(data.referenciaDireccion
+      ? [{ label: t("entrega.ui.reference"), value: data.referenciaDireccion, icon: "sign-direction" }]
+      : []),
+    ...(data.telefono
+      ? [{ label: t("entrega.ui.phone"), value: data.telefono, icon: "phone-outline", onPress: () => Linking.openURL(`tel:${data.telefono}`) }]
+      : []),
+  ];
+  // Outcomes other than a clean delivery, as quiet quick actions under the lines: the clean
+  // delivery is the one the driver records most, so it alone gets the pinned CTA.
+  const otherOutcomes: { key: string; label: string; icon: string; color: string; onPress: () => void }[] = [
+    { key: "issue", label: t("entrega.deliverWithIssue"), icon: "check-decagram-outline", color: colors.tint, onPress: withNewAttemptCheck(() => openDeliverDialog(true)) },
+    { key: "partial", label: t("entrega.partial"), icon: "package-variant", color: colors.tint, onPress: withNewAttemptCheck(() => setPartialMode(true)) },
+    { key: "later", label: t("entrega.deliverLater"), icon: "calendar-clock", color: colors.tint, onPress: withNewAttemptCheck(() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); }) },
+    { key: "notDelivered", label: t("entrega.notDelivered"), icon: "close-circle-outline", color: status.negative.base, onPress: withNewAttemptCheck(() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); }) },
+  ];
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={["left", "right"]}>
-      <ScrollView contentContainerStyle={[styles.scroll, { paddingBottom: 24 + insets.bottom }]}>
-        {/* Customer */}
-        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <View style={styles.custHeader}>
-              <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
-                  {data.nombreCliente || data.codigoCliente}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {data.codigoCliente} · {data.noFactura || data.noPedidoStr}
-                </Text>
-              </View>
-              <IconButton
-                icon="map-marker"
-                mode="contained-tonal"
-                disabled={!canNavigate}
-                onPress={() => setShowMap(true)}
-              />
-            </View>
-            {!!data.direccion && (
-              <View style={styles.infoRow}>
-                <Icon source="home-map-marker" size={16} color={theme.colors.onSurfaceVariant} />
-                <Text variant="bodySmall" style={styles.infoText}>{data.direccion}</Text>
-              </View>
-            )}
-            {!!data.referenciaDireccion && (
-              <View style={styles.infoRow}>
-                <Icon source="sign-direction" size={16} color={theme.colors.onSurfaceVariant} />
-                <Text variant="bodySmall" style={styles.infoText}>{data.referenciaDireccion}</Text>
-              </View>
-            )}
-            {!!data.telefono && (
-              <View style={styles.infoRow}>
-                <Icon source="phone" size={16} color={theme.colors.onSurfaceVariant} />
-                <Text
-                  variant="bodySmall"
-                  style={[styles.infoText, { color: theme.colors.primary }]}
-                  onPress={() => Linking.openURL(`tel:${data.telefono}`)}
-                >
-                  {data.telefono}
-                </Text>
-              </View>
-            )}
-          </Card.Content>
-        </Card>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {header}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.hero}>
+          <Text style={styles.overline}>{t("entrega.invoiceLabel")} · {docNo}</Text>
+          <Text style={styles.largeTitle}>{data.nombreCliente || data.codigoCliente}</Text>
+          <StatusChip label={t(st.key)} tone={st.tone} />
+        </View>
 
         {alreadyRecorded && (
-          <Chip icon="information" style={styles.recordedChip} textStyle={{ fontSize: theme.custom.type.caption.fontSize }}>
-            {t("entrega.alreadyRecorded", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
-          </Chip>
-        )}
-
-        {intentosPrevios.length > 0 && (
-          <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-            <Card.Content>
-              <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
-                {t("entrega.intentosPrevios")} ({intentosPrevios.length})
-              </Text>
-              {intentosPrevios.map((i) => {
-                const titulo = `${t("entrega.intentoN", { n: i.intento })} · ${t(`entrega.detalle.${i.status}`)}`;
-                const detalle = [formatDateTime(i.fecha), i.noRuta ? t("entrega.intentoRuta", { ruta: i.noRuta }) : null, i.chofer]
-                  .filter(Boolean)
-                  .join(" · ");
-                const nota = i.observacion || i.codigoMotivoRechazo;
-                return (
-                  <View
-                    key={`${i.intento}-${i.fecha}`}
-                    style={styles.attemptRow}
-                    accessible
-                    accessibilityLabel={[titulo, detalle, nota].filter(Boolean).join(", ")}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: "600" }}>
-                        {titulo}
-                      </Text>
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        {detalle}
-                      </Text>
-                      {!!nota && (
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                          {nota}
-                        </Text>
-                      )}
-                    </View>
-                  </View>
-                );
-              })}
-            </Card.Content>
-          </Card>
+          <View style={[styles.strip, { backgroundColor: status.info.container }]}>
+            <Icon source="information-outline" size={20} color={status.info.onContainer} />
+            <Text style={[styles.stripText, { color: status.info.onContainer }]}>
+              {t("entrega.alreadyRecorded", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
+            </Text>
+          </View>
         )}
 
         {(data.faltantesCarga?.length ?? 0) > 0 && (
-          <Chip icon="alert-circle-outline" style={styles.issueChip} textStyle={{ fontSize: theme.custom.type.caption.fontSize, color: status.warning.onContainer }}>
-            {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
-          </Chip>
+          <View style={[styles.strip, { backgroundColor: colors.warningBackground }]}>
+            <Icon source="alert-circle-outline" size={20} color={colors.warningForeground} />
+            <Text style={[styles.stripText, { color: colors.warningForeground }]}>
+              {t("entrega.loadShortageBanner", { count: data.faltantesCarga.length })}
+            </Text>
+          </View>
         )}
 
-        {/* Lines */}
-        <Card elevation={0} style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <Text variant="titleSmall" style={{ fontWeight: "bold", marginBottom: 8, color: theme.colors.onSurface }}>
-              {t("entrega.items")} ({data.lineas.length})
+        {/* Customer */}
+        <Text style={[styles.overline, styles.sectionHeader]}>{t("entrega.ui.customerOverline")}</Text>
+        {detailRows.map((row) => {
+          const content = (
+            <>
+              <Icon source={row.icon} size={20} color={row.onPress ? colors.tint : colors.inkTertiary} />
+              <Text style={styles.detailLabel}>{row.label}</Text>
+              <Text style={[styles.detailValue, row.onPress && styles.detailLink]}>{row.value}</Text>
+            </>
+          );
+          return row.onPress ? (
+            <Pressable
+              key={row.label}
+              onPress={row.onPress}
+              style={({ pressed }) => [styles.detailRow, pressed && styles.pressed]}
+              accessibilityRole="link"
+              accessibilityLabel={`${row.label}: ${row.value}`}
+            >
+              {content}
+            </Pressable>
+          ) : (
+            <View key={row.label} style={styles.detailRow} accessible accessibilityLabel={`${row.label}: ${row.value}`}>
+              {content}
+            </View>
+          );
+        })}
+
+        {intentosPrevios.length > 0 && (
+          <>
+            <Text style={[styles.overline, styles.sectionHeader]}>
+              {t("entrega.intentosPrevios")} · {intentosPrevios.length}
             </Text>
-            <Divider />
-            {data.lineas.map((l, idx) => {
-              const max = l.cantidad;
-              const faltante = faltantes[l.codigoProducto] ?? 0;
+            {intentosPrevios.map((i) => {
+              const ist = detalleStatusOf(i.status);
+              const titulo = `${t("entrega.intentoN", { n: i.intento })} · ${t(`entrega.detalle.${i.status}`)}`;
+              const detalle = [formatDateTime(i.fecha), i.noRuta ? t("entrega.intentoRuta", { ruta: i.noRuta }) : null, i.chofer]
+                .filter(Boolean)
+                .join(" · ");
+              const nota = i.observacion || i.codigoMotivoRechazo;
               return (
-                <View key={`${l.codigoProducto}-${idx}`} style={styles.lineRow}>
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }} numberOfLines={2}>
-                      {l.descripcion || l.codigoProducto}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                      {l.codigoProducto} · {l.cantidad} {l.unidad ?? ""}
-                    </Text>
+                <View
+                  key={`${i.intento}-${i.fecha}`}
+                  style={styles.attemptRow}
+                  accessible
+                  accessibilityLabel={[titulo, detalle, nota].filter(Boolean).join(", ")}
+                >
+                  <View style={styles.flex}>
+                    <Text style={styles.attemptTitle}>{t("entrega.intentoN", { n: i.intento })}</Text>
+                    <Text style={styles.attemptDetail}>{detalle}</Text>
+                    {!!nota && <Text style={styles.attemptNote}>{nota}</Text>}
                   </View>
-                  {partialMode ? (
-                    <View style={styles.stepper}>
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginRight: 4 }}>
-                        {t("entrega.missing")}
-                      </Text>
-                      <IconButton icon="minus" size={16} onPress={() => setFaltante(l.codigoProducto, faltante - 1, max)} style={styles.stepBtn} />
-                      <TextInput
-                        value={String(faltante)}
-                        onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) setFaltante(l.codigoProducto, n, max); }}
-                        keyboardType="numeric"
-                        style={styles.stepInput}
-                        dense
-                        mode="outlined"
-                      />
-                      <IconButton icon="plus" size={16} onPress={() => setFaltante(l.codigoProducto, faltante + 1, max)} style={styles.stepBtn} />
-                    </View>
-                  ) : (
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                      {l.subTotal.toFixed(2)}
-                    </Text>
-                  )}
+                  <StatusChip label={t(ist.key)} tone={ist.tone} />
                 </View>
               );
             })}
-            <Divider style={{ marginTop: 8 }} />
-            <View style={styles.totalRow}>
-              <Text variant="titleSmall" style={{ color: theme.colors.onSurfaceVariant }}>{t("entrega.total")}</Text>
-              <Text variant="titleMedium" style={{ fontWeight: "bold", color: theme.colors.onSurface }}>
-                {data.total.toFixed(2)}
-              </Text>
+          </>
+        )}
+
+        {/* Lines */}
+        <Text style={[styles.overline, styles.sectionHeader]}>
+          {partialMode ? t("entrega.ui.partialOverline") : `${t("entrega.items")} · ${data.lineas.length}`}
+        </Text>
+        {data.lineas.map((l, idx) => {
+          const max = l.cantidad;
+          const faltante = faltantes[l.codigoProducto] ?? 0;
+          return (
+            <View key={`${l.codigoProducto}-${idx}`} style={styles.lineRow}>
+              <View style={styles.lineTop}>
+                <View style={styles.flex}>
+                  <Text style={styles.lineName} numberOfLines={2}>
+                    {l.descripcion || l.codigoProducto}
+                  </Text>
+                  <Text style={styles.lineMeta}>
+                    {l.codigoProducto} · {l.cantidad} {l.unidad ?? ""}
+                  </Text>
+                </View>
+                {!partialMode && (
+                  <Text style={styles.lineAmount} numberOfLines={1}>
+                    {formatMoney(l.subTotal)}
+                  </Text>
+                )}
+              </View>
+              {partialMode && (
+                <View style={styles.stepperRow}>
+                  <Text style={styles.stepperLabel}>{t("entrega.missing")}</Text>
+                  <View style={styles.stepper}>
+                    <IconButton
+                      icon="minus"
+                      size={18}
+                      iconColor={colors.tint}
+                      onPress={() => setFaltante(l.codigoProducto, faltante - 1, max)}
+                      style={styles.stepBtn}
+                      accessibilityLabel={t("entrega.ui.decreaseMissing")}
+                    />
+                    <TextInput
+                      value={String(faltante)}
+                      onChangeText={(v) => { const n = parseInt(v, 10); if (!isNaN(n)) setFaltante(l.codigoProducto, n, max); }}
+                      keyboardType="numeric"
+                      style={styles.stepInput}
+                      dense
+                      mode="flat"
+                      underlineColor="transparent"
+                      accessibilityLabel={`${t("entrega.missing")}: ${l.descripcion || l.codigoProducto}`}
+                    />
+                    <IconButton
+                      icon="plus"
+                      size={18}
+                      iconColor={colors.tint}
+                      onPress={() => setFaltante(l.codigoProducto, faltante + 1, max)}
+                      style={styles.stepBtn}
+                      accessibilityLabel={t("entrega.ui.increaseMissing")}
+                    />
+                  </View>
+                </View>
+              )}
             </View>
-          </Card.Content>
-        </Card>
+          );
+        })}
+
+        {!partialMode && (
+          <>
+            <Text style={[styles.overline, styles.sectionHeader]}>{t("entrega.ui.otherOutcomes")}</Text>
+            {otherOutcomes.map((o) => (
+              <Pressable
+                key={o.key}
+                onPress={o.onPress}
+                disabled={submitting}
+                style={({ pressed }) => [styles.outcomeRow, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: submitting }}
+              >
+                <Icon source={o.icon} size={22} color={submitting ? colors.inkTertiary : o.color} />
+                <Text style={[styles.outcomeLabel, { color: submitting ? colors.inkTertiary : o.color }]}>{o.label}</Text>
+              </Pressable>
+            ))}
+          </>
+        )}
       </ScrollView>
 
-      {/* Actions */}
-      <View style={styles.actions}>
+      {/* Primary action */}
+      <View style={[styles.footer, { paddingBottom: theme.custom.spacing.md + insets.bottom }]}>
         {partialMode ? (
           <>
-            <Button mode="contained" buttonColor={status.warning.base} icon="check" loading={submitting} disabled={submitting} onPress={submitPartial} contentStyle={{ minHeight: 48 }}>
-              {t("entrega.confirmPartial")}
-            </Button>
-            <Button mode="text" onPress={() => { setPartialMode(false); setFaltantes({}); }} disabled={submitting}>
-              {t("common.cancel")}
-            </Button>
+            <Pressable
+              onPress={() => { setPartialMode(false); setFaltantes({}); }}
+              disabled={submitting}
+              style={styles.footerCancel}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.outcomeLabel, { color: submitting ? colors.inkTertiary : colors.tint }]}>
+                {t("common.cancel")}
+              </Text>
+            </Pressable>
+            <GradientButton
+              icon="check"
+              label={t("entrega.confirmPartial")}
+              loading={submitting}
+              onPress={submitPartial}
+              style={styles.flex}
+            />
           </>
         ) : (
           <>
-            <Button
-              mode="contained"
-              buttonColor={status.positive.base}
-              icon="check-circle"
+            <View style={styles.flex} accessible accessibilityLabel={`${t("entrega.total")}: ${formatMoney(data.total)}`}>
+              <Text style={styles.overline}>{t("entrega.total")}</Text>
+              <Text style={styles.footerTotal} numberOfLines={1} adjustsFontSizeToFit>
+                {formatMoney(data.total)}
+              </Text>
+            </View>
+            <GradientButton
+              icon="check-circle-outline"
+              label={t("entrega.deliver")}
               loading={submitting}
-              disabled={submitting}
               onPress={withNewAttemptCheck(() => openDeliverDialog(false))}
-              contentStyle={{ minHeight: 48 }}
-            >
-              {t("entrega.deliver")}
-            </Button>
-            <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="contained-tonal" icon="check-decagram" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => openDeliverDialog(true))}>
-                {t("entrega.deliverWithIssue")}
-              </Button>
-              <Button mode="contained-tonal" icon="alert-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => setPartialMode(true))}>
-                {t("entrega.partial")}
-              </Button>
-            </View>
-            <View style={[styles.actionRow, { marginTop: 8 }]}>
-              <Button mode="outlined" textColor={theme.colors.tertiary} icon="calendar-clock" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => { setReasonOutcome("entregar_despues"); setReason(""); setShowReason(true); })}>
-                {t("entrega.deliverLater")}
-              </Button>
-              <Button mode="outlined" textColor={status.negative.base} icon="close-circle-outline" style={styles.actionBtn} compact disabled={submitting} onPress={withNewAttemptCheck(() => { setReasonOutcome("no_entregado"); setReason(""); setShowReason(true); })}>
-                {t("entrega.notDelivered")}
-              </Button>
-            </View>
+            />
           </>
         )}
       </View>
@@ -428,7 +489,7 @@ export default function FacturaEntregaScreen() {
         <Dialog visible={deliverOpen} onDismiss={() => !submitting && setDeliverOpen(false)}>
           <Dialog.Title>{issueMode ? t("entrega.deliverWithIssueTitle") : t("entrega.deliverTitle")}</Dialog.Title>
           <Dialog.ScrollArea>
-            <ScrollView contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 4 }}>
+            <ScrollView contentContainerStyle={styles.dialogScroll}>
               {issueMode && (
                 <TextInput
                   mode="outlined"
@@ -438,12 +499,10 @@ export default function FacturaEntregaScreen() {
                   placeholder={t("entrega.issueNotePlaceholder")}
                   multiline
                   numberOfLines={2}
-                  style={{ marginBottom: 12 }}
+                  style={styles.dialogField}
                 />
               )}
-              <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
-                {t("entrega.paymentType")}
-              </Text>
+              <Text style={styles.dialogOverline}>{t("entrega.paymentType")}</Text>
               <View style={styles.payRow}>
                 {PAYMENT_TYPES.map((tp) => (
                   <Chip
@@ -466,19 +525,17 @@ export default function FacturaEntregaScreen() {
                   onChangeText={setMonto}
                   keyboardType="decimal-pad"
                   left={<TextInput.Affix text="$" />}
-                  style={{ marginTop: 12 }}
+                  style={styles.amountField}
                 />
               )}
 
-              <Text variant="labelLarge" style={{ color: theme.colors.onSurfaceVariant, marginTop: 16, marginBottom: 8 }}>
-                {t("entrega.photoProof")}
-              </Text>
+              <Text style={[styles.dialogOverline, styles.photoOverline]}>{t("entrega.photoProof")}</Text>
               {fotoUri ? (
                 <View style={styles.photoWrap}>
                   <Image source={{ uri: fotoUri }} style={styles.photo} />
                   {uploadingPhoto ? (
                     <View style={styles.photoOverlay}>
-                      <ActivityIndicator color={theme.custom.colors.onGradient} />
+                      <ActivityIndicator color={colors.onGradient} />
                       <Text style={styles.photoOverlayText}>{t("entrega.uploadingPhoto")}</Text>
                     </View>
                   ) : (
@@ -490,22 +547,21 @@ export default function FacturaEntregaScreen() {
                   )}
                 </View>
               ) : null}
-              <Button mode="outlined" icon="camera" onPress={takePhoto} disabled={uploadingPhoto || submitting} style={{ marginTop: 8 }}>
+              <AppButton mode="outlined" icon="camera" onPress={takePhoto} disabled={uploadingPhoto || submitting} style={styles.photoButton}>
                 {fotoUri ? t("entrega.retakePhoto") : t("entrega.takePhoto")}
-              </Button>
+              </AppButton>
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setDeliverOpen(false)} disabled={submitting}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setDeliverOpen(false)} disabled={submitting}>{t("common.cancel")}</AppButton>
+            <AppButton
               mode="contained"
-              buttonColor={status.positive.base}
               loading={submitting}
               disabled={submitting || uploadingPhoto}
               onPress={confirmDelivery}
             >
               {t("entrega.confirmDelivery")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
 
@@ -513,19 +569,19 @@ export default function FacturaEntregaScreen() {
           <Dialog.Title>{t("entrega.openIn")}</Dialog.Title>
           <Dialog.Content>
             {mapProviderOptions().map((opt) => (
-              <Button
+              <AppButton
                 key={opt.provider}
                 icon={opt.icon}
                 mode="text"
-                style={{ justifyContent: "flex-start", marginVertical: 2 }}
-                contentStyle={{ justifyContent: "flex-start" }}
+                style={styles.mapOption}
+                contentStyle={styles.mapOptionContent}
                 onPress={async () => {
                   setShowMap(false);
                   await openInMaps(opt.provider, { latitud: data.latitud, longitud: data.longitud, label: data.nombreCliente });
                 }}
               >
                 {opt.label}
-              </Button>
+              </AppButton>
             ))}
           </Dialog.Content>
         </Dialog>
@@ -534,13 +590,13 @@ export default function FacturaEntregaScreen() {
         <Dialog visible={!!pendingAction} onDismiss={() => setPendingAction(null)}>
           <Dialog.Title>{t("entrega.nuevoIntentoTitle")}</Dialog.Title>
           <Dialog.Content>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+            <Text style={styles.dialogBody}>
               {t("entrega.nuevoIntentoBody", { status: t(`entrega.detalle.${data.statusDetalle}`) })}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setPendingAction(null)}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setPendingAction(null)}>{t("common.cancel")}</AppButton>
+            <AppButton
               mode="contained"
               onPress={() => {
                 const action = pendingAction;
@@ -549,7 +605,7 @@ export default function FacturaEntregaScreen() {
               }}
             >
               {t("entrega.nuevoIntentoConfirm")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
 
@@ -569,14 +625,14 @@ export default function FacturaEntregaScreen() {
             />
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setShowReason(false)}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setShowReason(false)}>{t("common.cancel")}</AppButton>
+            <AppButton
               loading={submitting}
               disabled={submitting}
               onPress={() => { setShowReason(false); submit(reasonOutcome, { observacion: reason || undefined }); }}
             >
               {t("common.confirm")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
       </Portal>
@@ -587,31 +643,123 @@ export default function FacturaEntregaScreen() {
 }
 
 const PHOTO_BADGE_SIZE = 22;
+const PHOTO_SIZE = 120;
+const STEP_INPUT_WIDTH = 56;
 
-const createStyles = (theme: CustomTheme) => {
-  const { colors, radius, type, surface, status } = theme.custom;
+const createStyles = (theme: CustomTheme, gutter: number) => {
+  const { colors, radius, spacing, type, surface, hairline, touchTarget } = theme.custom;
   return StyleSheet.create({
-    container: { flex: 1 },
+    // Fills the screen and centres the empty or error state in it.
+    stateView: { flex: 1 },
+    container: { flex: 1, backgroundColor: colors.background },
     centered: { flex: 1, justifyContent: "center", alignItems: "center" },
-    scroll: { padding: 16, paddingBottom: 24 },
-    card: { borderRadius: radius.container, marginBottom: 12 },
-    custHeader: { flexDirection: "row", alignItems: "center" },
-    infoRow: { flexDirection: "row", alignItems: "center", marginTop: 6, gap: 6 },
-    infoText: { flex: 1, color: colors.inkSecondary },
-    recordedChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: colors.tintSoft },
-    issueChip: { alignSelf: "flex-start", marginBottom: 12, backgroundColor: status.warning.container },
-    lineRow: { flexDirection: "row", alignItems: "center", paddingVertical: 8, minHeight: 48 },
-    attemptRow: { flexDirection: "row", paddingVertical: 8, minHeight: 44, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.fill },
-    totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 },
-    stepper: { flexDirection: "row", alignItems: "center" },
-    stepBtn: { margin: 0, width: 30, height: 30 },
-    stepInput: { width: 52, height: 34, textAlign: "center", fontSize: type.bodySmall.fontSize, paddingHorizontal: 2 },
-    actions: { ...surface.floating, padding: 12 },
-    actionRow: { flexDirection: "row", gap: 8 },
-    payRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-    payChip: { marginBottom: 4 },
+    flex: { flex: 1 },
+    pressed: { backgroundColor: colors.fill },
+    scroll: { paddingBottom: spacing.xxl },
+    hero: { paddingHorizontal: gutter, paddingTop: spacing.sm, paddingBottom: spacing.lg, gap: spacing.sm },
+    overline: { ...type.overline },
+    largeTitle: { ...type.largeTitle },
+    strip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget,
+    },
+    stripText: { ...type.bodySmall, flex: 1 },
+    sectionHeader: {
+      paddingHorizontal: gutter,
+      paddingTop: spacing.xl,
+      paddingBottom: spacing.sm,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    detailRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    detailLabel: { ...type.bodySmall, minWidth: "28%" },
+    detailValue: { ...type.body, flex: 1, textAlign: "right" },
+    detailLink: { color: colors.tint },
+    attemptRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    attemptTitle: { ...type.rowTitle },
+    attemptDetail: { ...type.bodySmall, color: colors.inkSecondary },
+    attemptNote: { ...type.caption, marginTop: spacing.xs },
+    lineRow: {
+      paddingHorizontal: gutter,
+      paddingVertical: spacing.md,
+      minHeight: touchTarget,
+      gap: spacing.sm,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    lineTop: { flexDirection: "row", alignItems: "center", gap: spacing.md },
+    lineName: { ...type.body },
+    lineMeta: { ...type.caption },
+    lineAmount: { ...type.figure(17) },
+    stepperRow: { flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: spacing.md },
+    stepperLabel: { ...type.bodySmall },
+    stepper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.fill,
+      borderRadius: radius.control,
+    },
+    stepBtn: { margin: 0, width: touchTarget, height: touchTarget },
+    stepInput: {
+      width: STEP_INPUT_WIDTH,
+      height: touchTarget,
+      textAlign: "center",
+      backgroundColor: "transparent",
+      ...type.figure(type.body.fontSize ?? 17),
+      paddingHorizontal: 0,
+    },
+    outcomeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.md,
+      paddingHorizontal: gutter,
+      minHeight: touchTarget + spacing.sm,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    outcomeLabel: { ...type.body },
+    footer: {
+      ...surface.floating,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.lg,
+      paddingHorizontal: gutter,
+      paddingTop: spacing.md,
+    },
+    footerTotal: { ...type.figure(28) },
+    footerCancel: { minHeight: touchTarget, justifyContent: "center" },
+    dialogScroll: { paddingVertical: spacing.sm, paddingHorizontal: spacing.xs },
+    dialogField: { marginBottom: spacing.md },
+    dialogOverline: { ...type.overline, marginBottom: spacing.sm },
+    dialogBody: { ...type.body },
+    amountField: { marginTop: spacing.md },
+    photoOverline: { marginTop: spacing.lg },
+    payRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+    payChip: { marginBottom: spacing.xs },
     photoWrap: { alignSelf: "flex-start", position: "relative" },
-    photo: { width: 120, height: 120, borderRadius: radius.segment, backgroundColor: colors.fill },
+    photo: { width: PHOTO_SIZE, height: PHOTO_SIZE, borderRadius: radius.segment, backgroundColor: colors.fill },
     photoOverlay: {
       position: "absolute",
       top: 0, left: 0, right: 0, bottom: 0,
@@ -621,14 +769,16 @@ const createStyles = (theme: CustomTheme) => {
       justifyContent: "center",
     },
     // White in both modes: it sits on the dark scrim over the photo, like text on the gradient.
-    photoOverlayText: { color: colors.onGradient, marginTop: 4 },
+    photoOverlayText: { color: colors.onGradient, marginTop: spacing.xs },
     photoBadge: {
       position: "absolute",
-      top: 4,
-      right: 4,
+      top: spacing.xs,
+      right: spacing.xs,
       backgroundColor: colors.surfaceCard,
       borderRadius: PHOTO_BADGE_SIZE / 2,
     },
-    actionBtn: { flex: 1 },
+    photoButton: { marginTop: spacing.sm },
+    mapOption: { justifyContent: "flex-start", marginVertical: 2 },
+    mapOptionContent: { justifyContent: "flex-start" },
   });
 };

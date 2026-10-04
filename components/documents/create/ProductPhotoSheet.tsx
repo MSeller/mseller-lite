@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, View } from "react-native";
-import { Button, HelperText, Modal, Portal, Text, useTheme } from "react-native-paper";
+import { HelperText, Modal, Portal, Text, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../../constants/Theme";
 import { useTranslation } from "../../../hooks/useTranslation";
@@ -9,6 +9,7 @@ import type { ProductImage } from "../../../types/documents";
 import type { Product } from "../../../types/inventory";
 import { productThumbnailUrl, type UploadedProductPhoto } from "../../../utils/productPhoto";
 import ProductPhotoField from "./ProductPhotoField";
+import AppButton from "../../ui/AppButton";
 
 interface Props {
   /** The product to add a photo to; the sheet is open while this is set. */
@@ -103,10 +104,10 @@ const ProductPhotoSheet: React.FC<Props> = ({ product, onDismiss, onSaved }) => 
         )}
 
         <View style={styles.footer}>
-          <Button mode="text" onPress={onDismiss} disabled={ocupado} contentStyle={styles.buttonContent}>
+          <AppButton mode="text" onPress={onDismiss} disabled={ocupado} contentStyle={styles.buttonContent}>
             {t("common.cancel")}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             mode="contained"
             onPress={guardar}
             loading={guardando}
@@ -114,7 +115,7 @@ const ProductPhotoSheet: React.FC<Props> = ({ product, onDismiss, onSaved }) => 
             contentStyle={styles.buttonContent}
           >
             {t("documents.productPhoto.save")}
-          </Button>
+          </AppButton>
         </View>
       </Modal>
     </Portal>

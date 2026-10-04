@@ -9,8 +9,11 @@ import { searchProductsForDocument } from "../../services/ProductService";
 import type { ProductoEditable } from "../../types/catalog";
 import type { Product } from "../../types/inventory";
 import { formatMoney } from "../../utils/documentFormat";
+import { stockOf, stockTone } from "../../utils/productStock";
+import NewProductForm from "../documents/create/NewProductForm";
 import AppCard from "../ui/AppCard";
 import StatusChip from "../ui/StatusChip";
+import CatalogCreateModal from "./CatalogCreateModal";
 import CatalogList, { CATALOG_PAGE_SIZE } from "./CatalogList";
 import ProductDetail from "./ProductDetail";
 
@@ -46,7 +49,7 @@ const applyToProduct =
   });
 
 /**
- * Catálogo › Productos: search the product master, open one, edit it.
+ * Catálogo › Productos: search the product master, open one, edit it, or register a new one.
  *
  * Separate from Inventario › Productos, which is a stock lookup for every role;
  * this one edits the record and is offered to administrators only.
@@ -59,6 +62,8 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
   const [search, setSearch] = useState("");
   const results = usePagedSearch({ query: search, fetchPage: fetchProducts });
   const { setItems } = results;
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const renderRow = useCallback(
     (item: Product) => (
@@ -84,7 +89,12 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
               {item.codigo}
               {item.codigoBarra ? ` · ${item.codigoBarra}` : ""}
             </Text>
-            {item.status === "I" && <StatusChip label={t("catalog.inactive")} tone="negative" />}
+            {(!item.esServicio || item.status === "I") && (
+              <View style={styles.chips}>
+                {!item.esServicio && <StockChip value={stockOf(item)} />}
+                {item.status === "I" && <StatusChip label={t("catalog.inactive")} tone="negative" />}
+              </View>
+            )}
           </View>
           <Icon source="chevron-right" size={22} color={theme.colors.onSurfaceVariant} />
         </View>
@@ -103,6 +113,17 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
 
   const handleBack = useCallback(() => setSelected(null), []);
 
+  // The new product goes to the top of the list and opens, so the rest of the record
+  // (prices, classification, cost) can be completed right away with Editar.
+  const handleCreated = useCallback(
+    (producto: Product) => {
+      setItems((rows) => [producto, ...rows.filter((row) => row.codigo !== producto.codigo)]);
+      setCreating(false);
+      setSelected(producto);
+    },
+    [setItems]
+  );
+
   return (
     <>
       <View style={selected ? styles.hidden : styles.fill}>
@@ -119,6 +140,8 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
           emptyBody={t("catalog.products.emptyBody")}
           emptySearchTitle={t("catalog.products.emptySearchTitle")}
           emptySearchBody={t("catalog.products.emptySearchBody")}
+          onAdd={() => setCreating(true)}
+          addLabel={t("documents.newProduct.title")}
         />
       </View>
       {selected && (
@@ -132,8 +155,22 @@ const ProductsCatalogScreen: React.FC<Props> = ({ headerAccessory }) => {
           />
         </View>
       )}
+      <CatalogCreateModal
+        visible={creating}
+        title={t("documents.newProduct.title")}
+        busy={saving}
+        onDismiss={() => setCreating(false)}
+      >
+        <NewProductForm initialName={search.trim()} onCreated={handleCreated} onBusyChange={setSaving} />
+      </CatalogCreateModal>
     </>
   );
+};
+
+/** Units on hand, coloured like the stock rows of the product detail: none, low, enough. */
+const StockChip: React.FC<{ value: number }> = ({ value }) => {
+  const { t } = useTranslation();
+  return <StatusChip label={t("documents.stockShort", { value })} tone={stockTone(value)} />;
 };
 
 const createStyles = (theme: CustomTheme) =>
@@ -154,8 +191,8 @@ const createStyles = (theme: CustomTheme) =>
     iconBadge: {
       width: 44,
       height: 44,
-      borderRadius: 12,
-      backgroundColor: `${theme.colors.primary}14`,
+      borderRadius: theme.custom.radius.container,
+      backgroundColor: theme.custom.colors.tintSoft,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -180,6 +217,11 @@ const createStyles = (theme: CustomTheme) =>
     },
     meta: {
       color: theme.colors.onSurfaceVariant,
+    },
+    chips: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 6,
     },
   });
 

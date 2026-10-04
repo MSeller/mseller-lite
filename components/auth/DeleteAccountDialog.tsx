@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";
-import { Button, Dialog, HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
+import { Dialog, HelperText, Portal, Text, TextInput, useTheme } from "react-native-paper";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useUser } from "../../contexts/UserContext";
@@ -12,13 +12,13 @@ import {
 } from "../../services/accountService";
 import { hasPasswordLogin } from "../../services/googleSignIn";
 import { getBusinessId } from "../../utils/account";
+import { WRONG_PASSWORD_CODES } from "../../utils/authErrors";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   visible: boolean;
   onDismiss: () => void;
 }
-
-const WRONG_PASSWORD_CODES = ["auth/wrong-password", "auth/invalid-credential", "auth/invalid-login-credentials"];
 
 /**
  * Deletes the administrator's business and every login in it. Two deliberate hurdles, since
@@ -122,17 +122,17 @@ const DeleteAccountDialog: React.FC<Props> = ({ visible, onDismiss }) => {
           </ScrollView>
         </Dialog.ScrollArea>
         <Dialog.Actions>
-          <Button onPress={close} disabled={deleting}>
+          <AppButton onPress={close} disabled={deleting}>
             {t("common.cancel")}
-          </Button>
-          <Button
+          </AppButton>
+          <AppButton
             onPress={handleDelete}
             loading={deleting}
             disabled={!canDelete}
             textColor={theme.colors.error}
           >
             {t("account.deleteButton")}
-          </Button>
+          </AppButton>
         </Dialog.Actions>
       </Dialog>
     </Portal>

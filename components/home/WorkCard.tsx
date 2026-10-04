@@ -18,6 +18,8 @@ interface WorkCardProps {
   icon: string;
   loading: boolean;
   failed: boolean;
+  /** The module is not available to this user; the card says so rather than offering a retry. */
+  unavailable?: "disabled" | "unassigned" | null;
   lines: WorkCardLine[] | null;
   onPress: () => void;
   onRetry: () => void;
@@ -27,7 +29,7 @@ interface WorkCardProps {
  * One module's "today" numbers on the home screen. Tapping opens the module.
  * The first line is the headline figure; the rest are supporting counts.
  */
-export default function WorkCard({ title, icon, loading, failed, lines, onPress, onRetry }: WorkCardProps) {
+export default function WorkCard({ title, icon, loading, failed, unavailable, lines, onPress, onRetry }: WorkCardProps) {
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
@@ -45,7 +47,14 @@ export default function WorkCard({ title, icon, loading, failed, lines, onPress,
         </Text>
       </View>
 
-      {loading && !lines ? (
+      {unavailable ? (
+        <View style={styles.unavailable}>
+          <Icon source="lock-outline" size={22} color={theme.custom.colors.inkTertiary} />
+          <Text variant="bodySmall" style={styles.muted} numberOfLines={2}>
+            {t(unavailable === "unassigned" ? "home.noDriverCode" : "home.notEnabled")}
+          </Text>
+        </View>
+      ) : loading && !lines ? (
         <ActivityIndicator style={styles.loading} />
       ) : failed && !lines ? (
         <TouchableRipple onPress={onRetry} borderless style={styles.retry}>
@@ -93,6 +102,10 @@ export default function WorkCard({ title, icon, loading, failed, lines, onPress,
 
 const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
+    unavailable: {
+      gap: theme.custom.spacing.xs,
+      paddingTop: theme.custom.spacing.sm,
+    },
     card: {
       flexBasis: "47%",
       flexGrow: 1,
@@ -110,10 +123,10 @@ const createStyles = (theme: CustomTheme) =>
     iconWrap: {
       width: 30,
       height: 30,
-      borderRadius: 15,
+      borderRadius: 30 / 2,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: `${theme.colors.primary}14`,
+      backgroundColor: theme.custom.colors.tintSoft,
     },
     title: {
       flex: 1,
@@ -135,7 +148,7 @@ const createStyles = (theme: CustomTheme) =>
     },
     retry: {
       alignSelf: "flex-start",
-      borderRadius: 8,
+      borderRadius: theme.custom.radius.segment,
     },
     retryInner: {
       paddingVertical: 2,

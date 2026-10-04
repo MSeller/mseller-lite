@@ -1,8 +1,8 @@
 import { Tabs, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import React, { useMemo } from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Icon, Text, useTheme } from "react-native-paper";
+import { Icon, IconButton, Text, useTheme } from "react-native-paper";
 import type { CustomTheme } from "@/constants/Theme";
 import { useNavigationAccess } from "@/hooks/useNavigationAccess";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -31,36 +31,21 @@ function TabHeader({ rutaId }: { rutaId: string }) {
   };
 
   return (
-    <View
-      style={[
-        styles.header,
-        {
-          paddingTop: insets.top + 8,
-          backgroundColor: theme.colors.surface,
-          borderBottomColor: theme.custom.colors.hairline,
-        },
-      ]}
-    >
-      <TouchableOpacity
+    <View style={[styles.header, { paddingTop: insets.top }]}>
+      <IconButton
+        icon="arrow-left"
+        iconColor={theme.custom.colors.tint}
+        size={24}
         onPress={handleBack}
-        style={[styles.backBtn, { backgroundColor: theme.colors.surfaceVariant }]}
-        hitSlop={8}
-      >
-        <Icon source="arrow-left" size={22} color={theme.colors.primary} />
-      </TouchableOpacity>
+        style={styles.backBtn}
+        accessibilityLabel={t("common.back")}
+      />
 
       <View style={styles.titleGroup}>
-        <Text
-          variant="labelSmall"
-          style={[styles.moduleLabel, { color: theme.colors.primary }]}
-        >
+        <Text style={styles.moduleLabel} numberOfLines={1}>
           {t("preparacion.wavePicking")}
         </Text>
-        <Text
-          variant="titleMedium"
-          style={[styles.routeTitle, { color: theme.colors.onSurface }]}
-          numberOfLines={1}
-        >
+        <Text style={styles.routeTitle} numberOfLines={1} accessibilityRole="header">
           #{rutaId}
         </Text>
       </View>
@@ -94,6 +79,7 @@ export default function RutaIdLayout() {
           { height: 60 + insets.bottom, paddingBottom: 8 + insets.bottom },
         ],
         tabBarLabelStyle: styles.tabBarLabel,
+        sceneStyle: styles.scene,
       }}
     >
       <Tabs.Screen
@@ -136,44 +122,49 @@ export default function RutaIdLayout() {
   );
 }
 
-const createStyles = (theme: CustomTheme) => StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: theme.custom.hairline,
-    gap: 12,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: theme.custom.radius.pill,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  titleGroup: {
-    flex: 1,
-  },
-  moduleLabel: {
-    ...theme.custom.type.overline,
-  },
-  routeTitle: {
-    fontWeight: "800",
-    lineHeight: 22,
-  },
-  tabBar: {
-    paddingTop: 4,
-    // A hairline rule marks the boundary. An upward shadow only smudges the
-    // edge of the screen and reads as a rendering artefact on a light page.
-    backgroundColor: theme.custom.colors.surfaceCard,
-    borderTopWidth: theme.custom.hairline,
-    borderTopColor: theme.custom.colors.hairline,
-    elevation: 0,
-  },
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.5,
-  },
-});
+const createStyles = (theme: CustomTheme) => {
+  const { colors, spacing, type, hairline, touchTarget } = theme.custom;
+  return StyleSheet.create({
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingLeft: spacing.xs,
+      paddingRight: spacing.lg,
+      paddingBottom: spacing.xs,
+      minHeight: touchTarget + spacing.sm,
+      gap: spacing.xs,
+      backgroundColor: colors.background,
+      borderBottomWidth: hairline,
+      borderBottomColor: colors.hairline,
+    },
+    backBtn: {
+      margin: 0,
+    },
+    titleGroup: {
+      flex: 1,
+    },
+    moduleLabel: {
+      ...type.overline,
+    },
+    routeTitle: {
+      ...type.rowTitle,
+      fontWeight: "700",
+    },
+    tabBar: {
+      paddingTop: spacing.xs,
+      // A hairline rule marks the boundary. An upward shadow only smudges the
+      // edge of the screen and reads as a rendering artefact on a light page.
+      backgroundColor: colors.background,
+      borderTopWidth: hairline,
+      borderTopColor: colors.hairline,
+      elevation: 0,
+    },
+    scene: {
+      backgroundColor: colors.background,
+    },
+    // Weight only: the navigator supplies the size and the active/inactive colour.
+    tabBarLabel: {
+      fontWeight: "600",
+    },
+  });
+};

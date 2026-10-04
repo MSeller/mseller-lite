@@ -90,6 +90,11 @@ accent); route statuses share one map, `utils/routeStatus.ts`.
   instead of cutting them.
 - Contrast ≥ 4.5:1.
 - Every user-facing string in `locales/es.json` **and** `locales/en.json`.
+- No emojis in user-facing text: titles, headers, labels, buttons, toasts, list rows and locale
+  strings. Meaning comes from a `react-native-paper` icon (`Icon`, `List.Icon`, `Chip icon`,
+  `TextInput.Icon`) coloured with theme tokens, never from an emoji or a decorative glyph
+  (`✓`, `⚠`, `📍`, `🚚`). Emojis render differently per platform, ignore the theme in dark mode,
+  are read aloud by screen readers and make the app look generated rather than designed.
 
 ## Verifying a design PR
 

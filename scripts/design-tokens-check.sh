@@ -1,5 +1,5 @@
 #!/bin/bash
-# Lists hard-coded colors, font families/sizes and radii in view code, so each design PR can prove
+# Lists hard-coded colors, font families/sizes, radii and emojis in view code, so each design PR can prove
 # its screens only use `constants/Theme.ts` tokens (mirrors mobile-seller's check of the same name).
 # Usage: pnpm design:check [paths...] (defaults to app/ and components/). Exit code 1 when
 # anything is found. A radius written as half the element's own size (`56 / 2`) is geometry, not
@@ -16,6 +16,11 @@ matches=$(git grep --untracked -n -E "$pattern" -- "$@" ':(exclude)constants/The
         code=${hit#*:*:}
         printf '%s\n' "$code" | sed -E "s#$geometry##g" | grep -q -E "$pattern" && printf '%s\n' "$hit"
       done)
+# Emojis in user-facing text (view code and locale strings); console output is not user-facing.
+emoji='[\x{1F1E6}-\x{1F1FF}\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}\x{2B50}]'
+emojis=$(LC_ALL=en_US.UTF-8 git grep --untracked -n -P "$emoji" -- "$@" locales ':(exclude)**/__tests__/**' \
+    | grep -E '^[^:]+\.(tsx?|jsx?|json):' | grep -v -E 'console\.|^[^:]+:[0-9]+: *//')
+matches=$(printf '%s\n%s' "$matches" "$emojis" | sed '/^$/d')
 [ -z "$matches" ] && exit 0
 echo "$matches"
 exit 1

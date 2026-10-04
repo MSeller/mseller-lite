@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Appbar,
   Banner,
-  Button,
   Chip,
   Dialog,
   Divider,
@@ -34,6 +33,7 @@ import SectionHeader from "../ui/SectionHeader";
 import DocumentShareSheet from "./DocumentShareSheet";
 import DocumentStatusChip from "./DocumentStatusChip";
 import { getDocumentTypeMeta } from "./documentMeta";
+import AppButton from "../ui/AppButton";
 
 interface Props {
   noPedidoStr: string;
@@ -292,7 +292,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
 
           {awaitingApproval && (
             <View style={styles.approvalRow}>
-              <Button
+              <AppButton
                 mode="outlined"
                 icon="close-circle-outline"
                 textColor={theme.colors.error}
@@ -302,8 +302,8 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
                 contentStyle={styles.newButtonContent}
               >
                 {t("documents.reject")}
-              </Button>
-              <Button
+              </AppButton>
+              <AppButton
                 mode="contained"
                 icon="check-decagram-outline"
                 onPress={() => changeStatus("procesado")}
@@ -313,11 +313,11 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
                 contentStyle={styles.newButtonContent}
               >
                 {t("documents.approve")}
-              </Button>
+              </AppButton>
             </View>
           )}
 
-          <Button
+          <AppButton
             mode={awaitingApproval ? "outlined" : "contained"}
             icon="printer"
             onPress={() => setShareVisible(true)}
@@ -325,10 +325,10 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
             contentStyle={styles.newButtonContent}
           >
             {t("documents.share.action")}
-          </Button>
+          </AppButton>
 
           {canCreateDocuments && (
-            <Button
+            <AppButton
               mode="outlined"
               icon="plus"
               onPress={() => router.replace("/documentos/nuevo")}
@@ -336,7 +336,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
               contentStyle={styles.newButtonContent}
             >
               {t("documents.newDocument")}
-            </Button>
+            </AppButton>
           )}
         </ScrollView>
       )}
@@ -355,8 +355,8 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
             <Text variant="bodyMedium">{t("documents.rejectConfirmBody")}</Text>
           </Dialog.Content>
           <Dialog.Actions>
-            <Button onPress={() => setRejectConfirm(false)}>{t("common.cancel")}</Button>
-            <Button
+            <AppButton onPress={() => setRejectConfirm(false)}>{t("common.cancel")}</AppButton>
+            <AppButton
               textColor={theme.colors.error}
               onPress={() => {
                 setRejectConfirm(false);
@@ -364,7 +364,7 @@ const DocumentDetailScreen: React.FC<Props> = ({ noPedidoStr, shareOnOpen = fals
               }}
             >
               {t("documents.reject")}
-            </Button>
+            </AppButton>
           </Dialog.Actions>
         </Dialog>
       </Portal>

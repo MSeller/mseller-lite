@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, View } from "react-native";
-import { Button, Icon, IconButton, Modal, Portal, Text, useTheme } from "react-native-paper";
+import { Keyboard, StyleSheet, View } from "react-native";
+import { Icon, IconButton, Portal, Text, useTheme } from "react-native-paper";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { CustomTheme } from "../../constants/Theme";
 import { useTranslation } from "../../hooks/useTranslation";
 import { hasNativeModules } from "../../utils/nativeModules";
+import FullScreenModal from "../ui/FullScreenModal";
+import AppButton from "../ui/AppButton";
 
 /**
  * `expo-camera`, only when this binary contains it. Requiring it on a build made before it was
@@ -65,11 +68,19 @@ const BarcodeScanSheet: React.FC<Props> = ({ visible, onDismiss, onScan, title, 
   const theme = useTheme() as CustomTheme;
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useTranslation();
+  // Edge to edge like the system camera, so the chrome keeps clear of the notch and the
+  // home indicator itself.
+  const insets = useSafeAreaInsets();
+
+  // Opened from a search box the keyboard is usually up, covering the camera's footer.
+  useEffect(() => {
+    if (visible) Keyboard.dismiss();
+  }, [visible]);
 
   return (
     <Portal>
-      <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal}>
-        <View style={styles.header}>
+      <FullScreenModal visible={visible} onDismiss={onDismiss} style={styles.modal}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <Text variant="titleMedium" style={styles.title} numberOfLines={1}>
             {title}
           </Text>
@@ -97,17 +108,17 @@ const BarcodeScanSheet: React.FC<Props> = ({ visible, onDismiss, onScan, title, 
           </View>
         )}
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
           {!!feedback && (
             <Text variant="bodyLarge" style={styles.feedback} numberOfLines={2}>
               {feedback}
             </Text>
           )}
-          <Button mode="contained" onPress={onDismiss} contentStyle={styles.doneContent}>
+          <AppButton mode="contained" onPress={onDismiss} contentStyle={styles.doneContent}>
             {t("common.confirm")}
-          </Button>
+          </AppButton>
         </View>
-      </Modal>
+      </FullScreenModal>
     </Portal>
   );
 };
@@ -159,9 +170,9 @@ const Escaner: React.FC<EscanerProps> = ({ camara, onScan, continuous, onDone, s
         <Icon source="camera-off" size={48} color={SOBRE_CAMARA} />
         <Text style={styles.notice}>{t("scan.permission")}</Text>
         {permiso.canAskAgain && (
-          <Button mode="contained" onPress={pedirPermiso}>
+          <AppButton mode="contained" onPress={pedirPermiso}>
             {t("scan.allowCamera")}
-          </Button>
+          </AppButton>
         )}
       </View>
     );
@@ -184,8 +195,6 @@ const Escaner: React.FC<EscanerProps> = ({ camara, onScan, continuous, onDone, s
 const createStyles = (theme: CustomTheme) =>
   StyleSheet.create({
     modal: {
-      flex: 1,
-      margin: 0,
       backgroundColor: theme.colors.scrim,
     },
     header: {
@@ -193,7 +202,6 @@ const createStyles = (theme: CustomTheme) =>
       alignItems: "center",
       justifyContent: "space-between",
       paddingLeft: 20,
-      paddingTop: 12,
     },
     title: {
       color: SOBRE_CAMARA,
