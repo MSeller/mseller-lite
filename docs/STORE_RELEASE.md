@@ -82,6 +82,8 @@ History:
 | Date | Version | versionCode | Track | EAS build | Commit |
 |---|---|---|---|---|---|
 | 2026-09-14 | 1.0.1 | 9 | internal (draft) | `e7596603` | `054805cd` |
+| 2026-09-19 | 1.0.1 | 11 | production (first review, sent 2026-09-19) | `6d539045` | `25d4b028` |
+| 2026-10-07 | 1.2.0 | 12 | internal (draft); production release staged, not sent | `a02d18b2` | `5e0eee84` |
 
 One-time setup (done):
 
